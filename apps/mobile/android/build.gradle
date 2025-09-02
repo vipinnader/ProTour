@@ -1,0 +1,43 @@
+// Top-level build file for ProTour Android app
+
+buildscript {
+    ext {
+        buildToolsVersion = "34.0.0"
+        minSdkVersion = 21
+        compileSdkVersion = 34
+        targetSdkVersion = 34
+        ndkVersion = "25.1.8937393"
+        kotlinVersion = "1.8.10"
+        
+        // Flipper version
+        FLIPPER_VERSION = '0.182.0'
+    }
+    
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.1.1")
+        classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        
+        // Google services (Firebase)
+        classpath 'com.google.gms:google-services:4.4.0'
+        
+        // Crashlytics
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.9'
+        
+        // Performance monitoring
+        classpath 'com.google.firebase:perf-plugin:1.4.2'
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://www.jitpack.io' }
+    }
+}
+
+// Clean task
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

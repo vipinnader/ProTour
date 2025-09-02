@@ -1,0 +1,263 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Type checking
+        run: |
+          cd apps/mobile && npm run type-check
+          cd ../../functions && npm run type-check
+          cd ../packages/shared && npm run type-check
+
+      - name: Security audit
+        run: npm audit --audit-level high
+        continue-on-error: true
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [mobile, functions, shared]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests - Mobile
+        if: matrix.package == 'mobile'
+        run: cd apps/mobile && npm run test:ci
+
+      - name: Run tests - Functions
+        if: matrix.package == 'functions'
+        run: cd functions && npm run test:ci
+
+      - name: Run tests - Shared
+        if: matrix.package == 'shared'
+        run: cd packages/shared && npm run test:ci
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          directory: ./coverage
+          flags: ${{ matrix.package }}
+          name: codecov-${{ matrix.package }}
+          fail_ci_if_error: false
+
+      - name: Upload test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Test Results (${{ matrix.package }})
+          path: '**/test-results/junit.xml'
+          reporter: java-junit
+
+  build-mobile:
+    name: Mobile Build Verification
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        platform: [ios, android]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup React Native
+        run: cd apps/mobile && npm install
+
+      - name: Setup iOS build environment
+        if: matrix.platform == 'ios'
+        run: |
+          cd apps/mobile/ios
+          pod install
+
+      - name: Setup Android build environment
+        if: matrix.platform == 'android'
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          build-tools: 34.0.0
+
+      - name: Build iOS
+        if: matrix.platform == 'ios'
+        run: |
+          cd apps/mobile
+          npx react-native build-ios --mode Debug
+
+      - name: Build Android
+        if: matrix.platform == 'android'
+        run: |
+          cd apps/mobile/android
+          ./gradlew assembleDebug
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.platform }}
+          path: |
+            apps/mobile/ios/build/Build/Products/Debug-iphonesimulator/*.app
+            apps/mobile/android/app/build/outputs/apk/debug/*.apk
+          retention-days: 7
+
+  firebase-validation:
+    name: Firebase Functions Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Build Functions
+        run: cd functions && npm run build
+
+      - name: Validate Firebase configuration
+        run: firebase use --add protour-dev
+
+      - name: Validate Firestore rules
+        run: firebase firestore:rules:get
+
+      - name: Deploy to staging (dry run)
+        run: firebase deploy --only functions --project protour-dev --debug --dry-run
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      firebase-emulator:
+        image: gcr.io/firebase-tools/firebase-emulator-suite
+        ports:
+          - 4000:4000
+          - 5001:5001
+          - 8080:8080
+          - 9099:9099
+          - 9199:9199
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Start Firebase emulators
+        run: |
+          firebase emulators:start --project protour-dev --import ./emulator-data &
+          sleep 10
+
+      - name: Run integration tests
+        run: |
+          cd apps/mobile && npm run test:integration
+          cd ../../functions && npm run test
+
+      - name: Stop Firebase emulators
+        run: firebase emulators:stop
+
+  pr-summary:
+    name: PR Summary
+    runs-on: ubuntu-latest
+    needs: [code-quality, unit-tests, build-mobile, firebase-validation, integration-tests]
+    if: always()
+    steps:
+      - name: PR Summary Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const jobs = [
+              { name: 'Code Quality', result: '${{ needs.code-quality.result }}' },
+              { name: 'Unit Tests', result: '${{ needs.unit-tests.result }}' },
+              { name: 'Mobile Build', result: '${{ needs.build-mobile.result }}' },
+              { name: 'Firebase Validation', result: '${{ needs.firebase-validation.result }}' },
+              { name: 'Integration Tests', result: '${{ needs.integration-tests.result }}' }
+            ];
+
+            const passed = jobs.filter(job => job.result === 'success').length;
+            const failed = jobs.filter(job => job.result === 'failure').length;
+            const total = jobs.length;
+
+            const statusIcon = failed === 0 ? '✅' : '❌';
+            const summary = `${statusIcon} **PR Validation Summary**\n\n` +
+              `- **Passed**: ${passed}/${total}\n` +
+              `- **Failed**: ${failed}/${total}\n\n` +
+              '**Job Results:**\n' +
+              jobs.map(job => {
+                const icon = job.result === 'success' ? '✅' : 
+                           job.result === 'failure' ? '❌' : '⏸️';
+                return `- ${icon} ${job.name}`;
+              }).join('\n');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });

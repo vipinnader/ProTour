@@ -7,7 +7,17 @@ yarn-error.log*
 # Build outputs
 dist/
 build/
+lib/
 *.tsbuildinfo
+
+# React Native
+# Metro bundler cache
+.metro-cache/
+# Buck cache
+.buckd/
+buck-out/
+# Flipper
+Flipper/
 
 # Environment variables
 .env
@@ -98,5 +108,33 @@ jspm_packages/
 tmp/
 temp/
 
-#Additional files to be ignored
+# React Native iOS
+apps/mobile/ios/build/
+apps/mobile/ios/DerivedData/
+apps/mobile/ios/Pods/
+apps/mobile/ios/*.xcworkspace
+apps/mobile/ios/*.xcuserdata
+
+# React Native Android
+apps/mobile/android/app/build/
+apps/mobile/android/build/
+apps/mobile/android/.gradle/
+apps/mobile/android/local.properties
+apps/mobile/android/keystore.properties
+apps/mobile/android/app/release/
+apps/mobile/android/app/debug/
+
+# Firebase
+.firebase/
+.firebaserc
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+database-debug.log
+ui-debug.log
+functions/lib/
+functions/.runtimeconfig.json
+emulator-data/
+
+# Additional files to be ignored
 .ignore/

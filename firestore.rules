@@ -1,0 +1,103 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read and write their own user document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Tournament access rules
+    match /tournaments/{tournamentId} {
+      // Tournament owners and organizers can read/write
+      allow read, write: if request.auth != null && (
+        resource.data.ownerId == request.auth.uid ||
+        request.auth.uid in resource.data.organizerIds ||
+        request.auth.token.admin == true
+      );
+      
+      // Public tournaments can be read by authenticated users
+      allow read: if request.auth != null && resource.data.isPublic == true;
+      
+      // Tournament creation - authenticated users only
+      allow create: if request.auth != null && 
+        request.resource.data.ownerId == request.auth.uid;
+    }
+    
+    // Match access rules
+    match /tournaments/{tournamentId}/matches/{matchId} {
+      // Tournament organizers and referees can read/write matches
+      allow read, write: if request.auth != null && (
+        get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.ownerId == request.auth.uid ||
+        request.auth.uid in get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.organizerIds ||
+        request.auth.uid in get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.refereeIds ||
+        request.auth.token.admin == true
+      );
+      
+      // Players can read their own matches
+      allow read: if request.auth != null && (
+        resource.data.player1Id == request.auth.uid ||
+        resource.data.player2Id == request.auth.uid
+      );
+    }
+    
+    // Player profiles in tournaments
+    match /tournaments/{tournamentId}/players/{playerId} {
+      // Tournament organizers can read/write player data
+      allow read, write: if request.auth != null && (
+        get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.ownerId == request.auth.uid ||
+        request.auth.uid in get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.organizerIds ||
+        request.auth.token.admin == true
+      );
+      
+      // Players can read their own data
+      allow read: if request.auth != null && playerId == request.auth.uid;
+      
+      // Players can update their own registration data
+      allow update: if request.auth != null && playerId == request.auth.uid &&
+        // Only allow updating specific fields
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['displayName', 'phoneNumber', 'emergencyContact']);
+    }
+    
+    // Tournament registrations
+    match /tournaments/{tournamentId}/registrations/{registrationId} {
+      // Tournament organizers can read/write registrations
+      allow read, write: if request.auth != null && (
+        get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.ownerId == request.auth.uid ||
+        request.auth.uid in get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.organizerIds ||
+        request.auth.token.admin == true
+      );
+      
+      // Users can create their own registrations
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Users can read their own registrations
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+    
+    // Audit logs - read-only for organizers, write-only for functions
+    match /tournaments/{tournamentId}/auditLogs/{logId} {
+      allow read: if request.auth != null && (
+        get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.ownerId == request.auth.uid ||
+        request.auth.uid in get(/databases/$(database)/documents/tournaments/$(tournamentId)).data.organizerIds ||
+        request.auth.token.admin == true
+      );
+      
+      // Only allow writes from Cloud Functions
+      allow write: if false; // Cloud Functions have admin access
+    }
+    
+    // System-wide settings (admin only)
+    match /settings/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,370 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '18'
+  JAVA_VERSION: '11'
+  XCODE_VERSION: '15.2'
+
+jobs:
+  setup:
+    name: Setup and Validation
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.env.outputs.environment }}
+      should-deploy: ${{ steps.env.outputs.should-deploy }}
+    steps:
+      - name: Determine environment
+        id: env
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "should-deploy=false" >> $GITHUB_OUTPUT
+          fi
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run all tests
+        run: npm run test:ci
+
+      - name: Generate test report
+        run: npm run test:report
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 30
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          directory: ./coverage
+          fail_ci_if_error: true
+
+  build-functions:
+    name: Build Firebase Functions
+    runs-on: ubuntu-latest
+    needs: [setup, test]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build functions
+        run: cd functions && npm run build
+
+      - name: Upload functions build
+        uses: actions/upload-artifact@v4
+        with:
+          name: functions-build
+          path: functions/lib/
+          retention-days: 7
+
+  build-mobile:
+    name: Build Mobile Apps
+    runs-on: macos-latest
+    needs: [setup, test]
+    strategy:
+      matrix:
+        platform: [ios, android]
+        environment: [staging, production]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci && cd apps/mobile && npm install
+
+      - name: Setup iOS environment
+        if: matrix.platform == 'ios'
+        run: |
+          sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+          cd apps/mobile/ios && pod install
+
+      - name: Setup Android environment
+        if: matrix.platform == 'android'
+        uses: android-actions/setup-android@v3
+        with:
+          api-level: 34
+          build-tools: 34.0.0
+
+      - name: Configure iOS signing
+        if: matrix.platform == 'ios'
+        env:
+          IOS_CERTIFICATE: ${{ secrets.IOS_CERTIFICATE }}
+          IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          IOS_PROVISIONING_PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        run: |
+          # Import certificate and provisioning profile
+          echo "$IOS_CERTIFICATE" | base64 --decode > certificate.p12
+          echo "$IOS_PROVISIONING_PROFILE" | base64 --decode > profile.mobileprovision
+          
+          # Install certificate
+          security create-keychain -p "" build.keychain
+          security import certificate.p12 -k build.keychain -P "$IOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-keychain-settings -t 3600 -u build.keychain
+          security list-keychains -s build.keychain
+          
+          # Install provisioning profile
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
+
+      - name: Configure Android signing
+        if: matrix.platform == 'android'
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$ANDROID_KEYSTORE" | base64 --decode > apps/mobile/android/app/release.keystore
+          
+          # Create keystore.properties
+          cat > apps/mobile/android/keystore.properties << EOF
+          storeFile=release.keystore
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+
+      - name: Build iOS
+        if: matrix.platform == 'ios'
+        run: |
+          cd apps/mobile
+          if [[ "${{ matrix.environment }}" == "production" ]]; then
+            npx react-native build-ios --mode Release
+          else
+            npx react-native build-ios --mode Debug
+          fi
+
+      - name: Build Android
+        if: matrix.platform == 'android'
+        run: |
+          cd apps/mobile/android
+          if [[ "${{ matrix.environment }}" == "production" ]]; then
+            ./gradlew bundleRelease
+          else
+            ./gradlew bundleStaging
+          fi
+
+      - name: Upload iOS artifacts
+        if: matrix.platform == 'ios'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-${{ matrix.environment }}
+          path: |
+            apps/mobile/ios/build/Build/Products/**/*.ipa
+            apps/mobile/ios/build/Build/Products/**/*.app
+          retention-days: 30
+
+      - name: Upload Android artifacts
+        if: matrix.platform == 'android'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build-${{ matrix.environment }}
+          path: |
+            apps/mobile/android/app/build/outputs/bundle/**/*.aab
+            apps/mobile/android/app/build/outputs/apk/**/*.apk
+          retention-days: 30
+
+  deploy-firebase:
+    name: Deploy Firebase Services
+    runs-on: ubuntu-latest
+    needs: [setup, test, build-functions]
+    if: needs.setup.outputs.should-deploy == 'true'
+    environment: ${{ needs.setup.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Download functions build
+        uses: actions/download-artifact@v4
+        with:
+          name: functions-build
+          path: functions/lib/
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Configure Firebase project
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          if [[ "${{ needs.setup.outputs.environment }}" == "production" ]]; then
+            firebase use protour-prod --token "$FIREBASE_TOKEN"
+          else
+            firebase use protour-staging --token "$FIREBASE_TOKEN"
+          fi
+
+      - name: Deploy Firestore rules and indexes
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: firebase deploy --only firestore --token "$FIREBASE_TOKEN"
+
+      - name: Deploy Storage rules
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: firebase deploy --only storage --token "$FIREBASE_TOKEN"
+
+      - name: Deploy Functions
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: firebase deploy --only functions --token "$FIREBASE_TOKEN"
+
+  deploy-mobile:
+    name: Deploy Mobile Apps
+    runs-on: macos-latest
+    needs: [setup, test, build-mobile]
+    if: needs.setup.outputs.should-deploy == 'true'
+    environment: ${{ needs.setup.outputs.environment }}
+    strategy:
+      matrix:
+        platform: [ios, android]
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-build-${{ needs.setup.outputs.environment }}
+          path: ./artifacts/
+
+      - name: Deploy to TestFlight
+        if: matrix.platform == 'ios'
+        env:
+          APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+        run: |
+          # Upload to TestFlight
+          xcrun altool --upload-app --type ios \
+            --file ./artifacts/**/*.ipa \
+            --apiKey "$APP_STORE_CONNECT_API_KEY" \
+            --apiIssuer "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}"
+
+      - name: Deploy to Google Play Internal Testing
+        if: matrix.platform == 'android'
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
+        run: |
+          # Setup Google Play CLI
+          echo "$GOOGLE_PLAY_SERVICE_ACCOUNT" > service-account.json
+          
+          # Upload to Google Play Internal Testing
+          gcloud auth activate-service-account --key-file=service-account.json
+          gcloud alpha android-publisher releases create \
+            --app-id=com.protour.app \
+            --track=internal \
+            --bundle=./artifacts/**/*.aab
+
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    needs: [setup, deploy-firebase]
+    if: needs.setup.outputs.should-deploy == 'true'
+    steps:
+      - name: Check Firebase Functions health
+        run: |
+          if [[ "${{ needs.setup.outputs.environment }}" == "production" ]]; then
+            ENDPOINT="https://us-central1-protour-prod.cloudfunctions.net/healthCheck"
+          else
+            ENDPOINT="https://us-central1-protour-staging.cloudfunctions.net/healthCheck"
+          fi
+          
+          response=$(curl -s -o /dev/null -w "%{http_code}" "$ENDPOINT")
+          if [[ "$response" != "200" ]]; then
+            echo "Health check failed: $response"
+            exit 1
+          fi
+
+      - name: Check Firestore connectivity
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          # Test Firestore connectivity
+          firebase firestore:rules:get --token "$FIREBASE_TOKEN"
+
+  notify:
+    name: Deployment Notifications
+    runs-on: ubuntu-latest
+    needs: [setup, deploy-firebase, deploy-mobile, health-check]
+    if: always() && needs.setup.outputs.should-deploy == 'true'
+    steps:
+      - name: Deployment Success Notification
+        if: needs.deploy-firebase.result == 'success' && needs.deploy-mobile.result == 'success'
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"✅ ProTour deployment to ${{ needs.setup.outputs.environment }} completed successfully!"}' \
+            "$SLACK_WEBHOOK"
+
+      - name: Deployment Failure Notification
+        if: needs.deploy-firebase.result == 'failure' || needs.deploy-mobile.result == 'failure'
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"❌ ProTour deployment to ${{ needs.setup.outputs.environment }} failed! Check the logs."}' \
+            "$SLACK_WEBHOOK"

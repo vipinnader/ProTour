@@ -1,0 +1,77 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Tournament CSV imports - only tournament organizers can upload
+    match /tournaments/{tournamentId}/imports/{fileName} {
+      allow write: if request.auth != null &&
+        // Check if user is tournament owner or organizer
+        (
+          firestore.get(/databases/(default)/documents/tournaments/$(tournamentId)).data.ownerId == request.auth.uid ||
+          request.auth.uid in firestore.get(/databases/(default)/documents/tournaments/$(tournamentId)).data.organizerIds ||
+          request.auth.token.admin == true
+        ) &&
+        // Only allow CSV files under 10MB
+        request.resource.size < 10 * 1024 * 1024 &&
+        request.resource.contentType == 'text/csv';
+      
+      allow read: if request.auth != null &&
+        (
+          firestore.get(/databases/(default)/documents/tournaments/$(tournamentId)).data.ownerId == request.auth.uid ||
+          request.auth.uid in firestore.get(/databases/(default)/documents/tournaments/$(tournamentId)).data.organizerIds ||
+          request.auth.token.admin == true
+        );
+    }
+    
+    // Tournament images and logos
+    match /tournaments/{tournamentId}/images/{fileName} {
+      allow write: if request.auth != null &&
+        (
+          firestore.get(/databases/(default)/documents/tournaments/$(tournamentId)).data.ownerId == request.auth.uid ||
+          request.auth.uid in firestore.get(/databases/(default)/documents/tournaments/$(tournamentId)).data.organizerIds ||
+          request.auth.token.admin == true
+        ) &&
+        // Only allow image files under 5MB
+        request.resource.size < 5 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+      
+      // Public tournaments' images can be read by anyone
+      allow read: if firestore.get(/databases/(default)/documents/tournaments/$(tournamentId)).data.isPublic == true ||
+        (request.auth != null &&
+          (
+            firestore.get(/databases/(default)/documents/tournaments/$(tournamentId)).data.ownerId == request.auth.uid ||
+            request.auth.uid in firestore.get(/databases/(default)/documents/tournaments/$(tournamentId)).data.organizerIds ||
+            request.auth.token.admin == true
+          )
+        );
+    }
+    
+    // User profile images
+    match /users/{userId}/profile/{fileName} {
+      allow write: if request.auth != null &&
+        request.auth.uid == userId &&
+        // Only allow image files under 2MB
+        request.resource.size < 2 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+      
+      allow read: if request.auth != null;
+    }
+    
+    // Tournament results exports - organizers only
+    match /tournaments/{tournamentId}/exports/{fileName} {
+      allow write: if false; // Only Cloud Functions can write exports
+      
+      allow read: if request.auth != null &&
+        (
+          firestore.get(/databases/(default)/documents/tournaments/$(tournamentId)).data.ownerId == request.auth.uid ||
+          request.auth.uid in firestore.get(/databases/(default)/documents/tournaments/$(tournamentId)).data.organizerIds ||
+          request.auth.token.admin == true
+        );
+    }
+    
+    // Default deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "folders": [
+    {
+      "name": "ProTour Root",
+      "path": "."
+    },
+    {
+      "name": "Mobile App",
+      "path": "./apps/mobile"
+    },
+    {
+      "name": "Web Dashboard",
+      "path": "./apps/web"
+    },
+    {
+      "name": "Shared Packages",
+      "path": "./packages/shared"
+    },
+    {
+      "name": "Firebase Functions",
+      "path": "./functions"
+    }
+  ],
+  "settings": {
+    "typescript.preferences.useAliasesForRenames": false,
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": true,
+      "source.organizeImports": true
+    },
+    "eslint.workingDirectories": [
+      "./apps/mobile",
+      "./apps/web", 
+      "./functions",
+      "./packages/shared"
+    ],
+    "prettier.configPath": "./.prettierrc.js",
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/lib": true,
+      "**/.next": true,
+      "**/android/build": true,
+      "**/ios/build": true,
+      "**/ios/Pods": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/lib": true,
+      "**/.next": true,
+      "**/android/build": true,
+      "**/ios/build": true,
+      "**/ios/Pods": true
+    },
+    "typescript.preferences.includePackageJsonAutoImports": "on",
+    "emmet.includeLanguages": {
+      "javascript": "javascriptreact",
+      "typescript": "typescriptreact"
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+      "ms-vscode.vscode-typescript-next",
+      "bradlc.vscode-tailwindcss",
+      "ms-vscode.vscode-json",
+      "redhat.vscode-yaml",
+      "formulahendry.auto-rename-tag",
+      "christian-kohler.path-intellisense",
+      "ms-vscode-remote.remote-containers",
+      "github.copilot",
+      "github.copilot-chat",
+      "msjsdiag.vscode-react-native",
+      "ms-vscode.vscode-react-native",
+      "toba.vsfire",
+      "firebase-vscode.firebase-explorer",
+      "ms-vscode.js-debug-nightly"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Install Dependencies",
+        "type": "shell",
+        "command": "npm install",
+        "group": "build",
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        }
+      },
+      {
+        "label": "Start Mobile Development",
+        "type": "shell",
+        "command": "npm run dev:mobile",
+        "group": "build",
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        }
+      },
+      {
+        "label": "Start Firebase Emulators",
+        "type": "shell",
+        "command": "npm run firebase:emulator",
+        "group": "build",
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        }
+      },
+      {
+        "label": "Run Tests",
+        "type": "shell",
+        "command": "npm test",
+        "group": "test",
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        }
+      },
+      {
+        "label": "Lint All",
+        "type": "shell",
+        "command": "npm run lint",
+        "group": "build",
+        "presentation": {
+          "reveal": "always",
+          "panel": "new"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+lib/
+.next/
+android/
+ios/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment files
+.env*
+
+# Cache
+.tsbuildinfo
+
+# Generated files
+*.d.ts
+
+# Documentation (preserve formatting)
+*.md
+
+# Package lock files
+package-lock.json
+yarn.lock
