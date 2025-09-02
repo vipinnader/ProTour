@@ -139,10 +139,7 @@ jobs:
 
       - name: Setup Android environment
         if: matrix.platform == 'android'
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: 34
-          build-tools: 34.0.0
+        uses: android-actions/setup-android@v2
 
       - name: Configure iOS signing
         if: matrix.platform == 'ios'
