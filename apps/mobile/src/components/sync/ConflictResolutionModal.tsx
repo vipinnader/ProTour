@@ -10,8 +10,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { ConflictResolution } from '@protour/shared';
-import { useConflictResolution } from '../../contexts/SyncContext';
+import { useConflictResolution, ConflictResolution } from '../../contexts/SyncContext';
 
 interface ConflictResolutionModalProps {
   visible: boolean;
@@ -22,7 +21,7 @@ const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = ({
   visible,
   onClose,
 }) => {
-  const { conflicts, resolveWithLocal, resolveWithRemote, resolveManually } =
+  const { conflicts, resolveConflict, resolveAllConflicts } =
     useConflictResolution();
 
   const [selectedConflict, setSelectedConflict] =
@@ -31,7 +30,7 @@ const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = ({
 
   const handleResolveLocal = async (conflictId: string) => {
     try {
-      await resolveWithLocal(conflictId);
+      await resolveConflict(conflictId, 'local');
       Alert.alert('Success', 'Conflict resolved with your version');
       if (conflicts.length === 1) {
         onClose();
@@ -43,7 +42,7 @@ const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = ({
 
   const handleResolveRemote = async (conflictId: string) => {
     try {
-      await resolveWithRemote(conflictId);
+      await resolveConflict(conflictId, 'remote');
       Alert.alert('Success', 'Conflict resolved with server version');
       if (conflicts.length === 1) {
         onClose();

@@ -349,7 +349,8 @@ export class NetworkOptimizationService {
     const availableStorage = await this.getAvailableStorage();
 
     const hoursAvailable = Math.min(
-      (availableStorage - essentialDataSize) / (cacheSize / this.offlineCapacityHours),
+      (availableStorage - essentialDataSize) /
+        (cacheSize / this.offlineCapacityHours),
       this.offlineCapacityHours
     );
 
@@ -464,7 +465,9 @@ export class NetworkOptimizationService {
   }
 
   // Placeholder implementations for complex operations
-  private async applyCompressionSettings(settings: CompressionSettings): Promise<void> {
+  private async applyCompressionSettings(
+    settings: CompressionSettings
+  ): Promise<void> {
     // Implementation would configure compression middleware
   }
 
@@ -516,9 +519,15 @@ export class NetworkOptimizationService {
   private async cacheTournamentState(): Promise<void> {}
   private async cachePlayerStates(): Promise<void> {}
   private async cacheMatchStates(): Promise<void> {}
-  private async getCurrentCacheSize(): Promise<number> { return 50 * 1024 * 1024; } // 50MB
-  private async getEssentialDataSize(): Promise<number> { return 20 * 1024 * 1024; } // 20MB
-  private async getAvailableStorage(): Promise<number> { return 500 * 1024 * 1024; } // 500MB
+  private async getCurrentCacheSize(): Promise<number> {
+    return 50 * 1024 * 1024;
+  } // 50MB
+  private async getEssentialDataSize(): Promise<number> {
+    return 20 * 1024 * 1024;
+  } // 20MB
+  private async getAvailableStorage(): Promise<number> {
+    return 500 * 1024 * 1024;
+  } // 500MB
 }
 
 export const networkOptimizationService = new NetworkOptimizationService();

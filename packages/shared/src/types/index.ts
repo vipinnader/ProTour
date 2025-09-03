@@ -4,8 +4,17 @@ import { Timestamp } from '@react-native-firebase/firestore';
 
 // Epic 4: Indian Market Connectivity Types
 export type NetworkQuality = '2G' | '3G' | '4G' | 'WiFi';
-export type PerformanceProfile = 'ultra-conservative' | 'data-saver' | 'balanced' | 'performance';
-export type DataPriority = 'critical' | 'high' | 'medium' | 'low' | 'background';
+export type PerformanceProfile =
+  | 'ultra-conservative'
+  | 'data-saver'
+  | 'balanced'
+  | 'performance';
+export type DataPriority =
+  | 'critical'
+  | 'high'
+  | 'medium'
+  | 'low'
+  | 'background';
 
 export interface NetworkMetrics {
   quality: NetworkQuality;
@@ -320,8 +329,18 @@ export interface MonitoringSession {
   endTime?: Date;
   status: 'active' | 'paused' | 'completed';
   metrics: {
-    responseTime: { current: number; average: number; max: number; alerts: number };
-    syncLatency: { current: number; average: number; max: number; alerts: number };
+    responseTime: {
+      current: number;
+      average: number;
+      max: number;
+      alerts: number;
+    };
+    syncLatency: {
+      current: number;
+      average: number;
+      max: number;
+      alerts: number;
+    };
     offlineCapacity: { current: number; minimum: number; alerts: number };
     smsDeliveryRate: { current: number; average: number; alerts: number };
     batteryDrain: { current: number; projected8Hour: number; alerts: number };
@@ -610,7 +629,13 @@ export interface SupportChannel {
   availability: string;
 }
 
-export type IssueCategory = 'bug' | 'performance' | 'usability' | 'data' | 'network' | 'general';
+export type IssueCategory =
+  | 'bug'
+  | 'performance'
+  | 'usability'
+  | 'data'
+  | 'network'
+  | 'general';
 
 export interface PilotSuccessMetrics {
   adminTimeReduction: number; // percentage

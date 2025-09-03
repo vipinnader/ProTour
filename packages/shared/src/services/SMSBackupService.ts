@@ -74,10 +74,13 @@ export class SMSBackupService {
   ): Promise<BatchSMSResult> {
     try {
       // Optimize message for 160-character SMS limit
-      const optimizedMessage = this.optimizeMessageForSMS(message, tournamentCode);
+      const optimizedMessage = this.optimizeMessageForSMS(
+        message,
+        tournamentCode
+      );
 
       // Format all phone numbers
-      const formattedNumbers = recipients.map(num => 
+      const formattedNumbers = recipients.map(num =>
         this.formatIndianPhoneNumber(num)
       );
 
@@ -85,11 +88,15 @@ export class SMSBackupService {
       await this.checkCostLimits(formattedNumbers.length);
 
       // Implement rate limiting for batch sending
-      const results = await this.sendBatchSMS(formattedNumbers, optimizedMessage, {
-        batchSize: this.getBatchSize(),
-        delayBetweenBatches: this.getBatchDelay(),
-        priority: 'normal',
-      });
+      const results = await this.sendBatchSMS(
+        formattedNumbers,
+        optimizedMessage,
+        {
+          batchSize: this.getBatchSize(),
+          delayBetweenBatches: this.getBatchDelay(),
+          priority: 'normal',
+        }
+      );
 
       // Log batch SMS usage
       await this.logBatchSMSUsage(results);
@@ -216,9 +223,8 @@ export class SMSBackupService {
       await this.delay(this.fallbackTimeoutMs);
 
       // Check if push notification was delivered
-      const deliveryStatus = await this.notificationService.checkDeliveryStatus(
-        notificationId
-      );
+      const deliveryStatus =
+        await this.notificationService.checkDeliveryStatus(notificationId);
 
       if (deliveryStatus.delivered) {
         // Push notification was delivered, no need for SMS fallback
@@ -314,7 +320,7 @@ export class SMSBackupService {
 
   private createMatchAlertMessage(matchInfo: MatchAlert): string {
     const templates = this.getSMSTemplates();
-    
+
     switch (matchInfo.type) {
       case 'match-ready':
         return templates.matchReady(
@@ -350,7 +356,10 @@ export class SMSBackupService {
     };
   }
 
-  private optimizeMessageForSMS(message: string, tournamentCode?: string): string {
+  private optimizeMessageForSMS(
+    message: string,
+    tournamentCode?: string
+  ): string {
     const maxLength = 160;
     const prefix = tournamentCode ? `ProTour ${tournamentCode}: ` : 'ProTour: ';
     const suffix = ' Check app.';
@@ -360,7 +369,8 @@ export class SMSBackupService {
 
     if (optimizedMessage.length > availableLength) {
       // Truncate message to fit within SMS limit
-      optimizedMessage = optimizedMessage.substring(0, availableLength - 3) + '...';
+      optimizedMessage =
+        optimizedMessage.substring(0, availableLength - 3) + '...';
     }
 
     return prefix + optimizedMessage + suffix;
@@ -382,7 +392,7 @@ export class SMSBackupService {
       // Simulate SMS sending (in real implementation, would call actual SMS API)
       const messageId = this.generateMessageId();
       const cost = this.calculateSMSCost(message, options.priority);
-      
+
       // Log SMS attempt
       await this.logSMSAttempt(phoneNumber, message, options);
 
@@ -398,7 +408,9 @@ export class SMSBackupService {
         timestamp: new Date(),
         phoneNumber,
         message,
-        deliveryExpected: options.trackDelivery ? new Date(Date.now() + 30000) : undefined,
+        deliveryExpected: options.trackDelivery
+          ? new Date(Date.now() + 30000)
+          : undefined,
       };
     } catch (error) {
       return {
@@ -430,14 +442,14 @@ export class SMSBackupService {
 
     for (let i = 0; i < phoneNumbers.length; i += batchSize) {
       const batch = phoneNumbers.slice(i, i + batchSize);
-      
+
       // Send batch
       for (const phoneNumber of batch) {
         const result = await this.sendSMS(phoneNumber, message, {
           priority: options.priority,
           trackDelivery: true,
         });
-        
+
         results.push(result);
         totalCost += result.cost;
         if (result.status === 'sent') successCount++;
@@ -486,7 +498,7 @@ export class SMSBackupService {
 
   private calculateSMSCost(message: string, priority?: string): number {
     let cost = this.costConfig.costPerSMS;
-    
+
     // Multiple SMS for long messages
     const smsCount = Math.ceil(message.length / 160);
     cost *= smsCount;
@@ -501,7 +513,7 @@ export class SMSBackupService {
 
   private async setupFallbackMonitoring(): Promise<void> {
     // Set up monitoring for push notification failures
-    this.notificationService.onDeliveryFailure(async (notificationInfo) => {
+    this.notificationService.onDeliveryFailure(async notificationInfo => {
       await this.handleNotificationFallback(
         notificationInfo.userId,
         notificationInfo.notificationId,
@@ -526,8 +538,8 @@ export class SMSBackupService {
     const provider = this.smsProvider?.name || 'twilio-india';
     const urls = {
       'twilio-india': 'https://api.twilio.com/2010-04-01',
-      'msg91': 'https://api.msg91.com/api',
-      'textlocal': 'https://api.textlocal.in',
+      msg91: 'https://api.msg91.com/api',
+      textlocal: 'https://api.textlocal.in',
     };
     return urls[provider] || urls['twilio-india'];
   }
@@ -538,10 +550,14 @@ export class SMSBackupService {
   }
 
   private generateBatchId(): string {
-    return 'batch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return (
+      'batch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    );
   }
 
-  private async queryProviderDeliveryStatus(messageId: string): Promise<DeliveryStatus> {
+  private async queryProviderDeliveryStatus(
+    messageId: string
+  ): Promise<DeliveryStatus> {
     // Implementation would query actual SMS provider
     return {
       messageId,
@@ -551,7 +567,10 @@ export class SMSBackupService {
     };
   }
 
-  private async updateDeliveryStatus(messageId: string, status: DeliveryStatus): Promise<void> {
+  private async updateDeliveryStatus(
+    messageId: string,
+    status: DeliveryStatus
+  ): Promise<void> {
     await this.db.updateSMSDeliveryStatus(messageId, status);
   }
 
@@ -562,7 +581,10 @@ export class SMSBackupService {
     }, 60000); // Retry after 1 minute
   }
 
-  private async updateUserRateLimit(userId: string, maxDaily: number): Promise<void> {
+  private async updateUserRateLimit(
+    userId: string,
+    maxDaily: number
+  ): Promise<void> {
     await this.db.updateUserSMSRateLimit(userId, maxDaily);
   }
 
@@ -599,7 +621,11 @@ export class SMSBackupService {
     });
   }
 
-  private async logSMSAttempt(phoneNumber: string, message: string, options: any): Promise<void> {
+  private async logSMSAttempt(
+    phoneNumber: string,
+    message: string,
+    options: any
+  ): Promise<void> {
     // Log SMS attempt for debugging and monitoring
   }
 

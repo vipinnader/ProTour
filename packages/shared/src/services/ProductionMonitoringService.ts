@@ -35,7 +35,9 @@ export class ProductionMonitoringService {
    * Start monitoring tournament-specific metrics
    * AC4.4.3: Tournament-specific monitoring during active events
    */
-  async trackTournamentMetrics(tournamentId: string): Promise<MonitoringSession> {
+  async trackTournamentMetrics(
+    tournamentId: string
+  ): Promise<MonitoringSession> {
     try {
       const tournament = await this.db.getTournament(tournamentId);
       if (!tournament) {
@@ -72,7 +74,9 @@ export class ProductionMonitoringService {
 
       return session;
     } catch (error) {
-      throw new Error(`Failed to start tournament monitoring: ${error.message}`);
+      throw new Error(
+        `Failed to start tournament monitoring: ${error.message}`
+      );
     }
   }
 
@@ -130,7 +134,8 @@ export class ProductionMonitoringService {
           indianMarket: await this.getIndianMarketMetrics(timeRange),
         },
         incidents: await this.getIncidentSummary(timeRange),
-        recommendations: await this.generateOptimizationRecommendations(timeRange),
+        recommendations:
+          await this.generateOptimizationRecommendations(timeRange),
         trends: await this.analyzeTrends(timeRange),
         generatedAt: new Date(),
       };
@@ -140,7 +145,9 @@ export class ProductionMonitoringService {
 
       return report;
     } catch (error) {
-      throw new Error(`Failed to generate performance report: ${error.message}`);
+      throw new Error(
+        `Failed to generate performance report: ${error.message}`
+      );
     }
   }
 
@@ -152,7 +159,7 @@ export class ProductionMonitoringService {
     try {
       // Classify incident severity and priority
       const classification = this.classifyIncident(incident);
-      
+
       // Create incident record
       const incidentRecord = {
         ...incident,
@@ -175,7 +182,10 @@ export class ProductionMonitoringService {
 
       // Update monitoring sessions if tournament-related
       if (incident.tournamentId) {
-        await this.updateMonitoringSession(incident.tournamentId, incidentRecord);
+        await this.updateMonitoringSession(
+          incident.tournamentId,
+          incidentRecord
+        );
       }
 
       return response;
@@ -246,10 +256,12 @@ export class ProductionMonitoringService {
       };
 
       // Check if this is a known error pattern
-      const existingError = await this.findSimilarError(errorRecord.fingerprint);
+      const existingError = await this.findSimilarError(
+        errorRecord.fingerprint
+      );
       if (existingError) {
         await this.incrementErrorCount(existingError.id);
-        
+
         // Check if error frequency indicates a critical issue
         if (existingError.count > 10) {
           await this.escalateError(existingError);
@@ -257,7 +269,7 @@ export class ProductionMonitoringService {
       } else {
         // New error - store and potentially alert
         await this.db.storeError(errorRecord);
-        
+
         if (errorRecord.priority === 'critical') {
           await this.triggerCriticalErrorAlert(errorRecord);
         }
@@ -288,35 +300,47 @@ export class ProductionMonitoringService {
 
   private async initializeMonitoring(): Promise<void> {
     this.monitoringEnabled = true;
-    
+
     // Set up basic alert rules
     await this.setupDefaultAlertRules();
-    
+
     // Start background monitoring
     this.startBackgroundMonitoring();
   }
 
   private generateSessionId(): string {
-    return 'monitoring_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return (
+      'monitoring_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    );
   }
 
   private generateAlertId(): string {
-    return 'alert_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return (
+      'alert_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    );
   }
 
   private generateReportId(): string {
-    return 'report_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return (
+      'report_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    );
   }
 
   private generateIncidentId(): string {
-    return 'incident_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return (
+      'incident_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    );
   }
 
   private generateErrorId(): string {
-    return 'error_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return (
+      'error_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    );
   }
 
-  private async startRealTimeMonitoring(session: MonitoringSession): Promise<void> {
+  private async startRealTimeMonitoring(
+    session: MonitoringSession
+  ): Promise<void> {
     // Set up real-time monitoring interval
     const monitoringInterval = setInterval(async () => {
       if (session.status !== 'active') {
@@ -375,7 +399,7 @@ export class ProductionMonitoringService {
   private async evaluateAlertRule(rule: AlertRule): Promise<void> {
     try {
       const shouldAlert = await this.checkAlertCondition(rule);
-      
+
       if (shouldAlert) {
         await this.triggerAlert(rule);
       }
@@ -391,19 +415,19 @@ export class ProductionMonitoringService {
       case 'response_time_exceeds':
         const currentResponseTime = await this.getCurrentResponseTime();
         return currentResponseTime > rule.threshold;
-        
+
       case 'error_rate_exceeds':
         const currentErrorRate = await this.getCurrentErrorRate();
         return currentErrorRate > rule.threshold;
-        
+
       case 'offline_capacity_low':
         const offlineCapacity = await this.getOfflineCapacity();
         return offlineCapacity < rule.threshold;
-        
+
       case 'sms_delivery_rate_low':
         const deliveryRate = await this.getSMSDeliveryRate();
         return deliveryRate < rule.threshold;
-        
+
       default:
         return false;
     }
@@ -439,7 +463,7 @@ export class ProductionMonitoringService {
         case 'app':
           await this.notificationService.sendSystemAlert(alert);
           break;
-          
+
         case 'sms':
           const adminPhones = await this.getAdminPhoneNumbers(escalationLevel);
           for (const phone of adminPhones) {
@@ -449,7 +473,7 @@ export class ProductionMonitoringService {
             });
           }
           break;
-          
+
         case 'email':
           await this.sendEmailAlert(alert, escalationLevel);
           break;
@@ -467,10 +491,10 @@ export class ProductionMonitoringService {
     // Classify based on incident type and impact
     const tournamentRelated = !!incident.tournamentId;
     const userImpact = incident.affectedUsers || 0;
-    
+
     let priority: 'low' | 'medium' | 'high' | 'critical' = 'medium';
     let escalationLevel: EscalationLevel = 'low';
-    
+
     if (tournamentRelated && userImpact > 50) {
       priority = 'critical';
       escalationLevel = 'high';
@@ -497,7 +521,9 @@ export class ProductionMonitoringService {
     return 'general';
   }
 
-  private async executeIncidentResponse(incident: any): Promise<IncidentResponse> {
+  private async executeIncidentResponse(
+    incident: any
+  ): Promise<IncidentResponse> {
     const response: IncidentResponse = {
       incidentId: incident.id,
       responseId: this.generateResponseId(),
@@ -531,10 +557,16 @@ export class ProductionMonitoringService {
     return response;
   }
 
-  private calculateOverallHealth(components: any): 'healthy' | 'degraded' | 'unhealthy' {
+  private calculateOverallHealth(
+    components: any
+  ): 'healthy' | 'degraded' | 'unhealthy' {
     const componentStates = Object.values(components) as string[];
-    const unhealthyCount = componentStates.filter(state => state === 'unhealthy').length;
-    const degradedCount = componentStates.filter(state => state === 'degraded').length;
+    const unhealthyCount = componentStates.filter(
+      state => state === 'unhealthy'
+    ).length;
+    const degradedCount = componentStates.filter(
+      state => state === 'degraded'
+    ).length;
 
     if (unhealthyCount > 0) return 'unhealthy';
     if (degradedCount > 1) return 'degraded';
@@ -564,54 +596,139 @@ export class ProductionMonitoringService {
   }
 
   private generateResponseId(): string {
-    return 'response_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return (
+      'response_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    );
   }
 
   // Placeholder implementations for complex operations
   private async setupDefaultAlertRules(): Promise<void> {}
   private startBackgroundMonitoring(): void {}
-  private async updateSessionMetrics(session: MonitoringSession): Promise<void> {}
+  private async updateSessionMetrics(
+    session: MonitoringSession
+  ): Promise<void> {}
   private async checkSessionAlerts(session: MonitoringSession): Promise<void> {}
-  private async getTournamentCount(timeRange: any): Promise<number> { return 5; }
-  private async getUserCount(timeRange: any): Promise<number> { return 150; }
-  private async getIncidentCount(timeRange: any): Promise<number> { return 3; }
-  private async calculateUptime(timeRange: any): Promise<number> { return 99.5; }
-  private async getAverageResponseTime(timeRange: any): Promise<number> { return 2500; }
-  private async getPerformanceMetrics(timeRange: any): Promise<any> { return {}; }
-  private async getReliabilityMetrics(timeRange: any): Promise<any> { return {}; }
-  private async getUserExperienceMetrics(timeRange: any): Promise<any> { return {}; }
-  private async getIndianMarketMetrics(timeRange: any): Promise<any> { return {}; }
-  private async getIncidentSummary(timeRange: any): Promise<any[]> { return []; }
-  private async generateOptimizationRecommendations(timeRange: any): Promise<string[]> { return []; }
-  private async analyzeTrends(timeRange: any): Promise<any> { return {}; }
-  private async storePerformanceReport(report: PerformanceReport): Promise<void> {}
-  private async assignIncident(classification: any): Promise<string> { return 'admin-1'; }
-  private async notifyIncidentStakeholders(incident: any, response: any): Promise<void> {}
-  private async updateMonitoringSession(tournamentId: string, incident: any): Promise<void> {}
-  private async checkDatabaseHealth(): Promise<string> { return 'healthy'; }
-  private async checkAPIHealth(): Promise<string> { return 'healthy'; }
-  private async checkNotificationHealth(): Promise<string> { return 'healthy'; }
-  private async checkSMSHealth(): Promise<string> { return 'healthy'; }
-  private async checkStorageHealth(): Promise<string> { return 'healthy'; }
-  private async checkNetworkHealth(): Promise<string> { return 'healthy'; }
-  private async getCurrentResponseTime(): Promise<number> { return 2500; }
-  private async getCurrentMemoryUsage(): Promise<number> { return 150; }
-  private async getCurrentCPUUsage(): Promise<number> { return 45; }
-  private async getCurrentDiskUsage(): Promise<number> { return 60; }
-  private async getActiveConnections(): Promise<number> { return 25; }
-  private async getCurrentErrorRate(): Promise<number> { return 0.5; }
-  private async getActiveIncidents(): Promise<any[]> { return []; }
-  private async getRecentAlerts(): Promise<any[]> { return []; }
-  private async findSimilarError(fingerprint: string): Promise<any> { return null; }
+  private async getTournamentCount(timeRange: any): Promise<number> {
+    return 5;
+  }
+  private async getUserCount(timeRange: any): Promise<number> {
+    return 150;
+  }
+  private async getIncidentCount(timeRange: any): Promise<number> {
+    return 3;
+  }
+  private async calculateUptime(timeRange: any): Promise<number> {
+    return 99.5;
+  }
+  private async getAverageResponseTime(timeRange: any): Promise<number> {
+    return 2500;
+  }
+  private async getPerformanceMetrics(timeRange: any): Promise<any> {
+    return {};
+  }
+  private async getReliabilityMetrics(timeRange: any): Promise<any> {
+    return {};
+  }
+  private async getUserExperienceMetrics(timeRange: any): Promise<any> {
+    return {};
+  }
+  private async getIndianMarketMetrics(timeRange: any): Promise<any> {
+    return {};
+  }
+  private async getIncidentSummary(timeRange: any): Promise<any[]> {
+    return [];
+  }
+  private async generateOptimizationRecommendations(
+    timeRange: any
+  ): Promise<string[]> {
+    return [];
+  }
+  private async analyzeTrends(timeRange: any): Promise<any> {
+    return {};
+  }
+  private async storePerformanceReport(
+    report: PerformanceReport
+  ): Promise<void> {}
+  private async assignIncident(classification: any): Promise<string> {
+    return 'admin-1';
+  }
+  private async notifyIncidentStakeholders(
+    incident: any,
+    response: any
+  ): Promise<void> {}
+  private async updateMonitoringSession(
+    tournamentId: string,
+    incident: any
+  ): Promise<void> {}
+  private async checkDatabaseHealth(): Promise<string> {
+    return 'healthy';
+  }
+  private async checkAPIHealth(): Promise<string> {
+    return 'healthy';
+  }
+  private async checkNotificationHealth(): Promise<string> {
+    return 'healthy';
+  }
+  private async checkSMSHealth(): Promise<string> {
+    return 'healthy';
+  }
+  private async checkStorageHealth(): Promise<string> {
+    return 'healthy';
+  }
+  private async checkNetworkHealth(): Promise<string> {
+    return 'healthy';
+  }
+  private async getCurrentResponseTime(): Promise<number> {
+    return 2500;
+  }
+  private async getCurrentMemoryUsage(): Promise<number> {
+    return 150;
+  }
+  private async getCurrentCPUUsage(): Promise<number> {
+    return 45;
+  }
+  private async getCurrentDiskUsage(): Promise<number> {
+    return 60;
+  }
+  private async getActiveConnections(): Promise<number> {
+    return 25;
+  }
+  private async getCurrentErrorRate(): Promise<number> {
+    return 0.5;
+  }
+  private async getActiveIncidents(): Promise<any[]> {
+    return [];
+  }
+  private async getRecentAlerts(): Promise<any[]> {
+    return [];
+  }
+  private async findSimilarError(fingerprint: string): Promise<any> {
+    return null;
+  }
   private async incrementErrorCount(errorId: string): Promise<void> {}
   private async escalateError(error: any): Promise<void> {}
   private async triggerCriticalErrorAlert(error: any): Promise<void> {}
-  private async getOfflineCapacity(): Promise<number> { return 8; }
-  private async getSMSDeliveryRate(): Promise<number> { return 95; }
-  private async getAdminPhoneNumbers(level: EscalationLevel): Promise<string[]> { return []; }
-  private async sendEmailAlert(alert: any, level: EscalationLevel): Promise<void> {}
-  private estimateResolutionTime(incident: any): Date { return new Date(Date.now() + 60 * 60 * 1000); }
-  private async getResponseActions(incident: any): Promise<any[]> { return []; }
+  private async getOfflineCapacity(): Promise<number> {
+    return 8;
+  }
+  private async getSMSDeliveryRate(): Promise<number> {
+    return 95;
+  }
+  private async getAdminPhoneNumbers(
+    level: EscalationLevel
+  ): Promise<string[]> {
+    return [];
+  }
+  private async sendEmailAlert(
+    alert: any,
+    level: EscalationLevel
+  ): Promise<void> {}
+  private estimateResolutionTime(incident: any): Date {
+    return new Date(Date.now() + 60 * 60 * 1000);
+  }
+  private async getResponseActions(incident: any): Promise<any[]> {
+    return [];
+  }
   private async executeResponseAction(action: any): Promise<void> {}
 }
 

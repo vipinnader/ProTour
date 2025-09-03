@@ -186,13 +186,13 @@ const OfflineSearch: React.FC<OfflineSearchProps> = ({
 
     switch (collection) {
       case 'players':
-        return data.name || data.email || `Player ${data.id}`;
+        return String(data.name || data.email || `Player ${data.id || result.id}`);
       case 'matches':
-        return `${data.player1Name || 'TBD'} vs ${data.player2Name || 'TBD'}`;
+        return `${String(data.player1Name || 'TBD')} vs ${String(data.player2Name || 'TBD')}`;
       case 'tournaments':
-        return data.name || `Tournament ${data.id}`;
+        return String(data.name || `Tournament ${data.id || result.id}`);
       default:
-        return data.name || data.title || data.id || 'Unknown';
+        return String(data.name || data.title || data.id || result.id || 'Unknown');
     }
   };
 
@@ -202,9 +202,9 @@ const OfflineSearch: React.FC<OfflineSearchProps> = ({
     switch (collection) {
       case 'players':
         return [
-          data.organization,
+          data.organization && String(data.organization),
           data.ranking && `Ranking: ${data.ranking}`,
-          data.email,
+          data.email && String(data.email),
         ]
           .filter(Boolean)
           .join(' • ');
@@ -212,12 +212,16 @@ const OfflineSearch: React.FC<OfflineSearchProps> = ({
         return [
           data.court && `Court ${data.court}`,
           data.round && `Round ${data.round}`,
-          data.status,
+          data.status && String(data.status),
         ]
           .filter(Boolean)
           .join(' • ');
       case 'tournaments':
-        return [data.sport, data.location, data.status]
+        return [
+          data.sport && String(data.sport), 
+          data.location && String(data.location), 
+          data.status && String(data.status)
+        ]
           .filter(Boolean)
           .join(' • ');
       default:

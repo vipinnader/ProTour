@@ -43,7 +43,9 @@ export class IndianDeviceOptimizer {
 
       console.log('Budget Android optimization enabled for Indian market');
     } catch (error) {
-      throw new Error(`Failed to optimize for budget Android: ${error.message}`);
+      throw new Error(
+        `Failed to optimize for budget Android: ${error.message}`
+      );
     }
   }
 
@@ -56,10 +58,12 @@ export class IndianDeviceOptimizer {
     try {
       const config = this.getIndianMarketConfig(priceRange);
       await this.applyMarketSegmentOptimizations(config);
-      
+
       console.log(`Configured for Indian ${priceRange} price segment`);
     } catch (error) {
-      throw new Error(`Failed to configure for market segment: ${error.message}`);
+      throw new Error(
+        `Failed to configure for market segment: ${error.message}`
+      );
     }
   }
 
@@ -70,10 +74,12 @@ export class IndianDeviceOptimizer {
     try {
       const optimizations = this.getAndroidVersionOptimizations(version);
       await this.applyAndroidOptimizations(optimizations);
-      
+
       console.log(`Applied optimizations for Android ${version}`);
     } catch (error) {
-      throw new Error(`Failed to optimize for Android version: ${error.message}`);
+      throw new Error(
+        `Failed to optimize for Android version: ${error.message}`
+      );
     }
   }
 
@@ -93,7 +99,7 @@ export class IndianDeviceOptimizer {
       };
 
       await this.applyBatteryOptimizations(batteryConfig);
-      
+
       return batteryConfig;
     } catch (error) {
       throw new Error(`Failed to enable tournament day mode: ${error.message}`);
@@ -108,7 +114,7 @@ export class IndianDeviceOptimizer {
   ): Promise<DataUsageOptimization> {
     try {
       const dailyLimitMB = (monthlyLimitGB * 1024) / 30; // Daily limit in MB
-      
+
       const dataConfig: DataUsageOptimization = {
         dailyLimitMB,
         compressionLevel: 'maximum',
@@ -124,10 +130,12 @@ export class IndianDeviceOptimizer {
       };
 
       await this.applyDataOptimizations(dataConfig);
-      
+
       return dataConfig;
     } catch (error) {
-      throw new Error(`Failed to optimize for limited data plans: ${error.message}`);
+      throw new Error(
+        `Failed to optimize for limited data plans: ${error.message}`
+      );
     }
   }
 
@@ -138,16 +146,18 @@ export class IndianDeviceOptimizer {
     try {
       // Optimize for 2G/3G networks common in rural areas
       await this.enableSlowNetworkOptimizations();
-      
+
       // Configure for intermittent connectivity
       await this.enableIntermittentConnectivityMode();
-      
+
       // Optimize for peak time congestion
       await this.enablePeakTimeOptimizations();
-      
+
       console.log('Optimized for Indian network conditions');
     } catch (error) {
-      throw new Error(`Failed to optimize for Indian networks: ${error.message}`);
+      throw new Error(
+        `Failed to optimize for Indian networks: ${error.message}`
+      );
     }
   }
 
@@ -166,10 +176,12 @@ export class IndianDeviceOptimizer {
       };
 
       await this.applyStorageOptimizations(storageConfig);
-      
+
       return storageConfig;
     } catch (error) {
-      throw new Error(`Failed to enable storage optimization: ${error.message}`);
+      throw new Error(
+        `Failed to enable storage optimization: ${error.message}`
+      );
     }
   }
 
@@ -190,7 +202,10 @@ export class IndianDeviceOptimizer {
   }> {
     try {
       const profile = this.classifyIndianDevice(deviceSpecs);
-      const recommendations = this.generateRecommendations(profile, deviceSpecs);
+      const recommendations = this.generateRecommendations(
+        profile,
+        deviceSpecs
+      );
       const performance = await this.estimatePerformance(deviceSpecs);
 
       return {
@@ -244,27 +259,29 @@ export class IndianDeviceOptimizer {
     return configs[priceRange] || configs['15k-25k'];
   }
 
-  private async applyMarketSegmentOptimizations(config: BudgetDeviceConfig): Promise<void> {
+  private async applyMarketSegmentOptimizations(
+    config: BudgetDeviceConfig
+  ): Promise<void> {
     // Apply RAM-specific optimizations
     await this.configureRAMOptimizations(config.ramGB);
-    
+
     // Apply storage optimizations
     await this.configureStorageOptimizations(config.storageGB);
-    
+
     // Apply UI optimizations
     if (config.animationsDisabled) {
       await this.disableAllAnimations();
     } else if (config.animationsReduced) {
       await this.enableReducedAnimations();
     }
-    
+
     // Configure background tasks
     await this.configureBackgroundTasks(config);
   }
 
   private getAndroidVersionOptimizations(version: string): any {
     const versionNum = parseFloat(version);
-    
+
     return {
       enableModernOptimizations: versionNum >= 9.0,
       enableBackgroundLimits: versionNum >= 8.0,
@@ -278,11 +295,11 @@ export class IndianDeviceOptimizer {
     if (optimizations.enableModernOptimizations) {
       await this.enableModernPerformanceFeatures();
     }
-    
+
     if (optimizations.enableBackgroundLimits) {
       await this.enableSmartBackgroundLimits();
     }
-    
+
     if (optimizations.requireLegacyMode) {
       await this.enableLegacyCompatibilityMode();
     }
@@ -303,7 +320,7 @@ export class IndianDeviceOptimizer {
     specs: DeviceSpecs
   ): string[] {
     const recommendations: string[] = [];
-    
+
     if (profile === 'budget') {
       recommendations.push('Enable ultra battery optimization');
       recommendations.push('Use maximum data compression');
@@ -320,7 +337,7 @@ export class IndianDeviceOptimizer {
       recommendations.push('Monitor data usage');
       recommendations.push('Use standard battery mode');
     }
-    
+
     return recommendations;
   }
 
@@ -333,12 +350,15 @@ export class IndianDeviceOptimizer {
     // Base estimates adjusted for Indian device characteristics
     const ramFactor = Math.min(specs.ramGB / 4, 1); // Normalize to 4GB
     const cpuFactor = Math.min(specs.cpuCores / 8, 1); // Normalize to 8 cores
-    
+
     return {
-      startupTime: Math.max(1500, 4000 - (ramFactor * 1000) - (cpuFactor * 500)), // 1.5-4 seconds
-      memoryUsage: Math.max(80, 200 - (ramFactor * 50)), // 80-200MB
-      batteryHours: Math.max(6, 8 + (ramFactor * 2) + (cpuFactor * 2)), // 6-12 hours
-      dataUsageMB: Math.max(20, 80 - (this.budgetOptimizationEnabled ? 40 : 20)), // 20-80MB daily
+      startupTime: Math.max(1500, 4000 - ramFactor * 1000 - cpuFactor * 500), // 1.5-4 seconds
+      memoryUsage: Math.max(80, 200 - ramFactor * 50), // 80-200MB
+      batteryHours: Math.max(6, 8 + ramFactor * 2 + cpuFactor * 2), // 6-12 hours
+      dataUsageMB: Math.max(
+        20,
+        80 - (this.budgetOptimizationEnabled ? 40 : 20)
+      ), // 20-80MB daily
     };
   }
 
@@ -349,7 +369,7 @@ export class IndianDeviceOptimizer {
       cacheSize: 50, // 50MB cache
       imagePoolSize: 25, // 25MB image pool
     });
-    
+
     await this.enableAggressiveGarbageCollection();
     await this.limitConcurrentOperations(3); // Max 3 concurrent operations
   }
@@ -418,24 +438,34 @@ export class IndianDeviceOptimizer {
     });
   }
 
-  private async applyBatteryOptimizations(config: BatteryLifeOptimization): Promise<void> {
+  private async applyBatteryOptimizations(
+    config: BatteryLifeOptimization
+  ): Promise<void> {
     // Implementation would apply battery optimizations
   }
 
-  private async applyDataOptimizations(config: DataUsageOptimization): Promise<void> {
+  private async applyDataOptimizations(
+    config: DataUsageOptimization
+  ): Promise<void> {
     // Implementation would apply data usage optimizations
   }
 
-  private async applyStorageOptimizations(config: StorageOptimization): Promise<void> {
+  private async applyStorageOptimizations(
+    config: StorageOptimization
+  ): Promise<void> {
     // Implementation would apply storage optimizations
   }
 
   // Placeholder implementations for complex operations
   private async configureRAMOptimizations(ramGB: number): Promise<void> {}
-  private async configureStorageOptimizations(storageGB: number): Promise<void> {}
+  private async configureStorageOptimizations(
+    storageGB: number
+  ): Promise<void> {}
   private async disableAllAnimations(): Promise<void> {}
   private async enableReducedAnimations(): Promise<void> {}
-  private async configureBackgroundTasks(config: BudgetDeviceConfig): Promise<void> {}
+  private async configureBackgroundTasks(
+    config: BudgetDeviceConfig
+  ): Promise<void> {}
   private async enableModernPerformanceFeatures(): Promise<void> {}
   private async enableSmartBackgroundLimits(): Promise<void> {}
   private async enableLegacyCompatibilityMode(): Promise<void> {}

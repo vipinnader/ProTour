@@ -33,3 +33,4 @@ export * from './PilotSupportService';
 // Service instances for Epic 2B & 3
 export { multiDeviceService } from './MultiDeviceService';
 export { enhancedOfflineService } from './EnhancedOfflineService';
+export { advancedConflictResolutionService } from './AdvancedConflictResolutionService';

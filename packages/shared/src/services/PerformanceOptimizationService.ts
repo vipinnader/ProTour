@@ -31,7 +31,9 @@ export class PerformanceOptimizationService {
    * Optimize app for specific device specifications
    * AC4.3.1: App performance on Android 2018+ devices with 2GB RAM
    */
-  async optimizeForDevice(deviceSpecs: DeviceSpecs): Promise<OptimizationConfig> {
+  async optimizeForDevice(
+    deviceSpecs: DeviceSpecs
+  ): Promise<OptimizationConfig> {
     try {
       this.currentDeviceSpecs = deviceSpecs;
 
@@ -83,7 +85,8 @@ export class PerformanceOptimizationService {
       const report: MemoryUsageReport = {
         currentUsage: this.getCurrentMemoryUsage(),
         maxUsage: this.memoryThreshold,
-        utilizationPercent: (this.getCurrentMemoryUsage() / this.memoryThreshold) * 100,
+        utilizationPercent:
+          (this.getCurrentMemoryUsage() / this.memoryThreshold) * 100,
         recommendations: this.getMemoryRecommendations(),
         criticalLevel: this.isMemoryAtCriticalLevel(),
         timestamp: new Date(),
@@ -111,7 +114,7 @@ export class PerformanceOptimizationService {
         eightHourProjection: this.calculateHourlyBatteryDrain() * 8,
         optimizationLevel: this.getBatteryOptimizationLevel(),
         recommendations: this.getBatteryRecommendations(),
-        targetAchieved: (this.calculateHourlyBatteryDrain() * 8) <= 40,
+        targetAchieved: this.calculateHourlyBatteryDrain() * 8 <= 40,
         timestamp: new Date(),
       };
 
@@ -231,7 +234,9 @@ export class PerformanceOptimizationService {
 
       console.log('Budget Android optimizations applied');
     } catch (error) {
-      throw new Error(`Failed to optimize for budget Android: ${error.message}`);
+      throw new Error(
+        `Failed to optimize for budget Android: ${error.message}`
+      );
     }
   }
 
@@ -245,7 +250,9 @@ export class PerformanceOptimizationService {
     }
   }
 
-  private async createOptimizationConfig(deviceSpecs: DeviceSpecs): Promise<OptimizationConfig> {
+  private async createOptimizationConfig(
+    deviceSpecs: DeviceSpecs
+  ): Promise<OptimizationConfig> {
     const isBudgetDevice = deviceSpecs.ramGB <= 3 || deviceSpecs.cpuCores <= 4;
     const isOlderDevice = deviceSpecs.androidVersion < '10.0';
 
@@ -278,7 +285,9 @@ export class PerformanceOptimizationService {
     };
   }
 
-  private async applyDeviceOptimizations(config: OptimizationConfig): Promise<void> {
+  private async applyDeviceOptimizations(
+    config: OptimizationConfig
+  ): Promise<void> {
     // Apply memory optimizations
     if (config.memoryOptimization.enabled) {
       await this.configureMemoryLimits(config.memoryOptimization);
@@ -290,7 +299,9 @@ export class PerformanceOptimizationService {
     // Apply network optimizations
     await this.networkOptimizer.enableDataCompression();
     if (config.networkOptimization.reduceImageQuality < 0.8) {
-      await this.enableAggressiveImageCompression(config.networkOptimization.reduceImageQuality);
+      await this.enableAggressiveImageCompression(
+        config.networkOptimization.reduceImageQuality
+      );
     }
 
     // Apply battery optimizations
@@ -301,11 +312,12 @@ export class PerformanceOptimizationService {
 
   private async compressMediaFile(file: MediaFile): Promise<CompressedMedia> {
     const compressionRatio = this.getCompressionRatio(file.type);
-    
+
     // Simulate compression (in real implementation, would use actual compression libraries)
     const originalSize = file.size;
     const compressedSize = Math.floor(originalSize * compressionRatio);
-    const compressionPercent = ((originalSize - compressedSize) / originalSize) * 100;
+    const compressionPercent =
+      ((originalSize - compressedSize) / originalSize) * 100;
 
     return {
       originalFile: file,
@@ -329,7 +341,10 @@ export class PerformanceOptimizationService {
     return compressionRatios[fileType] || 0.5;
   }
 
-  private getQualityAfterCompression(fileType: string, compressionRatio: number): number {
+  private getQualityAfterCompression(
+    fileType: string,
+    compressionRatio: number
+  ): number {
     if (fileType.startsWith('image/')) {
       return Math.max(0.4, 1 - (1 - compressionRatio) * 0.8);
     }
@@ -377,8 +392,11 @@ export class PerformanceOptimizationService {
     const baselineDrain = 8; // 8% per hour baseline
     const optimizationReduction = this.batteryOptimizationEnabled ? 3 : 0; // 3% reduction with optimization
     const networkReduction = 1; // 1% reduction from network optimization
-    
-    return Math.max(3, baselineDrain - optimizationReduction - networkReduction);
+
+    return Math.max(
+      3,
+      baselineDrain - optimizationReduction - networkReduction
+    );
   }
 
   private getBatteryOptimizationLevel(): 'low' | 'medium' | 'high' {
@@ -423,7 +441,9 @@ export class PerformanceOptimizationService {
     }
   }
 
-  private getDeviceProfile(specs: DeviceSpecs): 'budget' | 'mid-range' | 'premium' {
+  private getDeviceProfile(
+    specs: DeviceSpecs
+  ): 'budget' | 'mid-range' | 'premium' {
     if (specs.ramGB <= 2 || specs.cpuCores <= 4) return 'budget';
     if (specs.ramGB <= 4 || specs.cpuCores <= 6) return 'mid-range';
     return 'premium';
@@ -434,8 +454,11 @@ export class PerformanceOptimizationService {
     const baseStartupTime = 2000; // 2 seconds base
     const deviceFactor = this.currentDeviceSpecs?.ramGB || 3;
     const optimizationReduction = this.optimizationConfig ? 500 : 0;
-    
-    return Math.max(1000, baseStartupTime - (deviceFactor * 100) - optimizationReduction);
+
+    return Math.max(
+      1000,
+      baseStartupTime - deviceFactor * 100 - optimizationReduction
+    );
   }
 
   private async measureRenderPerformance(): Promise<number> {
@@ -443,19 +466,22 @@ export class PerformanceOptimizationService {
     const baseFPS = 60;
     const deviceFactor = (this.currentDeviceSpecs?.ramGB || 3) / 6;
     const optimizationBoost = this.optimizationConfig ? 5 : 0;
-    
+
     return Math.min(60, baseFPS * deviceFactor + optimizationBoost);
   }
 
   private getOverallOptimizationLevel(): 'low' | 'medium' | 'high' {
     if (!this.optimizationConfig) return 'low';
-    
+
     const memoryOpt = this.optimizationConfig.memoryOptimization.enabled;
     const batteryOpt = this.optimizationConfig.batteryOptimization.enabled;
-    const networkOpt = this.optimizationConfig.networkOptimization.enableCompression;
-    
-    const optimizationCount = [memoryOpt, batteryOpt, networkOpt].filter(Boolean).length;
-    
+    const networkOpt =
+      this.optimizationConfig.networkOptimization.enableCompression;
+
+    const optimizationCount = [memoryOpt, batteryOpt, networkOpt].filter(
+      Boolean
+    ).length;
+
     if (optimizationCount >= 3) return 'high';
     if (optimizationCount >= 2) return 'medium';
     return 'low';
@@ -474,8 +500,12 @@ export class PerformanceOptimizationService {
   private async optimizeInitialization(): Promise<void> {}
   private async configureCodeSplitting(): Promise<void> {}
   private async applyAggressiveStartupOptimizations(): Promise<void> {}
-  private async setupDataUsageMonitoring(control: DataUsageControl): Promise<void> {}
-  private async configureDataUsageControls(control: DataUsageControl): Promise<void> {}
+  private async setupDataUsageMonitoring(
+    control: DataUsageControl
+  ): Promise<void> {}
+  private async configureDataUsageControls(
+    control: DataUsageControl
+  ): Promise<void> {}
   private async enableMemoryOptimization(): Promise<void> {}
   private async configureGarbageCollection(): Promise<void> {}
   private async limitConcurrentOperations(): Promise<void> {}
@@ -489,12 +519,15 @@ export class PerformanceOptimizationService {
   private async configureDataCompression(): Promise<void> {}
   private async configureMemoryLimits(config: any): Promise<void> {}
   private async configureRenderingOptimizations(config: any): Promise<void> {}
-  private async enableAggressiveImageCompression(quality: number): Promise<void> {}
+  private async enableAggressiveImageCompression(
+    quality: number
+  ): Promise<void> {}
   private async configureBatteryOptimizations(config: any): Promise<void> {}
-  
+
   private clearUnusedCaches(): void {}
   private forceGarbageCollection(): void {}
   private unloadNonEssentialComponents(): void {}
 }
 
-export const performanceOptimizationService = new PerformanceOptimizationService();
+export const performanceOptimizationService =
+  new PerformanceOptimizationService();

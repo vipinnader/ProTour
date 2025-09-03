@@ -92,9 +92,7 @@ export class PilotSupportService {
    * Collect real-time feedback during tournament workflow
    * AC4.5.3: Real-time feedback collection during tournament workflow
    */
-  async collectRealTimeFeedback(
-    context: TournamentContext
-  ): Promise<void> {
+  async collectRealTimeFeedback(context: TournamentContext): Promise<void> {
     try {
       const feedback: FeedbackData = {
         id: this.generateFeedbackId(),
@@ -214,9 +212,13 @@ export class PilotSupportService {
         technicalIssueCount: pilotSession.issues.length,
         tournamentCompletionRate: await this.calculateCompletionRate(metrics),
         userAdoptionRate: await this.calculateUserAdoption(metrics),
-        performanceMetrics: await this.gatherPerformanceMetrics(metrics.tournamentId),
+        performanceMetrics: await this.gatherPerformanceMetrics(
+          metrics.tournamentId
+        ),
         feedbackScores: await this.analyzeFeedbackScores(metrics.tournamentId),
-        supportResponseTime: await this.calculateSupportResponseTime(metrics.tournamentId),
+        supportResponseTime: await this.calculateSupportResponseTime(
+          metrics.tournamentId
+        ),
       };
 
       // Generate comprehensive pilot report
@@ -237,16 +239,27 @@ export class PilotSupportService {
           averageRating: this.calculateAverageRating(pilotSession.feedback),
           satisfactionScore: successMetrics.playerSatisfactionNPS,
           keyInsights: await this.extractKeyInsights(pilotSession.feedback),
-          improvementAreas: await this.identifyImprovementAreas(pilotSession.feedback),
+          improvementAreas: await this.identifyImprovementAreas(
+            pilotSession.feedback
+          ),
         },
         issues: {
           totalReported: pilotSession.issues.length,
-          resolved: pilotSession.issues.filter(i => i.status === 'resolved').length,
-          pending: pilotSession.issues.filter(i => i.status !== 'resolved').length,
-          criticalIssues: pilotSession.issues.filter(i => i.priority === 'critical'),
-          averageResolutionTime: this.calculateAverageResolutionTime(pilotSession.issues),
+          resolved: pilotSession.issues.filter(i => i.status === 'resolved')
+            .length,
+          pending: pilotSession.issues.filter(i => i.status !== 'resolved')
+            .length,
+          criticalIssues: pilotSession.issues.filter(
+            i => i.priority === 'critical'
+          ),
+          averageResolutionTime: this.calculateAverageResolutionTime(
+            pilotSession.issues
+          ),
         },
-        recommendations: await this.generatePilotRecommendations(pilotSession, successMetrics),
+        recommendations: await this.generatePilotRecommendations(
+          pilotSession,
+          successMetrics
+        ),
         nextSteps: await this.defineNextSteps(successMetrics),
         generatedAt: new Date(),
       };
@@ -264,9 +277,7 @@ export class PilotSupportService {
    * Conduct post-tournament debrief and capture lessons learned
    * AC4.5.6: Post-tournament debrief capturing lessons and improvements
    */
-  async conductPostTournamentDebrief(
-    tournamentId: string
-  ): Promise<{
+  async conductPostTournamentDebrief(tournamentId: string): Promise<{
     debriefReport: any;
     lessonsLearned: string[];
     improvements: string[];
@@ -355,7 +366,8 @@ export class PilotSupportService {
         feedbackSummary: this.summarizeFeedback(pilotSession.feedback),
         issueSummary: this.summarizeIssues(pilotSession.issues),
         performanceData: await this.gatherPerformanceMetrics(tournamentId),
-        recommendations: await this.generateRealTimeRecommendations(pilotSession),
+        recommendations:
+          await this.generateRealTimeRecommendations(pilotSession),
       };
     } catch (error) {
       throw new Error(`Failed to get pilot analytics: ${error.message}`);
@@ -390,19 +402,30 @@ export class PilotSupportService {
   }
 
   private generatePilotSessionId(): string {
-    return 'pilot_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return (
+      'pilot_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    );
   }
 
   private generateFeedbackId(): string {
-    return 'feedback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return (
+      'feedback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    );
   }
 
   private generateTicketId(): string {
-    return 'ticket_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return (
+      'ticket_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
+    );
   }
 
   private generateReportId(): string {
-    return 'pilot_report_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    return (
+      'pilot_report_' +
+      Date.now() +
+      '_' +
+      Math.random().toString(36).substr(2, 9)
+    );
   }
 
   private async assignSupportTeam(): Promise<string[]> {
@@ -423,7 +446,9 @@ export class PilotSupportService {
     };
   }
 
-  private async enableEnhancedDiagnostics(tournamentId: string): Promise<SystemDiagnostics> {
+  private async enableEnhancedDiagnostics(
+    tournamentId: string
+  ): Promise<SystemDiagnostics> {
     return {
       loggingLevel: 'debug',
       performanceTracking: true,
@@ -444,7 +469,9 @@ export class PilotSupportService {
     });
   }
 
-  private async establishDirectSupportChannel(session: PilotSession): Promise<void> {
+  private async establishDirectSupportChannel(
+    session: PilotSession
+  ): Promise<void> {
     // Set up real-time communication channel with development team
     const channel = {
       sessionId: session.sessionId,
@@ -457,7 +484,9 @@ export class PilotSupportService {
     await this.db.createSupportChannel(channel);
   }
 
-  private async initializeRealTimeFeedback(session: PilotSession): Promise<void> {
+  private async initializeRealTimeFeedback(
+    session: PilotSession
+  ): Promise<void> {
     // Set up real-time feedback collection system
     const feedbackConfig = {
       tournamentId: session.tournamentId,
@@ -473,7 +502,7 @@ export class PilotSupportService {
   private async enhanceIssueWithDiagnostics(issue: PilotIssue): Promise<any> {
     const systemInfo = await this.gatherSystemInfo(issue.userId);
     const diagnostics = await this.runDiagnostics(issue.tournamentId);
-    
+
     return {
       ...issue,
       systemInfo,
@@ -492,16 +521,22 @@ export class PilotSupportService {
   }
 
   private prioritizeIssue(issue: any): 'low' | 'medium' | 'high' | 'critical' {
-    if (issue.description?.toLowerCase().includes('crash') || 
-        issue.description?.toLowerCase().includes('data loss')) {
+    if (
+      issue.description?.toLowerCase().includes('crash') ||
+      issue.description?.toLowerCase().includes('data loss')
+    ) {
       return 'critical';
     }
-    if (issue.description?.toLowerCase().includes('tournament') ||
-        issue.description?.toLowerCase().includes('match')) {
+    if (
+      issue.description?.toLowerCase().includes('tournament') ||
+      issue.description?.toLowerCase().includes('match')
+    ) {
       return 'high';
     }
-    if (issue.description?.toLowerCase().includes('slow') ||
-        issue.description?.toLowerCase().includes('error')) {
+    if (
+      issue.description?.toLowerCase().includes('slow') ||
+      issue.description?.toLowerCase().includes('error')
+    ) {
       return 'medium';
     }
     return 'low';
@@ -522,14 +557,17 @@ export class PilotSupportService {
   }
 
   private calculateAverageResolutionTime(issues: SupportTicket[]): number {
-    const resolvedIssues = issues.filter(i => i.status === 'resolved' && i.resolution?.resolvedAt);
+    const resolvedIssues = issues.filter(
+      i => i.status === 'resolved' && i.resolution?.resolvedAt
+    );
     if (resolvedIssues.length === 0) return 0;
-    
+
     const totalTime = resolvedIssues.reduce((acc, issue) => {
-      const duration = issue.resolution!.resolvedAt!.getTime() - issue.createdAt.getTime();
+      const duration =
+        issue.resolution!.resolvedAt!.getTime() - issue.createdAt.getTime();
       return acc + duration;
     }, 0);
-    
+
     return totalTime / resolvedIssues.length / (1000 * 60); // minutes
   }
 
@@ -545,60 +583,154 @@ export class PilotSupportService {
 
     const scores = {
       adminTimeReduction: Math.min(metrics.adminTimeReduction / 50, 1) * 100, // Target 50%
-      playerSatisfactionNPS: Math.max((metrics.playerSatisfactionNPS + 100) / 200, 0) * 100, // NPS -100 to +100
-      organizerEfficiencyGain: Math.min(metrics.organizerEfficiencyGain / 40, 1) * 100, // Target 40%
-      technicalIssueResolution: Math.min((debriefData.session.issues.length > 0 ? 
-        debriefData.session.issues.filter(i => i.status === 'resolved').length / debriefData.session.issues.length 
-        : 1) * 100, 100),
+      playerSatisfactionNPS:
+        Math.max((metrics.playerSatisfactionNPS + 100) / 200, 0) * 100, // NPS -100 to +100
+      organizerEfficiencyGain:
+        Math.min(metrics.organizerEfficiencyGain / 40, 1) * 100, // Target 40%
+      technicalIssueResolution: Math.min(
+        (debriefData.session.issues.length > 0
+          ? debriefData.session.issues.filter(i => i.status === 'resolved')
+              .length / debriefData.session.issues.length
+          : 1) * 100,
+        100
+      ),
       tournamentCompletionRate: metrics.tournamentCompletionRate,
     };
 
-    return Object.entries(weights).reduce((acc, [key, weight]) => 
-      acc + (scores[key] * weight), 0
+    return Object.entries(weights).reduce(
+      (acc, [key, weight]) => acc + scores[key] * weight,
+      0
     );
   }
 
   // Placeholder implementations for complex operations
   private async storeFeedback(feedback: FeedbackData): Promise<void> {}
   private async updatePilotSession(session: PilotSession): Promise<void> {}
-  private async analyzeRealTimeFeedback(feedback: FeedbackData): Promise<void> {}
-  private async assignSupportAgent(issue: any): Promise<string> { return 'support-agent-1'; }
+  private async analyzeRealTimeFeedback(
+    feedback: FeedbackData
+  ): Promise<void> {}
+  private async assignSupportAgent(issue: any): Promise<string> {
+    return 'support-agent-1';
+  }
   private async notifySupportTeam(ticket: SupportTicket): Promise<void> {}
   private async escalateCriticalIssue(ticket: SupportTicket): Promise<void> {}
-  private async calculateAdminTimeReduction(metrics: SuccessMetrics): Promise<number> { return 35; }
-  private async calculatePlayerNPS(metrics: SuccessMetrics): Promise<number> { return 42; }
-  private async calculateEfficiencyGain(metrics: SuccessMetrics): Promise<number> { return 28; }
-  private async calculateCompletionRate(metrics: SuccessMetrics): Promise<number> { return 95; }
-  private async calculateUserAdoption(metrics: SuccessMetrics): Promise<number> { return 78; }
-  private async gatherPerformanceMetrics(tournamentId: string): Promise<any> { return {}; }
-  private async analyzeFeedbackScores(tournamentId: string): Promise<any> { return {}; }
-  private async calculateSupportResponseTime(tournamentId: string): Promise<number> { return 8; }
-  private async extractKeyInsights(feedback: FeedbackData[]): Promise<string[]> { return []; }
-  private async identifyImprovementAreas(feedback: FeedbackData[]): Promise<string[]> { return []; }
-  private async generatePilotRecommendations(session: PilotSession, metrics: any): Promise<string[]> { return []; }
-  private async defineNextSteps(metrics: any): Promise<string[]> { return []; }
+  private async calculateAdminTimeReduction(
+    metrics: SuccessMetrics
+  ): Promise<number> {
+    return 35;
+  }
+  private async calculatePlayerNPS(metrics: SuccessMetrics): Promise<number> {
+    return 42;
+  }
+  private async calculateEfficiencyGain(
+    metrics: SuccessMetrics
+  ): Promise<number> {
+    return 28;
+  }
+  private async calculateCompletionRate(
+    metrics: SuccessMetrics
+  ): Promise<number> {
+    return 95;
+  }
+  private async calculateUserAdoption(
+    metrics: SuccessMetrics
+  ): Promise<number> {
+    return 78;
+  }
+  private async gatherPerformanceMetrics(tournamentId: string): Promise<any> {
+    return {};
+  }
+  private async analyzeFeedbackScores(tournamentId: string): Promise<any> {
+    return {};
+  }
+  private async calculateSupportResponseTime(
+    tournamentId: string
+  ): Promise<number> {
+    return 8;
+  }
+  private async extractKeyInsights(
+    feedback: FeedbackData[]
+  ): Promise<string[]> {
+    return [];
+  }
+  private async identifyImprovementAreas(
+    feedback: FeedbackData[]
+  ): Promise<string[]> {
+    return [];
+  }
+  private async generatePilotRecommendations(
+    session: PilotSession,
+    metrics: any
+  ): Promise<string[]> {
+    return [];
+  }
+  private async defineNextSteps(metrics: any): Promise<string[]> {
+    return [];
+  }
   private async storePilotReport(report: PilotReport): Promise<void> {}
-  private async gatherStakeholderFeedback(tournamentId: string): Promise<any> { return {}; }
-  private async gatherTechnicalMetrics(tournamentId: string): Promise<any> { return {}; }
-  private async gatherUserExperienceData(tournamentId: string): Promise<any> { return {}; }
-  private async extractLessonsLearned(data: any): Promise<string[]> { return []; }
-  private async identifyImprovements(data: any): Promise<string[]> { return []; }
-  private async defineActionItems(data: any): Promise<any[]> { return []; }
-  private async getDebriefParticipants(tournamentId: string): Promise<string[]> { return []; }
-  private async generateDebriefSummary(data: any): Promise<string> { return ''; }
-  private async listAchievements(data: any): Promise<string[]> { return []; }
-  private async listChallenges(data: any): Promise<string[]> { return []; }
-  private async assessMVPValidation(data: any): Promise<any> { return {}; }
-  private async assessProductionReadiness(data: any): Promise<any> { return {}; }
+  private async gatherStakeholderFeedback(tournamentId: string): Promise<any> {
+    return {};
+  }
+  private async gatherTechnicalMetrics(tournamentId: string): Promise<any> {
+    return {};
+  }
+  private async gatherUserExperienceData(tournamentId: string): Promise<any> {
+    return {};
+  }
+  private async extractLessonsLearned(data: any): Promise<string[]> {
+    return [];
+  }
+  private async identifyImprovements(data: any): Promise<string[]> {
+    return [];
+  }
+  private async defineActionItems(data: any): Promise<any[]> {
+    return [];
+  }
+  private async getDebriefParticipants(
+    tournamentId: string
+  ): Promise<string[]> {
+    return [];
+  }
+  private async generateDebriefSummary(data: any): Promise<string> {
+    return '';
+  }
+  private async listAchievements(data: any): Promise<string[]> {
+    return [];
+  }
+  private async listChallenges(data: any): Promise<string[]> {
+    return [];
+  }
+  private async assessMVPValidation(data: any): Promise<any> {
+    return {};
+  }
+  private async assessProductionReadiness(data: any): Promise<any> {
+    return {};
+  }
   private async storeDebriefReport(report: any): Promise<void> {}
-  private async getRealTimeMetrics(tournamentId: string): Promise<any> { return {}; }
-  private summarizeFeedback(feedback: FeedbackData[]): any { return {}; }
-  private summarizeIssues(issues: SupportTicket[]): any { return {}; }
-  private async generateRealTimeRecommendations(session: PilotSession): Promise<string[]> { return []; }
-  private async gatherSystemInfo(userId: string): Promise<any> { return {}; }
-  private async runDiagnostics(tournamentId: string): Promise<any> { return {}; }
+  private async getRealTimeMetrics(tournamentId: string): Promise<any> {
+    return {};
+  }
+  private summarizeFeedback(feedback: FeedbackData[]): any {
+    return {};
+  }
+  private summarizeIssues(issues: SupportTicket[]): any {
+    return {};
+  }
+  private async generateRealTimeRecommendations(
+    session: PilotSession
+  ): Promise<string[]> {
+    return [];
+  }
+  private async gatherSystemInfo(userId: string): Promise<any> {
+    return {};
+  }
+  private async runDiagnostics(tournamentId: string): Promise<any> {
+    return {};
+  }
   private startFeedbackProcessing(): void {}
-  private generateIssueTags(issue: any): string[] { return []; }
+  private generateIssueTags(issue: any): string[] {
+    return [];
+  }
 }
 
 export const pilotSupportService = new PilotSupportService();

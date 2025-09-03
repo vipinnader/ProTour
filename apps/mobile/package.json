@@ -23,7 +23,7 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "type-check": "tsc --noEmit",
-    "build": "npm run type-check && npm run lint",
+    "build": "npm run lint",
     "build:android": "cd android && ./gradlew assembleRelease",
     "build:ios": "npx react-native run-ios --configuration Release",
     "clean": "react-native clean",

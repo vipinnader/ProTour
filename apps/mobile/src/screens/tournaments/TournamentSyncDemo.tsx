@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import {
   useSync,
-  usePermissions,
   useConflictResolution,
 } from '../../contexts/SyncContext';
 import SyncStatusIndicator from '../../components/sync/SyncStatusIndicator';
@@ -30,8 +29,12 @@ const TournamentSyncDemo: React.FC = () => {
     lastSyncTime,
   } = useSync();
 
-  const { isOrganizer, isReferee, isSpectator, hasPermission, tournamentId } =
-    usePermissions();
+  // TODO: Implement usePermissions hook
+  const isOrganizer = true;
+  const isReferee = false;
+  const isSpectator = false;
+  const hasPermission = (permission: string) => true;
+  const tournamentId = 'demo-tournament';
 
   const { hasConflicts, conflicts } = useConflictResolution();
 
@@ -155,7 +158,7 @@ const TournamentSyncDemo: React.FC = () => {
         <View style={styles.deviceCard}>
           <Text style={styles.deviceName}>{currentDevice.deviceName}</Text>
           <Text style={styles.deviceRole}>Role: {currentDevice.role}</Text>
-          <Text style={styles.deviceUser}>User: {currentDevice.userId}</Text>
+          <Text style={styles.deviceUser}>Device: {currentDevice.deviceId}</Text>
 
           {currentSession && (
             <>

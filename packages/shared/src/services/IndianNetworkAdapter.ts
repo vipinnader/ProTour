@@ -46,9 +46,7 @@ export class IndianNetworkAdapter {
   /**
    * Configure for typical Indian mobile data plans (1GB-2GB monthly)
    */
-  async configureForIndianDataPlans(
-    monthlyLimitGB: number = 1
-  ): Promise<void> {
+  async configureForIndianDataPlans(monthlyLimitGB: number = 1): Promise<void> {
     try {
       // Calculate daily data budget
       const dailyLimitMB = (monthlyLimitGB * 1024) / 30; // MB per day
@@ -130,9 +128,7 @@ export class IndianNetworkAdapter {
   /**
    * Apply Indian market-specific performance profile
    */
-  async applyIndianMarketProfile(
-    config: IndianNetworkConfig
-  ): Promise<void> {
+  async applyIndianMarketProfile(config: IndianNetworkConfig): Promise<void> {
     try {
       this.currentProfile = config.performanceProfile;
 
@@ -154,7 +150,9 @@ export class IndianNetworkAdapter {
       // Apply Indian-specific optimizations
       await this.applyIndianSpecificOptimizations(config);
     } catch (error) {
-      throw new Error(`Failed to apply Indian market profile: ${error.message}`);
+      throw new Error(
+        `Failed to apply Indian market profile: ${error.message}`
+      );
     }
   }
 
@@ -172,7 +170,8 @@ export class IndianNetworkAdapter {
       compressionSavings: metrics.compressionSavings,
       cachingSavings: metrics.cachingSavings,
       totalSavingsPercent: metrics.totalSavingsPercent,
-      projectedMonthlyUsageGB: metrics.projectedMonthlyUsage / (1024 * 1024 * 1024),
+      projectedMonthlyUsageGB:
+        metrics.projectedMonthlyUsage / (1024 * 1024 * 1024),
       recommendations: this.generateDataUsageRecommendations(metrics),
     };
   }
@@ -449,13 +448,17 @@ export class IndianNetworkAdapter {
   private async enableModerateCompression(): Promise<void> {}
   private async enableMinimalCompression(): Promise<void> {}
   private async optimizeForIndianISPs(isps: string[]): Promise<void> {}
-  private async optimizeForIndianTournamentSchedule(hours: any): Promise<void> {}
-  private async enableRegionalLanguageSupport(languages: string[]): Promise<void> {}
+  private async optimizeForIndianTournamentSchedule(
+    hours: any
+  ): Promise<void> {}
+  private async enableRegionalLanguageSupport(
+    languages: string[]
+  ): Promise<void> {}
   private async startDataUsageMonitoring(): Promise<void> {}
   private async enableSmartThrottling(): Promise<void> {}
   private async configureDataUsageAlerts(): Promise<void> {}
   private async enableWiFiOnlyForLargeOps(): Promise<void> {}
-  
+
   private startNetworkRequestMonitoring(): void {}
   private enableDailyUsageReports(): void {}
   private configureUsageLimitAlerts(): void {}

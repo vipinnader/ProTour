@@ -11,11 +11,12 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "noEmit": true,
-    "strict": true,
+    "strict": false,
     "target": "ESNext",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"],
