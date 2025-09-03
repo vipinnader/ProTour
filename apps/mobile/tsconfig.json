@@ -22,18 +22,7 @@
       "@protour/shared": ["../../packages/shared/src"]
     }
   },
-  "references": [
-    { "path": "../../packages/shared" }
-  ],
-  "include": [
-    "src/**/*",
-    "index.js",
-    "app.json",
-    "__tests__/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "android",
-    "ios"
-  ]
+  "references": [{ "path": "../../packages/shared" }],
+  "include": ["src/**/*", "index.js", "app.json", "__tests__/**/*"],
+  "exclude": ["node_modules", "android", "ios"]
 }

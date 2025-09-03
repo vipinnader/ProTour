@@ -1,7 +1,7 @@
 // Offline Search Component for Story 2B.1 - AC2B.1.2
 // Local search functionality for players and matches
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,7 @@ import { debounce } from 'lodash';
 interface SearchResult {
   id: string;
   collection: string;
-  data: any;
+  data: Record<string, unknown>;
   searchScore: number;
   matchedFields: string[];
   isFromCache: boolean;
@@ -62,9 +62,12 @@ const OfflineSearch: React.FC<OfflineSearchProps> = ({
       const startTime = Date.now();
 
       try {
-        const searchResults = await enhancedOfflineService.searchOffline(searchQuery, collections);
+        const searchResults = await enhancedOfflineService.searchOffline(
+          searchQuery,
+          collections
+        );
         const limitedResults = searchResults.slice(0, maxResults);
-        
+
         setResults(limitedResults as SearchResult[]);
         setSearchStats({
           totalResults: searchResults.length,
@@ -97,26 +100,34 @@ const OfflineSearch: React.FC<OfflineSearchProps> = ({
 
   const getCollectionDisplayName = (collection: string): string => {
     switch (collection) {
-      case 'players': return 'Player';
-      case 'matches': return 'Match';
-      case 'tournaments': return 'Tournament';
-      default: return collection;
+      case 'players':
+        return 'Player';
+      case 'matches':
+        return 'Match';
+      case 'tournaments':
+        return 'Tournament';
+      default:
+        return collection;
     }
   };
 
   const getCollectionColor = (collection: string): string => {
     switch (collection) {
-      case 'players': return '#007bff';
-      case 'matches': return '#28a745';
-      case 'tournaments': return '#ffc107';
-      default: return '#6c757d';
+      case 'players':
+        return '#007bff';
+      case 'matches':
+        return '#28a745';
+      case 'tournaments':
+        return '#ffc107';
+      default:
+        return '#6c757d';
     }
   };
 
   const renderSearchResult = ({ item }: { item: SearchResult }) => {
     const displayName = getResultDisplayName(item);
     const displaySubtitle = getResultSubtitle(item);
-    
+
     return (
       <TouchableOpacity
         style={styles.resultItem}
@@ -128,25 +139,27 @@ const OfflineSearch: React.FC<OfflineSearchProps> = ({
             <Text style={styles.resultTitle} numberOfLines={1}>
               {displayName}
             </Text>
-            
+
             {showCollectionBadge && (
-              <View style={[
-                styles.collectionBadge,
-                { backgroundColor: getCollectionColor(item.collection) }
-              ]}>
+              <View
+                style={[
+                  styles.collectionBadge,
+                  { backgroundColor: getCollectionColor(item.collection) },
+                ]}
+              >
                 <Text style={styles.collectionBadgeText}>
                   {getCollectionDisplayName(item.collection)}
                 </Text>
               </View>
             )}
           </View>
-          
+
           {displaySubtitle && (
             <Text style={styles.resultSubtitle} numberOfLines={2}>
               {displaySubtitle}
             </Text>
           )}
-          
+
           {item.matchedFields.length > 0 && (
             <View style={styles.matchedFields}>
               <Text style={styles.matchedFieldsText}>
@@ -155,11 +168,9 @@ const OfflineSearch: React.FC<OfflineSearchProps> = ({
             </View>
           )}
         </View>
-        
+
         <View style={styles.resultMeta}>
-          <Text style={styles.searchScore}>
-            {item.searchScore}%
-          </Text>
+          <Text style={styles.searchScore}>{item.searchScore}%</Text>
           {item.isFromCache && (
             <View style={styles.cacheIndicator}>
               <Text style={styles.cacheIndicatorText}>📱</Text>
@@ -172,7 +183,7 @@ const OfflineSearch: React.FC<OfflineSearchProps> = ({
 
   const getResultDisplayName = (result: SearchResult): string => {
     const { collection, data } = result;
-    
+
     switch (collection) {
       case 'players':
         return data.name || data.email || `Player ${data.id}`;
@@ -187,26 +198,28 @@ const OfflineSearch: React.FC<OfflineSearchProps> = ({
 
   const getResultSubtitle = (result: SearchResult): string => {
     const { collection, data } = result;
-    
+
     switch (collection) {
       case 'players':
         return [
           data.organization,
           data.ranking && `Ranking: ${data.ranking}`,
           data.email,
-        ].filter(Boolean).join(' • ');
+        ]
+          .filter(Boolean)
+          .join(' • ');
       case 'matches':
         return [
           data.court && `Court ${data.court}`,
           data.round && `Round ${data.round}`,
           data.status,
-        ].filter(Boolean).join(' • ');
+        ]
+          .filter(Boolean)
+          .join(' • ');
       case 'tournaments':
-        return [
-          data.sport,
-          data.location,
-          data.status,
-        ].filter(Boolean).join(' • ');
+        return [data.sport, data.location, data.status]
+          .filter(Boolean)
+          .join(' • ');
       default:
         return '';
     }
@@ -216,13 +229,11 @@ const OfflineSearch: React.FC<OfflineSearchProps> = ({
     if (query.length === 0) {
       return (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>
-            Start typing to search...
-          </Text>
+          <Text style={styles.emptyStateText}>Start typing to search...</Text>
         </View>
       );
     }
-    
+
     if (query.length < minQueryLength) {
       return (
         <View style={styles.emptyState}>
@@ -232,7 +243,7 @@ const OfflineSearch: React.FC<OfflineSearchProps> = ({
         </View>
       );
     }
-    
+
     if (results.length === 0 && !isSearching) {
       return (
         <View style={styles.emptyState}>
@@ -245,13 +256,13 @@ const OfflineSearch: React.FC<OfflineSearchProps> = ({
         </View>
       );
     }
-    
+
     return null;
   };
 
   const renderSearchStats = () => {
     if (results.length === 0 || query.length < minQueryLength) return null;
-    
+
     return (
       <View style={styles.searchStats}>
         <Text style={styles.searchStatsText}>
@@ -281,7 +292,7 @@ const OfflineSearch: React.FC<OfflineSearchProps> = ({
           autoCorrect={false}
           clearButtonMode="while-editing"
         />
-        
+
         {isSearching && (
           <View style={styles.searchIndicator}>
             <ActivityIndicator size="small" color="#007bff" />
@@ -296,7 +307,7 @@ const OfflineSearch: React.FC<OfflineSearchProps> = ({
       <FlatList
         data={results}
         renderItem={renderSearchResult}
-        keyExtractor={(item) => `${item.collection}_${item.id}`}
+        keyExtractor={item => `${item.collection}_${item.id}`}
         style={styles.resultsList}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}

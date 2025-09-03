@@ -25,10 +25,10 @@ function log(message, color = colors.reset) {
 function execCommand(command, options = {}) {
   try {
     log(`Running: ${command}`, colors.cyan);
-    const output = execSync(command, { 
-      stdio: 'inherit', 
+    const output = execSync(command, {
+      stdio: 'inherit',
       encoding: 'utf8',
-      ...options 
+      ...options,
     });
     return output;
   } catch (error) {
@@ -39,7 +39,7 @@ function execCommand(command, options = {}) {
 
 async function checkFirebaseCLI() {
   log('\n🔥 Checking Firebase CLI...', colors.blue);
-  
+
   try {
     execCommand('firebase --version');
     log('✅ Firebase CLI is installed', colors.green);
@@ -52,7 +52,7 @@ async function checkFirebaseCLI() {
 
 async function loginToFirebase() {
   log('\n🔐 Firebase Authentication...', colors.blue);
-  
+
   try {
     execCommand('firebase login --no-localhost');
     log('✅ Successfully authenticated with Firebase', colors.green);
@@ -64,17 +64,19 @@ async function loginToFirebase() {
 
 async function createFirebaseProjects() {
   log('\n🏗️  Creating Firebase projects...', colors.blue);
-  
+
   const projects = [
     { id: 'protour-dev', name: 'ProTour Development' },
     { id: 'protour-staging', name: 'ProTour Staging' },
-    { id: 'protour-prod', name: 'ProTour Production' }
+    { id: 'protour-prod', name: 'ProTour Production' },
   ];
 
   for (const project of projects) {
     try {
       log(`Creating project: ${project.id}`, colors.cyan);
-      execCommand(`firebase projects:create ${project.id} --display-name "${project.name}"`);
+      execCommand(
+        `firebase projects:create ${project.id} --display-name "${project.name}"`
+      );
       log(`✅ Created project: ${project.id}`, colors.green);
     } catch (error) {
       if (error.message.includes('already exists')) {
@@ -94,17 +96,17 @@ async function enableFirebaseServices() {
     'firestore.googleapis.com',
     'firebase.googleapis.com',
     'cloudfunctions.googleapis.com',
-    'storage-component.googleapis.com'
+    'storage-component.googleapis.com',
   ];
 
   const projects = ['protour-dev', 'protour-staging', 'protour-prod'];
 
   for (const project of projects) {
     log(`Enabling services for ${project}...`, colors.cyan);
-    
+
     try {
       execCommand(`firebase use ${project}`);
-      
+
       for (const service of services) {
         try {
           execCommand(`gcloud services enable ${service} --project=${project}`);
@@ -113,7 +115,7 @@ async function enableFirebaseServices() {
           log(`⚠️  Could not enable ${service} for ${project}`, colors.yellow);
         }
       }
-      
+
       log(`✅ Services enabled for ${project}`, colors.green);
     } catch (error) {
       log(`❌ Failed to enable services for ${project}`, colors.red);
@@ -127,7 +129,7 @@ async function deployFirebaseConfig() {
   try {
     // Set to development project
     execCommand('firebase use protour-dev');
-    
+
     // Deploy Firestore rules and indexes
     execCommand('firebase deploy --only firestore');
     log('✅ Deployed Firestore rules and indexes', colors.green);
@@ -140,7 +142,6 @@ async function deployFirebaseConfig() {
     execCommand('npm run build:functions');
     execCommand('firebase deploy --only functions');
     log('✅ Deployed Cloud Functions', colors.green);
-
   } catch (error) {
     log('❌ Failed to deploy Firebase configuration', colors.red);
     throw error;
@@ -153,10 +154,13 @@ async function setupEmulators() {
   try {
     // Start emulators in the background to initialize
     log('Starting emulators to initialize...', colors.cyan);
-    execCommand('firebase emulators:start --only auth,firestore,functions,storage --import=./emulator-data', {
-      timeout: 10000,
-      killSignal: 'SIGTERM'
-    });
+    execCommand(
+      'firebase emulators:start --only auth,firestore,functions,storage --import=./emulator-data',
+      {
+        timeout: 10000,
+        killSignal: 'SIGTERM',
+      }
+    );
   } catch (error) {
     // Expected to fail when we kill the process
     log('✅ Emulators initialized', colors.green);
@@ -168,27 +172,36 @@ async function setupEmulators() {
     execCommand('npm run firebase:emulator:seed');
     log('✅ Emulators seeded with test data', colors.green);
   } catch (error) {
-    log('⚠️  Could not seed emulators (they may not be running)', colors.yellow);
+    log(
+      '⚠️  Could not seed emulators (they may not be running)',
+      colors.yellow
+    );
   }
 }
 
 async function generateServiceAccountKeys() {
   log('\n🔑 Setting up service account keys...', colors.blue);
-  
-  log('⚠️  Service account keys should be generated manually for security:', colors.yellow);
-  log('1. Go to Firebase Console → Project Settings → Service Accounts', colors.cyan);
+
+  log(
+    '⚠️  Service account keys should be generated manually for security:',
+    colors.yellow
+  );
+  log(
+    '1. Go to Firebase Console → Project Settings → Service Accounts',
+    colors.cyan
+  );
   log('2. Click "Generate new private key" for each project', colors.cyan);
   log('3. Store keys securely (DO NOT commit to version control)', colors.cyan);
-  log('4. Set GOOGLE_APPLICATION_CREDENTIALS environment variable', colors.cyan);
+  log(
+    '4. Set GOOGLE_APPLICATION_CREDENTIALS environment variable',
+    colors.cyan
+  );
 }
 
 async function createEnvironmentFiles() {
   log('\n🌍 Creating environment files...', colors.blue);
 
-  const envFiles = [
-    'apps/mobile/.env',
-    'functions/.env'
-  ];
+  const envFiles = ['apps/mobile/.env', 'functions/.env'];
 
   for (const envFile of envFiles) {
     const exampleFile = `${envFile}.example`;
@@ -198,7 +211,10 @@ async function createEnvironmentFiles() {
     if (!fs.existsSync(fullPath) && fs.existsSync(examplePath)) {
       fs.copyFileSync(examplePath, fullPath);
       log(`✅ Created ${envFile} (copy of .env.example)`, colors.green);
-      log(`⚠️  Please update ${envFile} with your Firebase configuration`, colors.yellow);
+      log(
+        `⚠️  Please update ${envFile} with your Firebase configuration`,
+        colors.yellow
+      );
     } else if (fs.existsSync(fullPath)) {
       log(`⚠️  ${envFile} already exists`, colors.yellow);
     } else {
@@ -210,15 +226,24 @@ async function createEnvironmentFiles() {
 async function displayNextSteps() {
   log('\n🎉 Firebase setup completed!', colors.green);
   log('\n📋 Next steps:', colors.blue);
-  log('1. Update environment files with your Firebase configuration:', colors.cyan);
+  log(
+    '1. Update environment files with your Firebase configuration:',
+    colors.cyan
+  );
   log('   • apps/mobile/.env', colors.cyan);
   log('   • functions/.env', colors.cyan);
-  log('2. Generate and configure service account keys (see instructions above)', colors.cyan);
+  log(
+    '2. Generate and configure service account keys (see instructions above)',
+    colors.cyan
+  );
   log('3. Test the setup:', colors.cyan);
   log('   • npm run firebase:emulator:start (start emulators)', colors.cyan);
   log('   • npm run firebase:emulator:seed (seed test data)', colors.cyan);
   log('4. Access Firebase Emulator UI at http://localhost:4000', colors.cyan);
-  log('\n💡 Pro tip: Use different Firebase projects for dev/staging/prod!', colors.yellow);
+  log(
+    '\n💡 Pro tip: Use different Firebase projects for dev/staging/prod!',
+    colors.yellow
+  );
 }
 
 async function main() {

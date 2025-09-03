@@ -8,7 +8,8 @@
       "Bash(npm run lint)",
       "Bash(npm run:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(npx prettier:*)"
+      "Bash(npx prettier:*)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []

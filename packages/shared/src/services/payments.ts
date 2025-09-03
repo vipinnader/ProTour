@@ -262,12 +262,16 @@ export class RazorpayGateway extends PaymentGateway {
 
   async getPaymentIntent(id: string): Promise<PaymentIntent> {
     // const order = await this.client.orders.fetch(id);
-    
+
     // Mock response
     return {
       id,
       amount: { value: 1000, currency: 'INR' },
-      customer: { id: 'cust_123', name: 'Test User', email: 'test@example.com' },
+      customer: {
+        id: 'cust_123',
+        name: 'Test User',
+        email: 'test@example.com',
+      },
       description: 'Tournament registration',
       metadata: {},
       status: 'pending',
@@ -321,8 +325,9 @@ export class RazorpayGateway extends PaymentGateway {
     try {
       // Use Razorpay webhook verification
       // const isValid = Razorpay.validateWebhookSignature(payload, signature, secret);
-      
-      if (true) { // Mock verification
+
+      if (true) {
+        // Mock verification
         const event = JSON.parse(payload);
         return {
           id: event.id || `evt_${Date.now()}`,
@@ -343,7 +348,7 @@ export class RazorpayGateway extends PaymentGateway {
     const feePercentage = 0.02; // 2% + GST
     const gst = 0.18;
     const baseFee = amount.value * feePercentage;
-    const totalFee = baseFee + (baseFee * gst);
+    const totalFee = baseFee + baseFee * gst;
 
     return {
       value: Math.round(totalFee * 100) / 100,
@@ -473,7 +478,7 @@ export class StripeGateway extends PaymentGateway {
 
   async getPaymentIntent(id: string): Promise<PaymentIntent> {
     // const paymentIntent = await this.stripe.paymentIntents.retrieve(id);
-    
+
     // Mock response
     return {
       id,
@@ -544,7 +549,7 @@ export class StripeGateway extends PaymentGateway {
   ): WebhookEvent | null {
     try {
       // const event = this.stripe.webhooks.constructEvent(payload, signature, secret);
-      
+
       // Mock verification
       const event = JSON.parse(payload);
       return {
@@ -561,8 +566,8 @@ export class StripeGateway extends PaymentGateway {
   async calculateFees(amount: PaymentAmount): Promise<PaymentAmount> {
     // Stripe fees calculation
     const feePercentage = 0.029; // 2.9% + 30¢
-    const fixedFee = 0.30;
-    const totalFee = (amount.value * feePercentage) + fixedFee;
+    const fixedFee = 0.3;
+    const totalFee = amount.value * feePercentage + fixedFee;
 
     return {
       value: Math.round(totalFee * 100) / 100,

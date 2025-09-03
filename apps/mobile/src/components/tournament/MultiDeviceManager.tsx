@@ -26,34 +26,62 @@ const MultiDeviceManager: React.FC<MultiDeviceManagerProps> = ({
   visible,
   onClose,
 }) => {
-  const {
-    activeDevices,
-    generateAccessCode,
-    delegatePermissions,
-  } = useSync();
-  
+  const { activeDevices, generateAccessCode, delegatePermissions } = useSync();
+
   const { isOrganizer } = usePermissions();
-  
+
   const [showGenerateCode, setShowGenerateCode] = useState(false);
   const [showDelegatePermissions, setShowDelegatePermissions] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<DeviceInfo | null>(null);
-  const [codeRole, setCodeRole] = useState<'referee' | 'spectator'>('spectator');
+  const [codeRole, setCodeRole] = useState<'referee' | 'spectator'>(
+    'spectator'
+  );
   const [expirationMinutes, setExpirationMinutes] = useState('60');
   const [maxUses, setMaxUses] = useState('10');
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
 
   const availablePermissions = [
-    { id: 'enter_scores', label: 'Enter Scores', description: 'Can enter match scores' },
-    { id: 'manage_matches', label: 'Manage Matches', description: 'Can start/end matches' },
-    { id: 'view_tournament', label: 'View Tournament', description: 'Can view tournament details' },
-    { id: 'view_matches', label: 'View Matches', description: 'Can view match details' },
-    { id: 'view_brackets', label: 'View Brackets', description: 'Can view tournament brackets' },
-    { id: 'referee_tools', label: 'Referee Tools', description: 'Access to referee-specific tools' },
+    {
+      id: 'enter_scores',
+      label: 'Enter Scores',
+      description: 'Can enter match scores',
+    },
+    {
+      id: 'manage_matches',
+      label: 'Manage Matches',
+      description: 'Can start/end matches',
+    },
+    {
+      id: 'view_tournament',
+      label: 'View Tournament',
+      description: 'Can view tournament details',
+    },
+    {
+      id: 'view_matches',
+      label: 'View Matches',
+      description: 'Can view match details',
+    },
+    {
+      id: 'view_brackets',
+      label: 'View Brackets',
+      description: 'Can view tournament brackets',
+    },
+    {
+      id: 'referee_tools',
+      label: 'Referee Tools',
+      description: 'Access to referee-specific tools',
+    },
   ];
 
   const rolePermissions = {
-    referee: ['enter_scores', 'manage_matches', 'view_tournament', 'view_matches', 'referee_tools'],
+    referee: [
+      'enter_scores',
+      'manage_matches',
+      'view_tournament',
+      'view_matches',
+      'referee_tools',
+    ],
     spectator: ['view_tournament', 'view_matches', 'view_brackets'],
   };
 
@@ -119,7 +147,7 @@ const MultiDeviceManager: React.FC<MultiDeviceManagerProps> = ({
   const formatLastSeen = (timestamp: number): string => {
     const now = Date.now();
     const diff = now - timestamp;
-    
+
     if (diff < 60000) return 'Just now';
     if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
@@ -128,10 +156,14 @@ const MultiDeviceManager: React.FC<MultiDeviceManagerProps> = ({
 
   const getRoleColor = (role: string): string => {
     switch (role) {
-      case 'organizer': return '#28a745';
-      case 'referee': return '#007bff';
-      case 'spectator': return '#6c757d';
-      default: return '#6c757d';
+      case 'organizer':
+        return '#28a745';
+      case 'referee':
+        return '#007bff';
+      case 'spectator':
+        return '#6c757d';
+      default:
+        return '#6c757d';
     }
   };
 
@@ -140,16 +172,21 @@ const MultiDeviceManager: React.FC<MultiDeviceManagerProps> = ({
       <View style={styles.deviceInfo}>
         <View style={styles.deviceHeader}>
           <Text style={styles.deviceName}>{item.deviceName}</Text>
-          <View style={[styles.roleBadge, { backgroundColor: getRoleColor(item.role) }]}>
+          <View
+            style={[
+              styles.roleBadge,
+              { backgroundColor: getRoleColor(item.role) },
+            ]}
+          >
             <Text style={styles.roleBadgeText}>{item.role}</Text>
           </View>
         </View>
-        
+
         <Text style={styles.deviceUser}>User: {item.userId}</Text>
         <Text style={styles.deviceLastSeen}>
           Last seen: {formatLastSeen(item.lastSeen)}
         </Text>
-        
+
         <View style={styles.deviceCapabilities}>
           {item.capabilities.slice(0, 3).map((capability, index) => (
             <Text key={index} style={styles.capabilityTag}>
@@ -182,7 +219,7 @@ const MultiDeviceManager: React.FC<MultiDeviceManagerProps> = ({
     <TouchableOpacity
       style={[
         styles.permissionItem,
-        selectedPermissions.includes(item.id) && styles.permissionItemSelected
+        selectedPermissions.includes(item.id) && styles.permissionItemSelected,
       ]}
       onPress={() => {
         if (selectedPermissions.includes(item.id)) {
@@ -196,10 +233,13 @@ const MultiDeviceManager: React.FC<MultiDeviceManagerProps> = ({
         <Text style={styles.permissionLabel}>{item.label}</Text>
         <Text style={styles.permissionDescription}>{item.description}</Text>
       </View>
-      <View style={[
-        styles.permissionCheckbox,
-        selectedPermissions.includes(item.id) && styles.permissionCheckboxSelected
-      ]}>
+      <View
+        style={[
+          styles.permissionCheckbox,
+          selectedPermissions.includes(item.id) &&
+            styles.permissionCheckboxSelected,
+        ]}
+      >
         {selectedPermissions.includes(item.id) && (
           <Text style={styles.permissionCheckmark}>✓</Text>
         )}
@@ -209,7 +249,11 @@ const MultiDeviceManager: React.FC<MultiDeviceManagerProps> = ({
 
   if (!isOrganizer && activeDevices.length === 0) {
     return (
-      <Modal visible={visible} animationType="slide" presentationStyle="formSheet">
+      <Modal
+        visible={visible}
+        animationType="slide"
+        presentationStyle="formSheet"
+      >
         <View style={styles.container}>
           <View style={styles.header}>
             <Text style={styles.title}>Tournament Devices</Text>
@@ -228,7 +272,11 @@ const MultiDeviceManager: React.FC<MultiDeviceManagerProps> = ({
   }
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="formSheet">
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="formSheet"
+    >
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>
@@ -266,7 +314,7 @@ const MultiDeviceManager: React.FC<MultiDeviceManagerProps> = ({
         <FlatList
           data={activeDevices}
           renderItem={renderDeviceItem}
-          keyExtractor={(item) => item.deviceId}
+          keyExtractor={item => item.deviceId}
           style={styles.devicesList}
           ListEmptyComponent={() => (
             <View style={styles.emptyState}>
@@ -301,28 +349,32 @@ const MultiDeviceManager: React.FC<MultiDeviceManagerProps> = ({
                 <TouchableOpacity
                   style={[
                     styles.roleOption,
-                    codeRole === 'referee' && styles.roleOptionSelected
+                    codeRole === 'referee' && styles.roleOptionSelected,
                   ]}
                   onPress={() => setCodeRole('referee')}
                 >
-                  <Text style={[
-                    styles.roleOptionText,
-                    codeRole === 'referee' && styles.roleOptionTextSelected
-                  ]}>
+                  <Text
+                    style={[
+                      styles.roleOptionText,
+                      codeRole === 'referee' && styles.roleOptionTextSelected,
+                    ]}
+                  >
                     Referee
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[
                     styles.roleOption,
-                    codeRole === 'spectator' && styles.roleOptionSelected
+                    codeRole === 'spectator' && styles.roleOptionSelected,
                   ]}
                   onPress={() => setCodeRole('spectator')}
                 >
-                  <Text style={[
-                    styles.roleOptionText,
-                    codeRole === 'spectator' && styles.roleOptionTextSelected
-                  ]}>
+                  <Text
+                    style={[
+                      styles.roleOptionText,
+                      codeRole === 'spectator' && styles.roleOptionTextSelected,
+                    ]}
+                  >
                     Spectator
                   </Text>
                 </TouchableOpacity>
@@ -350,7 +402,7 @@ const MultiDeviceManager: React.FC<MultiDeviceManagerProps> = ({
               <FlatList
                 data={availablePermissions}
                 renderItem={renderPermissionItem}
-                keyExtractor={(item) => item.id}
+                keyExtractor={item => item.id}
                 style={styles.permissionsList}
               />
 
@@ -395,7 +447,7 @@ const MultiDeviceManager: React.FC<MultiDeviceManagerProps> = ({
                 <FlatList
                   data={availablePermissions}
                   renderItem={renderPermissionItem}
-                  keyExtractor={(item) => item.id}
+                  keyExtractor={item => item.id}
                   style={styles.permissionsList}
                 />
 
@@ -403,7 +455,9 @@ const MultiDeviceManager: React.FC<MultiDeviceManagerProps> = ({
                   style={styles.generateButton}
                   onPress={handleDelegatePermissions}
                 >
-                  <Text style={styles.generateButtonText}>Delegate Permissions</Text>
+                  <Text style={styles.generateButtonText}>
+                    Delegate Permissions
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}

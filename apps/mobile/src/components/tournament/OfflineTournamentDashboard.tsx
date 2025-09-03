@@ -12,7 +12,11 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { enhancedOfflineService, OfflineOperationLimits, TournamentCache } from '@protour/shared';
+import {
+  enhancedOfflineService,
+  OfflineOperationLimits,
+  TournamentCache,
+} from '@protour/shared';
 import { useSync } from '../../contexts/SyncContext';
 import { Tournament, Match, Player } from '@protour/shared/types';
 
@@ -34,7 +38,9 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
   tournament: propTournament,
 }) => {
   const { currentSession } = useSync();
-  const [tournament, setTournament] = useState<Tournament | null>(propTournament || null);
+  const [tournament, setTournament] = useState<Tournament | null>(
+    propTournament || null
+  );
   const [matches, setMatches] = useState<Match[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
@@ -44,7 +50,8 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
     syncInProgress: false,
     networkQuality: 'good',
   });
-  const [operationLimits, setOperationLimits] = useState<OfflineOperationLimits | null>(null);
+  const [operationLimits, setOperationLimits] =
+    useState<OfflineOperationLimits | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [cachedData, setCachedData] = useState<TournamentCache | null>(null);
@@ -52,7 +59,7 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
   useEffect(() => {
     initializeDashboard();
     setupStatusListeners();
-    
+
     return () => {
       cleanupListeners();
     };
@@ -61,13 +68,14 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
   const initializeDashboard = async () => {
     try {
       setIsLoading(true);
-      
+
       // Initialize enhanced offline service
       await enhancedOfflineService.initialize();
-      
+
       // Check if tournament is cached
-      const isCached = await enhancedOfflineService.isTournamentCached(tournamentId);
-      
+      const isCached =
+        await enhancedOfflineService.isTournamentCached(tournamentId);
+
       if (isCached) {
         // Load from cache
         const cache = enhancedOfflineService.getCachedTournament(tournamentId);
@@ -88,13 +96,15 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
           setCachedData(cache);
         }
       }
-      
+
       // Update status
       await updateStatus();
-      
     } catch (error) {
       console.error('Failed to initialize offline dashboard:', error);
-      Alert.alert('Initialization Error', 'Failed to load tournament data offline');
+      Alert.alert(
+        'Initialization Error',
+        'Failed to load tournament data offline'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -103,18 +113,26 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
   const setupStatusListeners = () => {
     // Listen for connectivity changes
     enhancedOfflineService.subscribe('online', () => {
-      setConnectionStatus(prev => ({ ...prev, isOnline: true, networkQuality: 'good' }));
+      setConnectionStatus(prev => ({
+        ...prev,
+        isOnline: true,
+        networkQuality: 'good',
+      }));
       updateStatus();
     });
 
     enhancedOfflineService.subscribe('offline', () => {
-      setConnectionStatus(prev => ({ ...prev, isOnline: false, networkQuality: 'offline' }));
+      setConnectionStatus(prev => ({
+        ...prev,
+        isOnline: false,
+        networkQuality: 'offline',
+      }));
       updateStatus();
     });
 
-    enhancedOfflineService.subscribe('offlineWarning', (data) => {
+    enhancedOfflineService.subscribe('offlineWarning', data => {
       Alert.alert(
-        'Offline Time Warning', 
+        'Offline Time Warning',
         `You've been offline for over 6 hours. ${Math.round(data.timeRemaining / (60 * 60 * 1000))} hours remaining before limited functionality.`,
         [{ text: 'OK' }]
       );
@@ -123,14 +141,17 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
     enhancedOfflineService.subscribe('offlineLimitExceeded', () => {
       Alert.alert(
         'Offline Limit Exceeded',
-        'You\'ve exceeded the 8-hour offline limit. Some features have been disabled. Please connect to internet to restore full functionality.',
+        "You've exceeded the 8-hour offline limit. Some features have been disabled. Please connect to internet to restore full functionality.",
         [{ text: 'OK' }]
       );
     });
 
-    enhancedOfflineService.subscribe('degradationMode', (limits: OfflineOperationLimits) => {
-      setOperationLimits(limits);
-    });
+    enhancedOfflineService.subscribe(
+      'degradationMode',
+      (limits: OfflineOperationLimits) => {
+        setOperationLimits(limits);
+      }
+    );
   };
 
   const cleanupListeners = () => {
@@ -141,7 +162,7 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
     try {
       const status = await enhancedOfflineService.getOfflineStatus();
       const limits = await enhancedOfflineService.getOfflineOperationLimits();
-      
+
       setConnectionStatus({
         isOnline: status.isOnline,
         lastSyncTime: status.lastSyncTime,
@@ -149,7 +170,7 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
         syncInProgress: status.syncInProgress,
         networkQuality: status.isOnline ? 'good' : 'offline',
       });
-      
+
       setOperationLimits(limits);
     } catch (error) {
       console.error('Failed to update status:', error);
@@ -185,21 +206,27 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
         'This will create a backup file of all tournament data. Continue?',
         [
           { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Export', 
+          {
+            text: 'Export',
             onPress: async () => {
               try {
-                const exportData = await enhancedOfflineService.createEmergencyExport(tournamentId);
+                const exportData =
+                  await enhancedOfflineService.createEmergencyExport(
+                    tournamentId
+                  );
                 Alert.alert(
                   'Export Complete',
                   `Tournament data exported to:\n${exportData.filePath}\n\nSize: ${Math.round(exportData.fileSize / 1024)} KB`,
                   [{ text: 'OK' }]
                 );
               } catch (error) {
-                Alert.alert('Export Failed', 'Could not create emergency export');
+                Alert.alert(
+                  'Export Failed',
+                  'Could not create emergency export'
+                );
               }
-            }
-          }
+            },
+          },
         ]
       );
     } catch (error) {
@@ -207,40 +234,63 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
     }
   };
 
-  const handleMatchUpdate = async (matchId: string, updates: Partial<Match>) => {
+  const handleMatchUpdate = async (
+    matchId: string,
+    updates: Partial<Match>
+  ) => {
     try {
       // Update match offline
-      await enhancedOfflineService.updateOffline('matches', matchId, updates, currentSession?.userId || 'offline');
-      
+      await enhancedOfflineService.updateOffline(
+        'matches',
+        matchId,
+        updates,
+        currentSession?.userId || 'offline'
+      );
+
       // Update local state
-      setMatches(prev => prev.map(match => 
-        match.id === matchId ? { ...match, ...updates } : match
-      ));
-      
+      setMatches(prev =>
+        prev.map(match =>
+          match.id === matchId ? { ...match, ...updates } : match
+        )
+      );
+
       await updateStatus();
     } catch (error) {
       console.error('Failed to update match:', error);
-      Alert.alert('Update Failed', 'Could not update match. Changes will be retried when online.');
+      Alert.alert(
+        'Update Failed',
+        'Could not update match. Changes will be retried when online.'
+      );
     }
   };
 
   const getStatusColor = (status: string): string => {
     switch (status) {
-      case 'online': return '#28a745';
-      case 'offline': return '#ffc107';
-      case 'error': return '#dc3545';
-      case 'syncing': return '#17a2b8';
-      default: return '#6c757d';
+      case 'online':
+        return '#28a745';
+      case 'offline':
+        return '#ffc107';
+      case 'error':
+        return '#dc3545';
+      case 'syncing':
+        return '#17a2b8';
+      default:
+        return '#6c757d';
     }
   };
 
   const getNetworkQualityIcon = (quality: string): string => {
     switch (quality) {
-      case 'excellent': return '📶';
-      case 'good': return '📶';
-      case 'poor': return '📶';
-      case 'offline': return '📵';
-      default: return '📶';
+      case 'excellent':
+        return '📶';
+      case 'good':
+        return '📶';
+      case 'poor':
+        return '📶';
+      case 'offline':
+        return '📵';
+      default:
+        return '📶';
     }
   };
 
@@ -279,26 +329,35 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
   }
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
     >
       {/* Connection Status Header */}
       <View style={styles.statusHeader}>
         <View style={styles.connectionStatus}>
-          <View style={[
-            styles.statusIndicator, 
-            { backgroundColor: getStatusColor(connectionStatus.isOnline ? 'online' : 'offline') }
-          ]} />
+          <View
+            style={[
+              styles.statusIndicator,
+              {
+                backgroundColor: getStatusColor(
+                  connectionStatus.isOnline ? 'online' : 'offline'
+                ),
+              },
+            ]}
+          />
           <Text style={styles.statusText}>
-            {connectionStatus.isOnline ? 'Online' : 'Offline'} {getNetworkQualityIcon(connectionStatus.networkQuality)}
+            {connectionStatus.isOnline ? 'Online' : 'Offline'}{' '}
+            {getNetworkQualityIcon(connectionStatus.networkQuality)}
           </Text>
         </View>
-        
+
         <Text style={styles.lastSync}>
           Last sync: {formatTimeAgo(connectionStatus.lastSyncTime)}
         </Text>
-        
+
         {connectionStatus.pendingOperations > 0 && (
           <View style={styles.pendingOperations}>
             <Text style={styles.pendingText}>
@@ -313,23 +372,43 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
 
       {/* Offline Operation Limits Warning */}
       {operationLimits && operationLimits.degradationLevel !== 'full' && (
-        <View style={[
-          styles.warningBanner, 
-          { backgroundColor: operationLimits.degradationLevel === 'emergency' ? '#dc3545' : '#ffc107' }
-        ]}>
-          <Text style={[
-            styles.warningText,
-            { color: operationLimits.degradationLevel === 'emergency' ? '#fff' : '#000' }
-          ]}>
-            {operationLimits.degradationLevel === 'emergency' 
+        <View
+          style={[
+            styles.warningBanner,
+            {
+              backgroundColor:
+                operationLimits.degradationLevel === 'emergency'
+                  ? '#dc3545'
+                  : '#ffc107',
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.warningText,
+              {
+                color:
+                  operationLimits.degradationLevel === 'emergency'
+                    ? '#fff'
+                    : '#000',
+              },
+            ]}
+          >
+            {operationLimits.degradationLevel === 'emergency'
               ? '⚠️ Emergency Mode: Limited functionality active'
-              : '⚠️ Limited Mode: Some features disabled'
-            }
+              : '⚠️ Limited Mode: Some features disabled'}
           </Text>
-          <Text style={[
-            styles.warningSubText,
-            { color: operationLimits.degradationLevel === 'emergency' ? '#fff' : '#000' }
-          ]}>
+          <Text
+            style={[
+              styles.warningSubText,
+              {
+                color:
+                  operationLimits.degradationLevel === 'emergency'
+                    ? '#fff'
+                    : '#000',
+              },
+            ]}
+          >
             Offline: {formatOfflineTime(operationLimits.currentOfflineTime)}
           </Text>
         </View>
@@ -339,27 +418,30 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
       <View style={styles.tournamentHeader}>
         <Text style={styles.tournamentName}>{tournament.name}</Text>
         <Text style={styles.tournamentStatus}>
-          Status: {tournament.status} • {players.length} players • {matches.length} matches
+          Status: {tournament.status} • {players.length} players •{' '}
+          {matches.length} matches
         </Text>
-        
+
         {cachedData && (
           <Text style={styles.cacheInfo}>
-            Cached: {formatTimeAgo(cachedData.lastUpdated)} • 
-            Size: {Math.round(cachedData.sizeBytes / 1024)} KB
+            Cached: {formatTimeAgo(cachedData.lastUpdated)} • Size:{' '}
+            {Math.round(cachedData.sizeBytes / 1024)} KB
           </Text>
         )}
       </View>
 
       {/* Quick Actions */}
       <View style={styles.actionsContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => handleMatchUpdate('example', { status: 'in_progress' })}
+          onPress={() =>
+            handleMatchUpdate('example', { status: 'in_progress' })
+          }
         >
           <Text style={styles.actionButtonText}>Start Match</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={[styles.actionButton, styles.secondaryButton]}
           onPress={handleEmergencyExport}
         >
@@ -372,7 +454,7 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
       {/* Recent Matches */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Recent Matches</Text>
-        {matches.slice(0, 5).map((match) => (
+        {matches.slice(0, 5).map(match => (
           <View key={match.id} style={styles.matchCard}>
             <View style={styles.matchInfo}>
               <Text style={styles.matchPlayers}>
@@ -383,11 +465,13 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
                 Round {match.round} • {match.status}
               </Text>
             </View>
-            
+
             {match.score && (
               <View style={styles.scoreContainer}>
                 <Text style={styles.scoreText}>
-                  {Array.isArray(match.score) ? match.score.join('-') : 'In Progress'}
+                  {Array.isArray(match.score)
+                    ? match.score.join('-')
+                    : 'In Progress'}
                 </Text>
               </View>
             )}
@@ -400,10 +484,11 @@ const OfflineTournamentDashboard: React.FC<OfflineTournamentDashboardProps> = ({
         <Text style={styles.sectionTitle}>Storage & Performance</Text>
         <View style={styles.storageInfo}>
           <Text style={styles.storageText}>
-            Cache Usage: {Math.round((operationLimits?.storageUsed || 0) / 1024)} KB / 
+            Cache Usage:{' '}
+            {Math.round((operationLimits?.storageUsed || 0) / 1024)} KB /
             {Math.round((operationLimits?.maxStorage || 0) / (1024 * 1024))} MB
           </Text>
-          
+
           {operationLimits?.featuresDisabled.length > 0 && (
             <Text style={styles.disabledFeatures}>
               Disabled: {operationLimits.featuresDisabled.join(', ')}

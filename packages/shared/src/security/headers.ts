@@ -15,10 +15,21 @@ export interface SecurityHeadersConfig {
   frameOptions?: 'DENY' | 'SAMEORIGIN' | string;
   contentTypeOptions?: boolean;
   xssProtection?: boolean;
-  referrerPolicy?: 'no-referrer' | 'no-referrer-when-downgrade' | 'origin' | 'origin-when-cross-origin' | 'same-origin' | 'strict-origin' | 'strict-origin-when-cross-origin' | 'unsafe-url';
+  referrerPolicy?:
+    | 'no-referrer'
+    | 'no-referrer-when-downgrade'
+    | 'origin'
+    | 'origin-when-cross-origin'
+    | 'same-origin'
+    | 'strict-origin'
+    | 'strict-origin-when-cross-origin'
+    | 'unsafe-url';
   permissionsPolicy?: Record<string, string[]>;
   crossOriginEmbedderPolicy?: 'unsafe-none' | 'require-corp';
-  crossOriginOpenerPolicy?: 'unsafe-none' | 'same-origin-allow-popups' | 'same-origin';
+  crossOriginOpenerPolicy?:
+    | 'unsafe-none'
+    | 'same-origin-allow-popups'
+    | 'same-origin';
   crossOriginResourcePolicy?: 'same-site' | 'same-origin' | 'cross-origin';
 }
 
@@ -66,8 +77,8 @@ export class SecurityHeadersManager {
     // Content Security Policy
     if (this.config.contentSecurityPolicy) {
       const csp = this.buildCSPHeader(this.config.contentSecurityPolicy);
-      const headerName = this.config.contentSecurityPolicy.reportOnly 
-        ? 'Content-Security-Policy-Report-Only' 
+      const headerName = this.config.contentSecurityPolicy.reportOnly
+        ? 'Content-Security-Policy-Report-Only'
         : 'Content-Security-Policy';
       res.setHeader(headerName, csp);
     }
@@ -100,23 +111,34 @@ export class SecurityHeadersManager {
 
     // Permissions-Policy
     if (this.config.permissionsPolicy) {
-      const permissionsPolicy = this.buildPermissionsPolicyHeader(this.config.permissionsPolicy);
+      const permissionsPolicy = this.buildPermissionsPolicyHeader(
+        this.config.permissionsPolicy
+      );
       res.setHeader('Permissions-Policy', permissionsPolicy);
     }
 
     // Cross-Origin-Embedder-Policy
     if (this.config.crossOriginEmbedderPolicy) {
-      res.setHeader('Cross-Origin-Embedder-Policy', this.config.crossOriginEmbedderPolicy);
+      res.setHeader(
+        'Cross-Origin-Embedder-Policy',
+        this.config.crossOriginEmbedderPolicy
+      );
     }
 
     // Cross-Origin-Opener-Policy
     if (this.config.crossOriginOpenerPolicy) {
-      res.setHeader('Cross-Origin-Opener-Policy', this.config.crossOriginOpenerPolicy);
+      res.setHeader(
+        'Cross-Origin-Opener-Policy',
+        this.config.crossOriginOpenerPolicy
+      );
     }
 
     // Cross-Origin-Resource-Policy
     if (this.config.crossOriginResourcePolicy) {
-      res.setHeader('Cross-Origin-Resource-Policy', this.config.crossOriginResourcePolicy);
+      res.setHeader(
+        'Cross-Origin-Resource-Policy',
+        this.config.crossOriginResourcePolicy
+      );
     }
 
     // Remove potentially sensitive headers
@@ -124,7 +146,9 @@ export class SecurityHeadersManager {
     res.removeHeader('Server');
   }
 
-  private buildCSPHeader(csp: NonNullable<SecurityHeadersConfig['contentSecurityPolicy']>): string {
+  private buildCSPHeader(
+    csp: NonNullable<SecurityHeadersConfig['contentSecurityPolicy']>
+  ): string {
     const directives = csp.directives || {};
     const defaultDirectives = {
       'default-src': ["'self'"],
@@ -163,7 +187,9 @@ export class SecurityHeadersManager {
     return policy;
   }
 
-  private buildHSTSHeader(hsts: NonNullable<SecurityHeadersConfig['hsts']>): string {
+  private buildHSTSHeader(
+    hsts: NonNullable<SecurityHeadersConfig['hsts']>
+  ): string {
     const maxAge = hsts.maxAge || 31536000; // 1 year default
     let hstsValue = `max-age=${maxAge}`;
 
@@ -178,16 +204,18 @@ export class SecurityHeadersManager {
     return hstsValue;
   }
 
-  private buildPermissionsPolicyHeader(permissions: Record<string, string[]>): string {
+  private buildPermissionsPolicyHeader(
+    permissions: Record<string, string[]>
+  ): string {
     const policies: string[] = [];
 
     for (const [feature, allowlist] of Object.entries(permissions)) {
       if (allowlist.length === 0) {
         policies.push(`${feature}=()`);
       } else {
-        const allowlistStr = allowlist.map(origin => 
-          origin === 'self' ? 'self' : `"${origin}"`
-        ).join(' ');
+        const allowlistStr = allowlist
+          .map(origin => (origin === 'self' ? 'self' : `"${origin}"`))
+          .join(' ');
         policies.push(`${feature}=(${allowlistStr})`);
       }
     }
@@ -242,9 +270,18 @@ export class SecurityConfigManager {
     this.environmentConfigs = {
       development: {
         cors: {
-          origins: ['http://localhost:3000', 'http://localhost:19006', 'exp://'],
+          origins: [
+            'http://localhost:3000',
+            'http://localhost:19006',
+            'exp://',
+          ],
           methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-          allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Requested-With'],
+          allowedHeaders: [
+            'Content-Type',
+            'Authorization',
+            'X-API-Key',
+            'X-Requested-With',
+          ],
           exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
           credentials: true,
           maxAge: 86400, // 24 hours
@@ -253,10 +290,23 @@ export class SecurityConfigManager {
           contentSecurityPolicy: {
             directives: {
               'default-src': ["'self'"],
-              'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'localhost:*', '*.expo.dev'],
+              'script-src': [
+                "'self'",
+                "'unsafe-inline'",
+                "'unsafe-eval'",
+                'localhost:*',
+                '*.expo.dev',
+              ],
               'style-src': ["'self'", "'unsafe-inline'", 'localhost:*'],
               'img-src': ["'self'", 'data:', 'https:', 'localhost:*'],
-              'connect-src': ["'self'", 'ws:', 'wss:', 'localhost:*', '*.expo.dev', '*.firebase.googleapis.com'],
+              'connect-src': [
+                "'self'",
+                'ws:',
+                'wss:',
+                'localhost:*',
+                '*.expo.dev',
+                '*.firebase.googleapis.com',
+              ],
               'font-src': ["'self'", 'data:', 'https:'],
             },
           },
@@ -276,9 +326,17 @@ export class SecurityConfigManager {
       },
       staging: {
         cors: {
-          origins: ['https://staging.protour.app', 'https://staging-admin.protour.app'],
+          origins: [
+            'https://staging.protour.app',
+            'https://staging-admin.protour.app',
+          ],
           methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-          allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Requested-With'],
+          allowedHeaders: [
+            'Content-Type',
+            'Authorization',
+            'X-API-Key',
+            'X-Requested-With',
+          ],
           exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
           credentials: true,
           maxAge: 86400,
@@ -290,7 +348,13 @@ export class SecurityConfigManager {
               'script-src': ["'self'"],
               'style-src': ["'self'", "'unsafe-inline'"],
               'img-src': ["'self'", 'data:', 'https:'],
-              'connect-src': ["'self'", 'wss:', '*.firebase.googleapis.com', '*.razorpay.com', '*.stripe.com'],
+              'connect-src': [
+                "'self'",
+                'wss:',
+                '*.firebase.googleapis.com',
+                '*.razorpay.com',
+                '*.stripe.com',
+              ],
               'font-src': ["'self'", 'https:'],
               'frame-ancestors': ["'none'"],
             },
@@ -306,10 +370,10 @@ export class SecurityConfigManager {
           xssProtection: true,
           referrerPolicy: 'strict-origin-when-cross-origin',
           permissionsPolicy: {
-            'camera': [],
-            'microphone': [],
-            'geolocation': [],
-            'payment': ['self'],
+            camera: [],
+            microphone: [],
+            geolocation: [],
+            payment: ['self'],
           },
           crossOriginEmbedderPolicy: 'require-corp',
           crossOriginOpenerPolicy: 'same-origin',
@@ -318,9 +382,18 @@ export class SecurityConfigManager {
       },
       production: {
         cors: {
-          origins: ['https://protour.app', 'https://admin.protour.app', 'https://www.protour.app'],
+          origins: [
+            'https://protour.app',
+            'https://admin.protour.app',
+            'https://www.protour.app',
+          ],
           methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-          allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key', 'X-Requested-With'],
+          allowedHeaders: [
+            'Content-Type',
+            'Authorization',
+            'X-API-Key',
+            'X-Requested-With',
+          ],
           exposedHeaders: ['X-Total-Count', 'X-Page-Count'],
           credentials: true,
           maxAge: 86400,
@@ -332,7 +405,13 @@ export class SecurityConfigManager {
               'script-src': ["'self'"],
               'style-src': ["'self'", "'unsafe-inline'"],
               'img-src': ["'self'", 'data:', 'https:'],
-              'connect-src': ["'self'", 'wss:', '*.firebase.googleapis.com', '*.razorpay.com', '*.stripe.com'],
+              'connect-src': [
+                "'self'",
+                'wss:',
+                '*.firebase.googleapis.com',
+                '*.razorpay.com',
+                '*.stripe.com',
+              ],
               'font-src': ["'self'", 'https:'],
               'frame-ancestors': ["'none'"],
               'upgrade-insecure-requests': [],
@@ -349,12 +428,12 @@ export class SecurityConfigManager {
           xssProtection: true,
           referrerPolicy: 'strict-origin-when-cross-origin',
           permissionsPolicy: {
-            'camera': [],
-            'microphone': [],
-            'geolocation': [],
-            'payment': ['self'],
-            'fullscreen': ['self'],
-            'autoplay': [],
+            camera: [],
+            microphone: [],
+            geolocation: [],
+            payment: ['self'],
+            fullscreen: ['self'],
+            autoplay: [],
           },
           crossOriginEmbedderPolicy: 'require-corp',
           crossOriginOpenerPolicy: 'same-origin',
@@ -364,7 +443,10 @@ export class SecurityConfigManager {
     };
   }
 
-  getConfig(environment: keyof EnvironmentConfig): { cors: CORSConfig; security: SecurityHeadersConfig } {
+  getConfig(environment: keyof EnvironmentConfig): {
+    cors: CORSConfig;
+    security: SecurityHeadersConfig;
+  } {
     return this.environmentConfigs[environment];
   }
 
@@ -380,12 +462,21 @@ export class SecurityConfigManager {
     return manager.middleware();
   }
 
-  updateEnvironmentConfig(environment: keyof EnvironmentConfig, updates: Partial<{ cors: CORSConfig; security: SecurityHeadersConfig }>) {
+  updateEnvironmentConfig(
+    environment: keyof EnvironmentConfig,
+    updates: Partial<{ cors: CORSConfig; security: SecurityHeadersConfig }>
+  ) {
     if (updates.cors) {
-      this.environmentConfigs[environment].cors = { ...this.environmentConfigs[environment].cors, ...updates.cors };
+      this.environmentConfigs[environment].cors = {
+        ...this.environmentConfigs[environment].cors,
+        ...updates.cors,
+      };
     }
     if (updates.security) {
-      this.environmentConfigs[environment].security = { ...this.environmentConfigs[environment].security, ...updates.security };
+      this.environmentConfigs[environment].security = {
+        ...this.environmentConfigs[environment].security,
+        ...updates.security,
+      };
     }
   }
 }
@@ -395,10 +486,10 @@ export const cspReportHandler = () => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (req.path === '/api/csp-report' && req.method === 'POST') {
       console.warn('CSP Violation Report:', JSON.stringify(req.body, null, 2));
-      
+
       // You can implement additional logging here
       // Example: Send to monitoring service, store in database, etc.
-      
+
       res.status(204).send();
     } else {
       next();
@@ -416,8 +507,10 @@ export const validateSecurityHeaders = () => {
       'Content-Security-Policy',
     ];
 
-    const missingHeaders = requiredHeaders.filter(header => !res.getHeader(header));
-    
+    const missingHeaders = requiredHeaders.filter(
+      header => !res.getHeader(header)
+    );
+
     if (missingHeaders.length > 0 && process.env.NODE_ENV !== 'development') {
       console.warn(`Missing security headers: ${missingHeaders.join(', ')}`);
     }

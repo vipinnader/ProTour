@@ -3,8 +3,13 @@ import crypto from 'crypto';
 import { EventEmitter } from 'events';
 
 export type TestSeverity = 'info' | 'low' | 'medium' | 'high' | 'critical';
-export type TestStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
-export type TestCategory = 
+export type TestStatus =
+  | 'pending'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'skipped';
+export type TestCategory =
   | 'authentication'
   | 'authorization'
   | 'input_validation'
@@ -117,7 +122,7 @@ export class SecurityTestingFramework extends EventEmitter {
     this.baseUrl = baseUrl;
     this.defaultHeaders = {
       'User-Agent': 'ProTour-Security-Scanner/1.0',
-      'Accept': 'application/json',
+      Accept: 'application/json',
       ...defaultHeaders,
     };
 
@@ -227,8 +232,8 @@ export class SecurityTestingFramework extends EventEmitter {
         endpoint: '/api/profile',
         method: 'POST',
         headers: {
-          'Origin': 'https://malicious-site.com',
-          'Referer': 'https://malicious-site.com',
+          Origin: 'https://malicious-site.com',
+          Referer: 'https://malicious-site.com',
         },
         payload: {
           name: 'Changed by CSRF',
@@ -361,7 +366,7 @@ export class SecurityTestingFramework extends EventEmitter {
         retries: 0,
         ...test,
       };
-      
+
       this.tests.set(securityTest.id, securityTest);
     });
   }
@@ -376,7 +381,7 @@ export class SecurityTestingFramework extends EventEmitter {
 
     this.tests.set(securityTest.id, securityTest);
     this.emit('testAdded', securityTest);
-    
+
     return securityTest.id;
   }
 
@@ -398,44 +403,48 @@ export class SecurityTestingFramework extends EventEmitter {
 
     test.status = 'running';
     test.executedAt = new Date();
-    
+
     this.emit('testStarted', test);
 
     const startTime = Date.now();
 
     try {
       const result = await this.executeTest(test, context);
-      
+
       test.status = 'completed';
       test.result = result;
       test.duration = Date.now() - startTime;
-      
-      this.emit('testCompleted', { test, result });
-      
-      return result;
 
+      this.emit('testCompleted', { test, result });
+
+      return result;
     } catch (error) {
       test.retries++;
-      
+
       if (test.retries < test.maxRetries) {
         test.status = 'pending';
         this.emit('testRetrying', { test, error, attempt: test.retries });
-        
+
         // Retry with exponential backoff
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, test.retries) * 1000));
+        await new Promise(resolve =>
+          setTimeout(resolve, Math.pow(2, test.retries) * 1000)
+        );
         return this.runTest(testId, context);
       }
 
       test.status = 'failed';
       test.duration = Date.now() - startTime;
-      
+
       this.emit('testFailed', { test, error });
-      
+
       throw error;
     }
   }
 
-  private async executeTest(test: SecurityTest, context: any): Promise<TestResult> {
+  private async executeTest(
+    test: SecurityTest,
+    context: any
+  ): Promise<TestResult> {
     if (!test.automated) {
       throw new Error('Manual test execution not supported');
     }
@@ -482,7 +491,11 @@ export class SecurityTestingFramework extends EventEmitter {
     method: string;
     headers: Record<string, string>;
     body?: any;
-  }): Promise<{ status: number; headers: Record<string, string>; body: string }> {
+  }): Promise<{
+    status: number;
+    headers: Record<string, string>;
+    body: string;
+  }> {
     const { url, method, headers, body } = options;
 
     try {
@@ -502,9 +515,10 @@ export class SecurityTestingFramework extends EventEmitter {
         headers: responseHeaders,
         body: await response.text(),
       };
-
     } catch (error) {
-      throw new Error(`Request failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Request failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -518,7 +532,8 @@ export class SecurityTestingFramework extends EventEmitter {
 
     // Check response code
     if (test.expectedResult.responseCode) {
-      const codeMatch = evidence.response.status === test.expectedResult.responseCode;
+      const codeMatch =
+        evidence.response.status === test.expectedResult.responseCode;
       if (test.expectedResult.vulnerable) {
         vulnerable = codeMatch;
         confidence += codeMatch ? 30 : 0;
@@ -530,7 +545,9 @@ export class SecurityTestingFramework extends EventEmitter {
 
     // Check response pattern
     if (test.expectedResult.responsePattern) {
-      const patternMatch = test.expectedResult.responsePattern.test(evidence.response.body);
+      const patternMatch = test.expectedResult.responsePattern.test(
+        evidence.response.body
+      );
       if (test.expectedResult.vulnerable) {
         vulnerable = vulnerable || patternMatch;
         confidence += patternMatch ? 40 : 0;
@@ -542,10 +559,12 @@ export class SecurityTestingFramework extends EventEmitter {
 
     // Check indicators
     for (const indicator of test.expectedResult.indicators) {
-      if (evidence.response.body.toLowerCase().includes(indicator.toLowerCase())) {
+      if (
+        evidence.response.body.toLowerCase().includes(indicator.toLowerCase())
+      ) {
         indicators.push(indicator);
         confidence += 20;
-        
+
         if (test.expectedResult.vulnerable) {
           vulnerable = true;
         }
@@ -576,7 +595,10 @@ export class SecurityTestingFramework extends EventEmitter {
     };
   }
 
-  private checkSecurityHeaders(headers: Record<string, string>, indicators: string[]): void {
+  private checkSecurityHeaders(
+    headers: Record<string, string>,
+    indicators: string[]
+  ): void {
     const securityHeaders = {
       'x-content-type-options': 'nosniff',
       'x-frame-options': ['DENY', 'SAMEORIGIN'],
@@ -587,7 +609,7 @@ export class SecurityTestingFramework extends EventEmitter {
 
     for (const [header, expected] of Object.entries(securityHeaders)) {
       const value = headers[header];
-      
+
       if (!value) {
         indicators.push(`Missing security header: ${header}`);
       } else if (Array.isArray(expected)) {
@@ -600,29 +622,46 @@ export class SecurityTestingFramework extends EventEmitter {
     }
   }
 
-  private generateRecommendation(test: SecurityTest, vulnerable: boolean): string {
+  private generateRecommendation(
+    test: SecurityTest,
+    vulnerable: boolean
+  ): string {
     if (!vulnerable) {
       return 'No security issues detected. Continue monitoring.';
     }
 
     const recommendations: Record<TestCategory, string> = {
-      authentication: 'Implement proper input validation and rate limiting for authentication endpoints.',
-      authorization: 'Implement proper access controls and verify user permissions for all resources.',
-      input_validation: 'Implement input validation and sanitization for all user inputs.',
-      injection: 'Use parameterized queries and input validation to prevent injection attacks.',
-      encryption: 'Implement proper encryption for data at rest and in transit.',
-      session_management: 'Implement secure session management with proper token handling.',
-      access_control: 'Implement role-based access control and verify permissions.',
+      authentication:
+        'Implement proper input validation and rate limiting for authentication endpoints.',
+      authorization:
+        'Implement proper access controls and verify user permissions for all resources.',
+      input_validation:
+        'Implement input validation and sanitization for all user inputs.',
+      injection:
+        'Use parameterized queries and input validation to prevent injection attacks.',
+      encryption:
+        'Implement proper encryption for data at rest and in transit.',
+      session_management:
+        'Implement secure session management with proper token handling.',
+      access_control:
+        'Implement role-based access control and verify permissions.',
       configuration: 'Review and secure application and server configurations.',
-      business_logic: 'Implement proper business logic validation and constraints.',
-      information_disclosure: 'Implement proper error handling to avoid information leakage.',
+      business_logic:
+        'Implement proper business logic validation and constraints.',
+      information_disclosure:
+        'Implement proper error handling to avoid information leakage.',
       csrf: 'Implement CSRF tokens and validate request origins.',
       xss: 'Implement input validation, output encoding, and Content Security Policy.',
-      file_upload: 'Implement file type validation, size limits, and malware scanning.',
-      api_security: 'Implement proper API authentication, rate limiting, and input validation.',
+      file_upload:
+        'Implement file type validation, size limits, and malware scanning.',
+      api_security:
+        'Implement proper API authentication, rate limiting, and input validation.',
     };
 
-    return recommendations[test.category] || 'Review the security implementation for this component.';
+    return (
+      recommendations[test.category] ||
+      'Review the security implementation for this component.'
+    );
   }
 
   private generateReferences(test: SecurityTest): string[] {
@@ -677,19 +716,19 @@ export class SecurityTestingFramework extends EventEmitter {
     try {
       if (suite.parallel) {
         // Run tests in parallel
-        const promises = suite.tests.map(testId => 
+        const promises = suite.tests.map(testId =>
           this.runTest(testId, context).catch(error => ({ error, testId }))
         );
 
         const results = await Promise.all(promises);
-        
+
         for (const result of results) {
           if ('error' in result) {
             report.failed++;
           } else {
             report.results.push(result);
             report.passed++;
-            
+
             if (result.vulnerable) {
               report.vulnerabilities[result.severity]++;
             }
@@ -702,7 +741,7 @@ export class SecurityTestingFramework extends EventEmitter {
             const result = await this.runTest(testId, context);
             report.results.push(result);
             report.passed++;
-            
+
             if (result.vulnerable) {
               report.vulnerabilities[result.severity]++;
             }
@@ -718,9 +757,8 @@ export class SecurityTestingFramework extends EventEmitter {
       report.recommendations = this.generateSuiteRecommendations(report);
 
       this.emit('suiteCompleted', { suite, report });
-      
-      return report;
 
+      return report;
     } catch (error) {
       this.emit('suiteFailed', { suite, report, error });
       throw error;
@@ -728,8 +766,11 @@ export class SecurityTestingFramework extends EventEmitter {
   }
 
   private generateSummary(report: TestReport): string {
-    const totalVulns = Object.values(report.vulnerabilities).reduce((a, b) => a + b, 0);
-    
+    const totalVulns = Object.values(report.vulnerabilities).reduce(
+      (a, b) => a + b,
+      0
+    );
+
     if (totalVulns === 0) {
       return 'No vulnerabilities detected. Security posture is good.';
     }
@@ -748,7 +789,7 @@ export class SecurityTestingFramework extends EventEmitter {
 
   private generateSuiteRecommendations(report: TestReport): string[] {
     const recommendations = new Set<string>();
-    
+
     report.results.forEach(result => {
       if (result.vulnerable) {
         recommendations.add(result.recommendation);
@@ -756,11 +797,15 @@ export class SecurityTestingFramework extends EventEmitter {
     });
 
     if (report.vulnerabilities.critical > 0) {
-      recommendations.add('Prioritize fixing critical vulnerabilities immediately.');
+      recommendations.add(
+        'Prioritize fixing critical vulnerabilities immediately.'
+      );
     }
 
     if (report.vulnerabilities.high > 0) {
-      recommendations.add('Address high-severity vulnerabilities in the next release cycle.');
+      recommendations.add(
+        'Address high-severity vulnerabilities in the next release cycle.'
+      );
     }
 
     return Array.from(recommendations);
@@ -770,7 +815,10 @@ export class SecurityTestingFramework extends EventEmitter {
     return this.tests.get(testId) || null;
   }
 
-  getTests(filter?: { category?: TestCategory; severity?: TestSeverity }): SecurityTest[] {
+  getTests(filter?: {
+    category?: TestCategory;
+    severity?: TestSeverity;
+  }): SecurityTest[] {
     let tests = Array.from(this.tests.values());
 
     if (filter) {
@@ -794,10 +842,10 @@ export class SecurityTestingFramework extends EventEmitter {
     return (req: Request, res: Response, next: NextFunction) => {
       // This would integrate with CI/CD pipelines
       // to run security tests on each deployment
-      
+
       const originalEnd = res.end;
-      
-      res.end = function(this: Response, ...args: any[]) {
+
+      res.end = function (this: Response, ...args: any[]) {
         // Run lightweight security checks after response
         setImmediate(() => {
           // Example: Check for sensitive data in response

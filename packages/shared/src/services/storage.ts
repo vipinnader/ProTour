@@ -164,9 +164,7 @@ export abstract class StorageProvider {
 
   abstract getStorageStats(): Promise<StorageStats>;
 
-  abstract createUploadSignature(
-    options: UploadOptions
-  ): Promise<{
+  abstract createUploadSignature(options: UploadOptions): Promise<{
     signature: string;
     timestamp: number;
     apiKey: string;
@@ -241,7 +239,9 @@ export class CloudinaryStorageProvider extends StorageProvider {
 
       // Add transformation if provided
       if (options.transformation) {
-        uploadOptions.transformation = this.buildCloudinaryTransformation(options.transformation);
+        uploadOptions.transformation = this.buildCloudinaryTransformation(
+          options.transformation
+        );
       }
 
       // Simulate upload with progress
@@ -277,7 +277,10 @@ export class CloudinaryStorageProvider extends StorageProvider {
         size: result.bytes,
         mimeType: `image/${result.format}`,
         url: result.secure_url,
-        thumbnailUrl: this.generateCloudinaryUrl(result.public_id, { width: 200, height: 200 }),
+        thumbnailUrl: this.generateCloudinaryUrl(result.public_id, {
+          width: 200,
+          height: 200,
+        }),
         metadata: {
           tags: result.tags,
           ...options.metadata,
@@ -298,15 +301,23 @@ export class CloudinaryStorageProvider extends StorageProvider {
     }
   }
 
-  private buildCloudinaryTransformation(transformation: ImageTransformation): any {
+  private buildCloudinaryTransformation(
+    transformation: ImageTransformation
+  ): any {
     const cloudinaryTransformation: any = {};
 
-    if (transformation.width) cloudinaryTransformation.width = transformation.width;
-    if (transformation.height) cloudinaryTransformation.height = transformation.height;
-    if (transformation.crop) cloudinaryTransformation.crop = transformation.crop;
-    if (transformation.gravity) cloudinaryTransformation.gravity = transformation.gravity;
-    if (transformation.quality) cloudinaryTransformation.quality = transformation.quality;
-    if (transformation.format) cloudinaryTransformation.format = transformation.format;
+    if (transformation.width)
+      cloudinaryTransformation.width = transformation.width;
+    if (transformation.height)
+      cloudinaryTransformation.height = transformation.height;
+    if (transformation.crop)
+      cloudinaryTransformation.crop = transformation.crop;
+    if (transformation.gravity)
+      cloudinaryTransformation.gravity = transformation.gravity;
+    if (transformation.quality)
+      cloudinaryTransformation.quality = transformation.quality;
+    if (transformation.format)
+      cloudinaryTransformation.format = transformation.format;
     if (transformation.effects) {
       cloudinaryTransformation.effect = transformation.effects.join(',');
     }
@@ -314,9 +325,12 @@ export class CloudinaryStorageProvider extends StorageProvider {
     return cloudinaryTransformation;
   }
 
-  private generateCloudinaryUrl(publicId: string, transformation?: ImageTransformation): string {
+  private generateCloudinaryUrl(
+    publicId: string,
+    transformation?: ImageTransformation
+  ): string {
     let url = `https://res.cloudinary.com/${this.config.cloudName}/image/upload`;
-    
+
     if (transformation) {
       const params = [];
       if (transformation.width) params.push(`w_${transformation.width}`);
@@ -324,12 +338,12 @@ export class CloudinaryStorageProvider extends StorageProvider {
       if (transformation.crop) params.push(`c_${transformation.crop}`);
       if (transformation.quality) params.push(`q_${transformation.quality}`);
       if (transformation.format) params.push(`f_${transformation.format}`);
-      
+
       if (params.length > 0) {
         url += '/' + params.join(',');
       }
     }
-    
+
     return `${url}/${publicId}`;
   }
 
@@ -344,12 +358,14 @@ export class CloudinaryStorageProvider extends StorageProvider {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const result = await this.uploadFile(file, options, (progress) => {
+      const result = await this.uploadFile(file, options, progress => {
         if (onProgress) {
           const overallProgress: UploadProgress = {
             loaded: i * 100 + progress.percentage,
             total: files.length * 100,
-            percentage: Math.round((i * 100 + progress.percentage) / files.length),
+            percentage: Math.round(
+              (i * 100 + progress.percentage) / files.length
+            ),
             speed: progress.speed,
           };
           onProgress(overallProgress);
@@ -372,7 +388,10 @@ export class CloudinaryStorageProvider extends StorageProvider {
     };
   }
 
-  async uploadFromUrl(url: string, options: UploadOptions = {}): Promise<UploadResult> {
+  async uploadFromUrl(
+    url: string,
+    options: UploadOptions = {}
+  ): Promise<UploadResult> {
     if (!this.initialized) await this.initialize();
 
     try {
@@ -431,9 +450,7 @@ export class CloudinaryStorageProvider extends StorageProvider {
   }
 
   async deleteMultipleFiles(fileIds: string[]): Promise<boolean[]> {
-    const results = await Promise.all(
-      fileIds.map(id => this.deleteFile(id))
-    );
+    const results = await Promise.all(fileIds.map(id => this.deleteFile(id)));
     return results;
   }
 
@@ -488,14 +505,16 @@ export class CloudinaryStorageProvider extends StorageProvider {
         resources: [
           {
             public_id: 'sample_file_1',
-            secure_url: 'https://res.cloudinary.com/demo/image/upload/sample1.jpg',
+            secure_url:
+              'https://res.cloudinary.com/demo/image/upload/sample1.jpg',
             format: 'jpg',
             bytes: 1024 * 400,
             created_at: new Date().toISOString(),
           },
           {
             public_id: 'sample_file_2',
-            secure_url: 'https://res.cloudinary.com/demo/image/upload/sample2.jpg',
+            secure_url:
+              'https://res.cloudinary.com/demo/image/upload/sample2.jpg',
             format: 'png',
             bytes: 1024 * 600,
             created_at: new Date().toISOString(),
@@ -535,19 +554,27 @@ export class CloudinaryStorageProvider extends StorageProvider {
     let url = `https://res.cloudinary.com/${this.config.cloudName}/image/upload`;
 
     if (options.transformation && 'width' in options.transformation) {
-      url += '/' + Object.entries(options.transformation)
-        .filter(([_, value]) => value !== undefined)
-        .map(([key, value]) => {
-          switch (key) {
-            case 'width': return `w_${value}`;
-            case 'height': return `h_${value}`;
-            case 'crop': return `c_${value}`;
-            case 'quality': return `q_${value}`;
-            case 'format': return `f_${value}`;
-            default: return `${key}_${value}`;
-          }
-        })
-        .join(',');
+      url +=
+        '/' +
+        Object.entries(options.transformation)
+          .filter(([_, value]) => value !== undefined)
+          .map(([key, value]) => {
+            switch (key) {
+              case 'width':
+                return `w_${value}`;
+              case 'height':
+                return `h_${value}`;
+              case 'crop':
+                return `c_${value}`;
+              case 'quality':
+                return `q_${value}`;
+              case 'format':
+                return `f_${value}`;
+              default:
+                return `${key}_${value}`;
+            }
+          })
+          .join(',');
     }
 
     url += `/${fileId}`;
@@ -579,11 +606,11 @@ export class CloudinaryStorageProvider extends StorageProvider {
     try {
       // Build search expression
       let expression = query;
-      
+
       if (filters?.tags) {
         expression += ` AND tags:(${filters.tags.join(' OR ')})`;
       }
-      
+
       if (filters?.folder) {
         expression += ` AND folder:${filters.folder}`;
       }
@@ -628,19 +655,17 @@ export class CloudinaryStorageProvider extends StorageProvider {
     }
   }
 
-  async createUploadSignature(
-    options: UploadOptions
-  ): Promise<{
+  async createUploadSignature(options: UploadOptions): Promise<{
     signature: string;
     timestamp: number;
     apiKey: string;
     uploadUrl: string;
   }> {
     const timestamp = Math.round(new Date().getTime() / 1000);
-    
+
     // In real implementation, generate signature using Cloudinary utils
     // const signature = this.cloudinary.utils.api_sign_request(params, this.config.apiSecret);
-    
+
     return {
       signature: `mock_signature_${timestamp}`,
       timestamp,
@@ -686,9 +711,9 @@ export class AWSS3StorageProvider extends StorageProvider {
     if (!this.initialized) await this.initialize();
 
     try {
-      const key = options.folder ? 
-        `${options.folder}/${options.filename || Date.now()}` : 
-        options.filename || Date.now().toString();
+      const key = options.folder
+        ? `${options.folder}/${options.filename || Date.now()}`
+        : options.filename || Date.now().toString();
 
       const uploadParams = {
         Bucket: this.config.bucketName!,
@@ -767,10 +792,12 @@ export class AWSS3StorageProvider extends StorageProvider {
     onProgress?: (progress: UploadProgress) => void
   ): Promise<BatchUploadResult> {
     const results = await Promise.all(
-      files.map((file, index) => 
+      files.map((file, index) =>
         this.uploadFile(file, {
           ...options,
-          filename: options.filename ? `${options.filename}_${index}` : undefined,
+          filename: options.filename
+            ? `${options.filename}_${index}`
+            : undefined,
         })
       )
     );
@@ -786,7 +813,10 @@ export class AWSS3StorageProvider extends StorageProvider {
     };
   }
 
-  async uploadFromUrl(url: string, options: UploadOptions = {}): Promise<UploadResult> {
+  async uploadFromUrl(
+    url: string,
+    options: UploadOptions = {}
+  ): Promise<UploadResult> {
     try {
       // Fetch the file from URL and upload to S3
       // const response = await fetch(url);
@@ -836,7 +866,7 @@ export class AWSS3StorageProvider extends StorageProvider {
       //     Objects: fileIds.map(Key => ({ Key })),
       //   },
       // };
-      // 
+      //
       // await this.s3.deleteObjects(deleteParams).promise();
 
       return fileIds.map(() => true);
@@ -846,15 +876,31 @@ export class AWSS3StorageProvider extends StorageProvider {
   }
 
   // Implement remaining methods similar to Cloudinary
-  async getFile(): Promise<StorageFile | null> { return null; }
-  async listFiles(): Promise<{ files: StorageFile[]; nextCursor?: string; hasMore: boolean }> { 
-    return { files: [], hasMore: false }; 
+  async getFile(): Promise<StorageFile | null> {
+    return null;
   }
-  async getDownloadUrl(): Promise<string> { return ''; }
-  async generateThumbnail(): Promise<string> { return ''; }
-  async searchFiles(): Promise<StorageFile[]> { return []; }
-  async getStorageStats(): Promise<StorageStats> { return {} as StorageStats; }
-  async createUploadSignature(): Promise<any> { return {}; }
+  async listFiles(): Promise<{
+    files: StorageFile[];
+    nextCursor?: string;
+    hasMore: boolean;
+  }> {
+    return { files: [], hasMore: false };
+  }
+  async getDownloadUrl(): Promise<string> {
+    return '';
+  }
+  async generateThumbnail(): Promise<string> {
+    return '';
+  }
+  async searchFiles(): Promise<StorageFile[]> {
+    return [];
+  }
+  async getStorageStats(): Promise<StorageStats> {
+    return {} as StorageStats;
+  }
+  async createUploadSignature(): Promise<any> {
+    return {};
+  }
 }
 
 /**
@@ -862,19 +908,49 @@ export class AWSS3StorageProvider extends StorageProvider {
  */
 export class GCPStorageProvider extends StorageProvider {
   // Similar implementation to S3
-  async initialize(): Promise<void> { console.log('[Storage] GCP Storage initialized'); }
-  async uploadFile(): Promise<UploadResult> { return { success: false, error: 'Not implemented' }; }
-  async uploadMultipleFiles(): Promise<BatchUploadResult> { return { success: false, results: [], successCount: 0, failureCount: 0 }; }
-  async uploadFromUrl(): Promise<UploadResult> { return { success: false, error: 'Not implemented' }; }
-  async deleteFile(): Promise<boolean> { return false; }
-  async deleteMultipleFiles(): Promise<boolean[]> { return []; }
-  async getFile(): Promise<StorageFile | null> { return null; }
-  async listFiles(): Promise<{ files: StorageFile[]; nextCursor?: string; hasMore: boolean }> { return { files: [], hasMore: false }; }
-  async getDownloadUrl(): Promise<string> { return ''; }
-  async generateThumbnail(): Promise<string> { return ''; }
-  async searchFiles(): Promise<StorageFile[]> { return []; }
-  async getStorageStats(): Promise<StorageStats> { return {} as StorageStats; }
-  async createUploadSignature(): Promise<any> { return {}; }
+  async initialize(): Promise<void> {
+    console.log('[Storage] GCP Storage initialized');
+  }
+  async uploadFile(): Promise<UploadResult> {
+    return { success: false, error: 'Not implemented' };
+  }
+  async uploadMultipleFiles(): Promise<BatchUploadResult> {
+    return { success: false, results: [], successCount: 0, failureCount: 0 };
+  }
+  async uploadFromUrl(): Promise<UploadResult> {
+    return { success: false, error: 'Not implemented' };
+  }
+  async deleteFile(): Promise<boolean> {
+    return false;
+  }
+  async deleteMultipleFiles(): Promise<boolean[]> {
+    return [];
+  }
+  async getFile(): Promise<StorageFile | null> {
+    return null;
+  }
+  async listFiles(): Promise<{
+    files: StorageFile[];
+    nextCursor?: string;
+    hasMore: boolean;
+  }> {
+    return { files: [], hasMore: false };
+  }
+  async getDownloadUrl(): Promise<string> {
+    return '';
+  }
+  async generateThumbnail(): Promise<string> {
+    return '';
+  }
+  async searchFiles(): Promise<StorageFile[]> {
+    return [];
+  }
+  async getStorageStats(): Promise<StorageStats> {
+    return {} as StorageStats;
+  }
+  async createUploadSignature(): Promise<any> {
+    return {};
+  }
 }
 
 /**
@@ -909,11 +985,13 @@ export class FirebaseStorageProvider extends StorageProvider {
 
     try {
       const fileName = options.filename || `upload_${Date.now()}`;
-      const filePath = options.folder ? `${options.folder}/${fileName}` : fileName;
-      
+      const filePath = options.folder
+        ? `${options.folder}/${fileName}`
+        : fileName;
+
       // const bucket = this.storage.bucket();
       // const fileRef = bucket.file(filePath);
-      
+
       // Upload with progress simulation
       if (onProgress) {
         for (let i = 0; i <= 100; i += 20) {
@@ -971,21 +1049,41 @@ export class FirebaseStorageProvider extends StorageProvider {
   }
 
   // Implement remaining methods similar to other providers
-  async uploadMultipleFiles(): Promise<BatchUploadResult> { 
-    return { success: true, results: [], successCount: 0, failureCount: 0 }; 
+  async uploadMultipleFiles(): Promise<BatchUploadResult> {
+    return { success: true, results: [], successCount: 0, failureCount: 0 };
   }
-  async uploadFromUrl(): Promise<UploadResult> { 
-    return { success: false, error: 'Not implemented' }; 
+  async uploadFromUrl(): Promise<UploadResult> {
+    return { success: false, error: 'Not implemented' };
   }
-  async deleteFile(): Promise<boolean> { return true; }
-  async deleteMultipleFiles(): Promise<boolean[]> { return []; }
-  async getFile(): Promise<StorageFile | null> { return null; }
-  async listFiles(): Promise<{ files: StorageFile[]; nextCursor?: string; hasMore: boolean }> { 
-    return { files: [], hasMore: false }; 
+  async deleteFile(): Promise<boolean> {
+    return true;
   }
-  async getDownloadUrl(): Promise<string> { return ''; }
-  async generateThumbnail(): Promise<string> { return ''; }
-  async searchFiles(): Promise<StorageFile[]> { return []; }
-  async getStorageStats(): Promise<StorageStats> { return {} as StorageStats; }
-  async createUploadSignature(): Promise<any> { return {}; }
+  async deleteMultipleFiles(): Promise<boolean[]> {
+    return [];
+  }
+  async getFile(): Promise<StorageFile | null> {
+    return null;
+  }
+  async listFiles(): Promise<{
+    files: StorageFile[];
+    nextCursor?: string;
+    hasMore: boolean;
+  }> {
+    return { files: [], hasMore: false };
+  }
+  async getDownloadUrl(): Promise<string> {
+    return '';
+  }
+  async generateThumbnail(): Promise<string> {
+    return '';
+  }
+  async searchFiles(): Promise<StorageFile[]> {
+    return [];
+  }
+  async getStorageStats(): Promise<StorageStats> {
+    return {} as StorageStats;
+  }
+  async createUploadSignature(): Promise<any> {
+    return {};
+  }
 }

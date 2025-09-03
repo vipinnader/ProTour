@@ -45,7 +45,7 @@ export interface DataCategory {
   thirdParties: string[]; // who has access
 }
 
-export type DataProcessingPurpose = 
+export type DataProcessingPurpose =
   | 'account_management'
   | 'service_provision'
   | 'payment_processing'
@@ -66,7 +66,13 @@ export type LegalBasis =
 export interface PrivacyRequest {
   id: string;
   subjectId: string;
-  type: 'access' | 'rectification' | 'erasure' | 'portability' | 'restriction' | 'objection';
+  type:
+    | 'access'
+    | 'rectification'
+    | 'erasure'
+    | 'portability'
+    | 'restriction'
+    | 'objection';
   status: 'pending' | 'in_progress' | 'completed' | 'rejected' | 'expired';
   requestDate: Date;
   deadline: Date;
@@ -134,18 +140,20 @@ export class PrivacyManager {
   private subjects: Map<string, DataSubject> = new Map();
   private requests: Map<string, PrivacyRequest> = new Map();
   private breaches: Map<string, DataBreachIncident> = new Map();
-  
-  constructor(private config: {
-    defaultRetentionDays: number;
-    requestDeadlineDays: number;
-    breachNotificationHours: number;
-    consentExpiryDays: number;
-  } = {
-    defaultRetentionDays: 365,
-    requestDeadlineDays: 30,
-    breachNotificationHours: 72,
-    consentExpiryDays: 365,
-  }) {}
+
+  constructor(
+    private config: {
+      defaultRetentionDays: number;
+      requestDeadlineDays: number;
+      breachNotificationHours: number;
+      consentExpiryDays: number;
+    } = {
+      defaultRetentionDays: 365,
+      requestDeadlineDays: 30,
+      breachNotificationHours: 72,
+      consentExpiryDays: 365,
+    }
+  ) {}
 
   /**
    * Register new data subject
@@ -180,7 +188,11 @@ export class PrivacyManager {
     };
 
     const consentStatus: ConsentStatus = {
-      essential: { ...defaultConsent, granted: true, method: 'legitimate_interest' },
+      essential: {
+        ...defaultConsent,
+        granted: true,
+        method: 'legitimate_interest',
+      },
       marketing: initialConsents.marketing || defaultConsent,
       analytics: initialConsents.analytics || defaultConsent,
       thirdParty: initialConsents.thirdParty || defaultConsent,
@@ -200,8 +212,11 @@ export class PrivacyManager {
     this.subjects.set(id, subject);
 
     // Log the registration
-    console.log(`[Privacy] Registered data subject ${id} with consents:`, 
-      Object.entries(consentStatus).filter(([_, record]) => record.granted).map(([key]) => key)
+    console.log(
+      `[Privacy] Registered data subject ${id} with consents:`,
+      Object.entries(consentStatus)
+        .filter(([_, record]) => record.granted)
+        .map(([key]) => key)
     );
 
     return subject;
@@ -248,7 +263,9 @@ export class PrivacyManager {
       await this.handleConsentWithdrawal(subjectId, consentType);
     }
 
-    console.log(`[Privacy] Updated ${consentType} consent for ${subjectId}: ${granted}`);
+    console.log(
+      `[Privacy] Updated ${consentType} consent for ${subjectId}: ${granted}`
+    );
   }
 
   /**
@@ -269,7 +286,9 @@ export class PrivacyManager {
     }
 
     const now = new Date();
-    const deadline = new Date(now.getTime() + this.config.requestDeadlineDays * 24 * 60 * 60 * 1000);
+    const deadline = new Date(
+      now.getTime() + this.config.requestDeadlineDays * 24 * 60 * 60 * 1000
+    );
 
     const request: PrivacyRequest = {
       id: this.generateId('req'),
@@ -290,7 +309,9 @@ export class PrivacyManager {
       setTimeout(() => this.processAccessRequest(request.id), 1000);
     }
 
-    console.log(`[Privacy] Submitted ${type} request ${request.id} for subject ${subjectId}`);
+    console.log(
+      `[Privacy] Submitted ${type} request ${request.id} for subject ${subjectId}`
+    );
     return request;
   }
 
@@ -309,7 +330,9 @@ export class PrivacyManager {
     }
 
     request.status = 'in_progress';
-    request.processingNotes.push(`Started processing access request at ${new Date().toISOString()}`);
+    request.processingNotes.push(
+      `Started processing access request at ${new Date().toISOString()}`
+    );
 
     // Collect all data for the subject
     const personalData = {
@@ -340,7 +363,9 @@ export class PrivacyManager {
     request.response = JSON.stringify(response, null, 2);
     request.status = 'completed';
     request.completedAt = new Date();
-    request.processingNotes.push(`Completed access request at ${new Date().toISOString()}`);
+    request.processingNotes.push(
+      `Completed access request at ${new Date().toISOString()}`
+    );
 
     console.log(`[Privacy] Completed access request ${requestId}`);
   }
@@ -348,7 +373,10 @@ export class PrivacyManager {
   /**
    * Process data erasure request (GDPR Article 17)
    */
-  async processErasureRequest(requestId: string, reason: string): Promise<void> {
+  async processErasureRequest(
+    requestId: string,
+    reason: string
+  ): Promise<void> {
     const request = this.requests.get(requestId);
     if (!request || request.type !== 'erasure') {
       throw new Error(`Invalid erasure request: ${requestId}`);
@@ -392,7 +420,7 @@ export class PrivacyManager {
     cause: string
   ): Promise<DataBreachIncident> {
     const now = new Date();
-    
+
     const breach: DataBreachIncident = {
       id: this.generateId('breach'),
       detectedAt: now,
@@ -403,7 +431,10 @@ export class PrivacyManager {
       description,
       cause,
       containmentActions: [],
-      notificationRequired: this.isNotificationRequired(severity, affectedSubjectIds.length),
+      notificationRequired: this.isNotificationRequired(
+        severity,
+        affectedSubjectIds.length
+      ),
       authorityNotified: false,
       subjectsNotified: false,
       status: 'open',
@@ -416,27 +447,36 @@ export class PrivacyManager {
       setTimeout(() => this.notifyDataBreach(breach.id), 1000);
     }
 
-    console.log(`[Privacy] Reported ${severity} data breach ${breach.id} affecting ${affectedSubjectIds.length} subjects`);
+    console.log(
+      `[Privacy] Reported ${severity} data breach ${breach.id} affecting ${affectedSubjectIds.length} subjects`
+    );
     return breach;
   }
 
   /**
    * Generate privacy report
    */
-  async generatePrivacyReport(period: { start: Date; end: Date }): Promise<PrivacyReport> {
-    const subjects = Array.from(this.subjects.values())
-      .filter(s => s.registrationDate >= period.start && s.registrationDate <= period.end);
-    
-    const requests = Array.from(this.requests.values())
-      .filter(r => r.requestDate >= period.start && r.requestDate <= period.end);
-    
-    const breaches = Array.from(this.breaches.values())
-      .filter(b => b.detectedAt >= period.start && b.detectedAt <= period.end);
+  async generatePrivacyReport(period: {
+    start: Date;
+    end: Date;
+  }): Promise<PrivacyReport> {
+    const subjects = Array.from(this.subjects.values()).filter(
+      s =>
+        s.registrationDate >= period.start && s.registrationDate <= period.end
+    );
+
+    const requests = Array.from(this.requests.values()).filter(
+      r => r.requestDate >= period.start && r.requestDate <= period.end
+    );
+
+    const breaches = Array.from(this.breaches.values()).filter(
+      b => b.detectedAt >= period.start && b.detectedAt <= period.end
+    );
 
     const consentStatistics = this.calculateConsentStatistics(subjects);
     const requestStatistics = this.calculateRequestStatistics(requests);
     const breachStatistics = this.calculateBreachStatistics(breaches);
-    
+
     const complianceScore = this.calculateComplianceScore(
       consentStatistics,
       requestStatistics,
@@ -466,7 +506,10 @@ export class PrivacyManager {
     const subject = this.subjects.get(subjectId);
     if (!subject) return false;
 
-    const purposeConsentMap: Record<DataProcessingPurpose, keyof ConsentStatus> = {
+    const purposeConsentMap: Record<
+      DataProcessingPurpose,
+      keyof ConsentStatus
+    > = {
       account_management: 'essential',
       service_provision: 'essential',
       payment_processing: 'essential',
@@ -479,7 +522,7 @@ export class PrivacyManager {
 
     const consentType = purposeConsentMap[purpose];
     const consent = subject.consentStatus[consentType];
-    
+
     return consent.granted && !this.isConsentExpired(consent);
   }
 
@@ -488,8 +531,9 @@ export class PrivacyManager {
   }
 
   private getDefaultDataCategories(jurisdiction: string): DataCategory[] {
-    const retentionPeriod = jurisdiction === 'EU' ? 1095 : this.config.defaultRetentionDays; // 3 years for EU
-    
+    const retentionPeriod =
+      jurisdiction === 'EU' ? 1095 : this.config.defaultRetentionDays; // 3 years for EU
+
     return [
       {
         category: 'personal',
@@ -514,8 +558,10 @@ export class PrivacyManager {
     subjectId: string,
     consentType: keyof ConsentStatus
   ): Promise<void> {
-    console.log(`[Privacy] Handling consent withdrawal for ${subjectId}: ${consentType}`);
-    
+    console.log(
+      `[Privacy] Handling consent withdrawal for ${subjectId}: ${consentType}`
+    );
+
     // Implement specific actions based on consent type
     switch (consentType) {
       case 'marketing':
@@ -565,7 +611,9 @@ export class PrivacyManager {
   }
 
   private getDataRecipients(subject: DataSubject): string[] {
-    return [...new Set(subject.dataCategories.flatMap(cat => cat.thirdParties))];
+    return [
+      ...new Set(subject.dataCategories.flatMap(cat => cat.thirdParties)),
+    ];
   }
 
   private getRetentionPeriods(subject: DataSubject): Record<string, number> {
@@ -578,30 +626,33 @@ export class PrivacyManager {
 
   private getDataSubjectRights(subject: DataSubject): string[] {
     const baseRights = ['access', 'rectification', 'portability'];
-    
+
     if (subject.jurisdiction === 'EU') {
       baseRights.push('erasure', 'restriction', 'objection');
     }
-    
+
     return baseRights;
   }
 
-  private canEraseData(subject: DataSubject, reason: string): { allowed: boolean; reason?: string } {
+  private canEraseData(
+    subject: DataSubject,
+    reason: string
+  ): { allowed: boolean; reason?: string } {
     // Check legal obligations
     const hasLegalObligation = subject.dataCategories.some(
       cat => cat.legalBasis === 'legal_obligation'
     );
-    
+
     if (hasLegalObligation) {
-      return { 
-        allowed: false, 
-        reason: 'Data required for legal compliance cannot be erased' 
+      return {
+        allowed: false,
+        reason: 'Data required for legal compliance cannot be erased',
       };
     }
 
     // Check ongoing contracts
     // In a real implementation, check if user has active tournaments, pending payments, etc.
-    
+
     return { allowed: true };
   }
 
@@ -611,14 +662,19 @@ export class PrivacyManager {
     // 2. Update third-party systems
     // 3. Create audit trail
     // 4. Verify complete erasure
-    
+
     console.log(`[Privacy] Erasing all data for subject ${subjectId}`);
     this.subjects.delete(subjectId);
   }
 
-  private isNotificationRequired(severity: string, affectedCount: number): boolean {
+  private isNotificationRequired(
+    severity: string,
+    affectedCount: number
+  ): boolean {
     // EU GDPR: Must notify if high risk to rights and freedoms
-    return severity === 'high' || severity === 'critical' || affectedCount > 100;
+    return (
+      severity === 'high' || severity === 'critical' || affectedCount > 100
+    );
   }
 
   private async notifyDataBreach(breachId: string): Promise<void> {
@@ -629,16 +685,19 @@ export class PrivacyManager {
     // 1. Notify supervisory authority within 72 hours
     // 2. Notify affected data subjects if high risk
     // 3. Create detailed breach report
-    
+
     breach.reportedAt = new Date();
     breach.authorityNotified = true;
     breach.subjectsNotified = breach.severity === 'critical';
-    
+
     console.log(`[Privacy] Notified authorities of data breach ${breachId}`);
   }
 
   private isConsentExpired(consent: ConsentRecord): boolean {
-    const expiryDate = new Date(consent.timestamp.getTime() + this.config.consentExpiryDays * 24 * 60 * 60 * 1000);
+    const expiryDate = new Date(
+      consent.timestamp.getTime() +
+        this.config.consentExpiryDays * 24 * 60 * 60 * 1000
+    );
     return new Date() > expiryDate;
   }
 
@@ -659,7 +718,9 @@ export class PrivacyManager {
     console.log(`[Privacy] Stopped location tracking for ${subjectId}`);
   }
 
-  private calculateConsentStatistics(subjects: DataSubject[]): ConsentStatistics {
+  private calculateConsentStatistics(
+    subjects: DataSubject[]
+  ): ConsentStatistics {
     const stats: ConsentStatistics = {
       totalSubjects: subjects.length,
       consentRates: {} as any,
@@ -669,56 +730,97 @@ export class PrivacyManager {
     };
 
     // Calculate consent rates for each type
-    (['marketing', 'analytics', 'thirdParty', 'location', 'communications'] as const).forEach(type => {
-      const granted = subjects.filter(s => s.consentStatus[type].granted).length;
-      const withdrawn = subjects.filter(s => s.consentStatus[type].withdrawnAt).length;
-      
-      stats.consentRates[type] = subjects.length > 0 ? granted / subjects.length : 0;
-      stats.withdrawalRates[type] = subjects.length > 0 ? withdrawn / subjects.length : 0;
+    (
+      [
+        'marketing',
+        'analytics',
+        'thirdParty',
+        'location',
+        'communications',
+      ] as const
+    ).forEach(type => {
+      const granted = subjects.filter(
+        s => s.consentStatus[type].granted
+      ).length;
+      const withdrawn = subjects.filter(
+        s => s.consentStatus[type].withdrawnAt
+      ).length;
+
+      stats.consentRates[type] =
+        subjects.length > 0 ? granted / subjects.length : 0;
+      stats.withdrawalRates[type] =
+        subjects.length > 0 ? withdrawn / subjects.length : 0;
     });
 
     return stats;
   }
 
-  private calculateRequestStatistics(requests: PrivacyRequest[]): RequestStatistics {
+  private calculateRequestStatistics(
+    requests: PrivacyRequest[]
+  ): RequestStatistics {
     const completedRequests = requests.filter(r => r.status === 'completed');
-    const averageProcessingTime = completedRequests.length > 0 ? 
-      completedRequests.reduce((sum, r) => {
-        const processingTime = r.completedAt!.getTime() - r.requestDate.getTime();
-        return sum + processingTime;
-      }, 0) / completedRequests.length : 0;
+    const averageProcessingTime =
+      completedRequests.length > 0
+        ? completedRequests.reduce((sum, r) => {
+            const processingTime =
+              r.completedAt!.getTime() - r.requestDate.getTime();
+            return sum + processingTime;
+          }, 0) / completedRequests.length
+        : 0;
 
-    const requestsByType = requests.reduce((acc, r) => {
-      acc[r.type] = (acc[r.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const requestsByType = requests.reduce(
+      (acc, r) => {
+        acc[r.type] = (acc[r.type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     return {
       totalRequests: requests.length,
       requestsByType,
       averageProcessingTime: averageProcessingTime / (1000 * 60 * 60), // Convert to hours
-      completionRate: requests.length > 0 ? completedRequests.length / requests.length : 0,
-      overduceRequests: requests.filter(r => r.deadline < new Date() && r.status !== 'completed').length,
+      completionRate:
+        requests.length > 0 ? completedRequests.length / requests.length : 0,
+      overduceRequests: requests.filter(
+        r => r.deadline < new Date() && r.status !== 'completed'
+      ).length,
     };
   }
 
-  private calculateBreachStatistics(breaches: DataBreachIncident[]): BreachStatistics {
-    const breachesBySeverity = breaches.reduce((acc, b) => {
-      acc[b.severity] = (acc[b.severity] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+  private calculateBreachStatistics(
+    breaches: DataBreachIncident[]
+  ): BreachStatistics {
+    const breachesBySeverity = breaches.reduce(
+      (acc, b) => {
+        acc[b.severity] = (acc[b.severity] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     const reportedBreaches = breaches.filter(b => b.reportedAt);
-    const averageResponseTime = reportedBreaches.length > 0 ?
-      reportedBreaches.reduce((sum, b) => {
-        const responseTime = b.reportedAt!.getTime() - b.detectedAt.getTime();
-        return sum + responseTime;
-      }, 0) / reportedBreaches.length : 0;
+    const averageResponseTime =
+      reportedBreaches.length > 0
+        ? reportedBreaches.reduce((sum, b) => {
+            const responseTime =
+              b.reportedAt!.getTime() - b.detectedAt.getTime();
+            return sum + responseTime;
+          }, 0) / reportedBreaches.length
+        : 0;
 
-    const affectedSubjectsTotal = breaches.reduce((sum, b) => sum + b.affectedSubjects, 0);
-    const notifiedBreaches = breaches.filter(b => b.authorityNotified && b.notificationRequired);
-    const notificationCompliance = breaches.filter(b => b.notificationRequired).length > 0 ?
-      notifiedBreaches.length / breaches.filter(b => b.notificationRequired).length : 1;
+    const affectedSubjectsTotal = breaches.reduce(
+      (sum, b) => sum + b.affectedSubjects,
+      0
+    );
+    const notifiedBreaches = breaches.filter(
+      b => b.authorityNotified && b.notificationRequired
+    );
+    const notificationCompliance =
+      breaches.filter(b => b.notificationRequired).length > 0
+        ? notifiedBreaches.length /
+          breaches.filter(b => b.notificationRequired).length
+        : 1;
 
     return {
       totalBreaches: breaches.length,
@@ -737,7 +839,9 @@ export class PrivacyManager {
     let score = 100;
 
     // Deduct for poor consent management
-    const avgConsentRate = Object.values(consent.consentRates).reduce((a, b) => a + b, 0) / Object.keys(consent.consentRates).length;
+    const avgConsentRate =
+      Object.values(consent.consentRates).reduce((a, b) => a + b, 0) /
+      Object.keys(consent.consentRates).length;
     if (avgConsentRate < 0.3) score -= 20;
 
     // Deduct for poor request handling
@@ -763,15 +867,21 @@ export class PrivacyManager {
     }
 
     if (requests.overduceRequests > 0) {
-      recommendations.push('Implement automated request processing to meet deadlines');
+      recommendations.push(
+        'Implement automated request processing to meet deadlines'
+      );
     }
 
     if (breaches.totalBreaches > 0) {
-      recommendations.push('Strengthen security measures to prevent data breaches');
+      recommendations.push(
+        'Strengthen security measures to prevent data breaches'
+      );
     }
 
     if (breaches.notificationCompliance < 1) {
-      recommendations.push('Improve breach notification procedures and timelines');
+      recommendations.push(
+        'Improve breach notification procedures and timelines'
+      );
     }
 
     recommendations.push('Conduct regular privacy training for all staff');

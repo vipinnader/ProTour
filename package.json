@@ -44,7 +44,7 @@
     "firebase:setup": "firebase init",
     "mobile:setup": "node scripts/setup-mobile.js",
     "mobile:ios": "cd apps/mobile && npm run ios",
-    "mobile:android": "cd apps/mobile && npm run android", 
+    "mobile:android": "cd apps/mobile && npm run android",
     "mobile:start": "cd apps/mobile && npm run start",
     "version:bump": "node scripts/version-manager.js bump",
     "version:status": "node scripts/version-manager.js status",

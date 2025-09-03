@@ -22,14 +22,11 @@ const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = ({
   visible,
   onClose,
 }) => {
-  const {
-    conflicts,
-    resolveWithLocal,
-    resolveWithRemote,
-    resolveManually,
-  } = useConflictResolution();
-  
-  const [selectedConflict, setSelectedConflict] = useState<ConflictResolution | null>(null);
+  const { conflicts, resolveWithLocal, resolveWithRemote, resolveManually } =
+    useConflictResolution();
+
+  const [selectedConflict, setSelectedConflict] =
+    useState<ConflictResolution | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
   const handleResolveLocal = async (conflictId: string) => {
@@ -96,11 +93,12 @@ const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = ({
         </View>
 
         <Text style={styles.subtitle}>
-          Multiple devices modified the same data. Please choose which version to keep.
+          Multiple devices modified the same data. Please choose which version
+          to keep.
         </Text>
 
         <ScrollView style={styles.conflictsList}>
-          {conflicts.map((conflict) => (
+          {conflicts.map(conflict => (
             <View key={conflict.conflictId} style={styles.conflictItem}>
               <View style={styles.conflictHeader}>
                 <Text style={styles.conflictTitle}>
@@ -116,27 +114,37 @@ const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = ({
                   <Text style={styles.versionTitle}>Your Version (Local)</Text>
                   <Text style={styles.versionPreview}>
                     {formatData(conflict.localVersion).substring(0, 100)}
-                    {formatData(conflict.localVersion).length > 100 ? '...' : ''}
+                    {formatData(conflict.localVersion).length > 100
+                      ? '...'
+                      : ''}
                   </Text>
                   <TouchableOpacity
                     style={[styles.resolveButton, styles.localButton]}
                     onPress={() => handleResolveLocal(conflict.conflictId)}
                   >
-                    <Text style={styles.resolveButtonText}>Use This Version</Text>
+                    <Text style={styles.resolveButtonText}>
+                      Use This Version
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
                 <View style={styles.versionCard}>
-                  <Text style={styles.versionTitle}>Server Version (Remote)</Text>
+                  <Text style={styles.versionTitle}>
+                    Server Version (Remote)
+                  </Text>
                   <Text style={styles.versionPreview}>
                     {formatData(conflict.remoteVersion).substring(0, 100)}
-                    {formatData(conflict.remoteVersion).length > 100 ? '...' : ''}
+                    {formatData(conflict.remoteVersion).length > 100
+                      ? '...'
+                      : ''}
                   </Text>
                   <TouchableOpacity
                     style={[styles.resolveButton, styles.remoteButton]}
                     onPress={() => handleResolveRemote(conflict.conflictId)}
                   >
-                    <Text style={styles.resolveButtonText}>Use This Version</Text>
+                    <Text style={styles.resolveButtonText}>
+                      Use This Version
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -191,7 +199,9 @@ const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = ({
                   </Text>
                 </View>
 
-                <Text style={styles.detailsTitle}>Server Version (Remote):</Text>
+                <Text style={styles.detailsTitle}>
+                  Server Version (Remote):
+                </Text>
                 <View style={styles.codeBlock}>
                   <Text style={styles.codeText}>
                     {formatData(selectedConflict.remoteVersion)}
@@ -207,7 +217,9 @@ const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = ({
                     setShowDetails(false);
                   }}
                 >
-                  <Text style={styles.resolveButtonText}>Use Local Version</Text>
+                  <Text style={styles.resolveButtonText}>
+                    Use Local Version
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -217,7 +229,9 @@ const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = ({
                     setShowDetails(false);
                   }}
                 >
-                  <Text style={styles.resolveButtonText}>Use Remote Version</Text>
+                  <Text style={styles.resolveButtonText}>
+                    Use Remote Version
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>

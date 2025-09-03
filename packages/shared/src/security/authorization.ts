@@ -28,7 +28,16 @@ export interface ResourcePermission {
   actions: string[];
   conditions?: {
     field: string;
-    operator: 'eq' | 'ne' | 'in' | 'nin' | 'gt' | 'gte' | 'lt' | 'lte' | 'exists';
+    operator:
+      | 'eq'
+      | 'ne'
+      | 'in'
+      | 'nin'
+      | 'gt'
+      | 'gte'
+      | 'lt'
+      | 'lte'
+      | 'exists';
     value: any;
   }[];
 }
@@ -196,7 +205,7 @@ export class RoleManager {
     };
 
     this.roles.set(role.name, roleDefinition);
-    
+
     if (role.inherits) {
       this.roleHierarchy.set(role.name, new Set(role.inherits));
     }
@@ -279,7 +288,10 @@ export class RoleManager {
     return Array.from(permissions);
   }
 
-  private addInheritedPermissions(roleName: Role, permissions: Set<Permission>): void {
+  private addInheritedPermissions(
+    roleName: Role,
+    permissions: Set<Permission>
+  ): void {
     const inherited = this.roleHierarchy.get(roleName);
     if (!inherited) {
       return;
@@ -300,7 +312,9 @@ export class RoleManager {
 
   hasPermission(userId: string, permission: Permission): boolean {
     const userPermissions = this.getUserPermissions(userId);
-    return userPermissions.includes('*') || userPermissions.includes(permission);
+    return (
+      userPermissions.includes('*') || userPermissions.includes(permission)
+    );
   }
 
   hasRole(userId: string, role: Role): boolean {
@@ -340,9 +354,11 @@ export class PolicyManager {
 
   evaluatePolicy(context: AuthorizationContext): boolean {
     const applicablePolicies = this.getApplicablePolicies(context);
-    
+
     // Sort by priority (higher priority first)
-    const sortedPolicies = applicablePolicies.sort((a, b) => b.priority - a.priority);
+    const sortedPolicies = applicablePolicies.sort(
+      (a, b) => b.priority - a.priority
+    );
 
     for (const policy of sortedPolicies) {
       if (this.matchesPolicy(context, policy)) {
@@ -355,36 +371,51 @@ export class PolicyManager {
   }
 
   private getApplicablePolicies(context: AuthorizationContext): PolicyRule[] {
-    return Array.from(this.policies.values()).filter(policy => 
-      policy.isActive && this.isPolicyApplicable(context, policy)
+    return Array.from(this.policies.values()).filter(
+      policy => policy.isActive && this.isPolicyApplicable(context, policy)
     );
   }
 
-  private isPolicyApplicable(context: AuthorizationContext, policy: PolicyRule): boolean {
+  private isPolicyApplicable(
+    context: AuthorizationContext,
+    policy: PolicyRule
+  ): boolean {
     // Check if user matches subjects
-    const matchesSubjects = 
-      !policy.subjects.users || policy.subjects.users.includes(context.userId) ||
-      !policy.subjects.roles || policy.subjects.roles.some(role => context.role === role);
+    const matchesSubjects =
+      !policy.subjects.users ||
+      policy.subjects.users.includes(context.userId) ||
+      !policy.subjects.roles ||
+      policy.subjects.roles.some(role => context.role === role);
 
     // Check if resource matches
-    const matchesResources = policy.resources.includes('*') || 
-      policy.resources.some(resource => this.matchesResource(context.resourceId || '', resource));
+    const matchesResources =
+      policy.resources.includes('*') ||
+      policy.resources.some(resource =>
+        this.matchesResource(context.resourceId || '', resource)
+      );
 
     // Check if action matches
-    const matchesActions = policy.actions.includes('*') || 
-      policy.actions.includes(context.action);
+    const matchesActions =
+      policy.actions.includes('*') || policy.actions.includes(context.action);
 
     return matchesSubjects && matchesResources && matchesActions;
   }
 
-  private matchesPolicy(context: AuthorizationContext, policy: PolicyRule): boolean {
+  private matchesPolicy(
+    context: AuthorizationContext,
+    policy: PolicyRule
+  ): boolean {
     if (!policy.conditions) {
       return true;
     }
 
     return policy.conditions.every(condition => {
       const contextValue = this.getContextValue(context, condition.field);
-      return this.evaluateCondition(contextValue, condition.operator, condition.value);
+      return this.evaluateCondition(
+        contextValue,
+        condition.operator,
+        condition.value
+      );
     });
   }
 
@@ -411,18 +442,32 @@ export class PolicyManager {
     return fieldMap[field];
   }
 
-  private evaluateCondition(value: any, operator: string, expected: any): boolean {
+  private evaluateCondition(
+    value: any,
+    operator: string,
+    expected: any
+  ): boolean {
     switch (operator) {
-      case 'eq': return value === expected;
-      case 'ne': return value !== expected;
-      case 'in': return Array.isArray(expected) && expected.includes(value);
-      case 'nin': return Array.isArray(expected) && !expected.includes(value);
-      case 'gt': return value > expected;
-      case 'gte': return value >= expected;
-      case 'lt': return value < expected;
-      case 'lte': return value <= expected;
-      case 'exists': return value !== undefined && value !== null;
-      default: return false;
+      case 'eq':
+        return value === expected;
+      case 'ne':
+        return value !== expected;
+      case 'in':
+        return Array.isArray(expected) && expected.includes(value);
+      case 'nin':
+        return Array.isArray(expected) && !expected.includes(value);
+      case 'gt':
+        return value > expected;
+      case 'gte':
+        return value >= expected;
+      case 'lt':
+        return value < expected;
+      case 'lte':
+        return value <= expected;
+      case 'exists':
+        return value !== undefined && value !== null;
+      default:
+        return false;
     }
   }
 
@@ -458,7 +503,12 @@ export class AuthorizationManager {
     return this.policyManager.evaluatePolicy(context);
   }
 
-  can(userId: string, action: string, resource?: string, additionalContext?: any): boolean {
+  can(
+    userId: string,
+    action: string,
+    resource?: string,
+    additionalContext?: any
+  ): boolean {
     const userRoles = this.roleManager.getUserRoles(userId);
     const primaryRole = userRoles[0] || 'viewer';
 
@@ -476,10 +526,13 @@ export class AuthorizationManager {
 }
 
 // Authorization middleware
-export const authorize = (authManager: AuthorizationManager, requiredPermission: Permission) => {
+export const authorize = (
+  authManager: AuthorizationManager,
+  requiredPermission: Permission
+) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user;
-    
+
     if (!user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
@@ -503,10 +556,13 @@ export const authorize = (authManager: AuthorizationManager, requiredPermission:
 };
 
 // Dynamic authorization middleware
-export const authorizeResource = (authManager: AuthorizationManager, getAction: (req: Request) => string) => {
+export const authorizeResource = (
+  authManager: AuthorizationManager,
+  getAction: (req: Request) => string
+) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const user = (req as any).user;
-    
+
     if (!user) {
       return res.status(401).json({ error: 'Authentication required' });
     }

@@ -26,7 +26,10 @@ class ErrorTrackingSetup {
     this.rootPath = path.join(__dirname, '..');
     this.mobileConfigPath = path.join(this.rootPath, 'apps/mobile/src/config');
     this.functionsConfigPath = path.join(this.rootPath, 'functions/src/config');
-    this.sharedConfigPath = path.join(this.rootPath, 'packages/shared/src/config');
+    this.sharedConfigPath = path.join(
+      this.rootPath,
+      'packages/shared/src/config'
+    );
   }
 
   /**
@@ -241,7 +244,10 @@ export const errorTracker = MobileErrorTracker.getInstance();
 `;
 
     fs.writeFileSync(configFile, config);
-    log(`✅ Created mobile error tracking config: ${path.relative(this.rootPath, configFile)}`, colors.green);
+    log(
+      `✅ Created mobile error tracking config: ${path.relative(this.rootPath, configFile)}`,
+      colors.green
+    );
   }
 
   /**
@@ -433,7 +439,10 @@ export const errorTrackingMiddleware = (req: any, res: any, next: any) => {
 `;
 
     fs.writeFileSync(configFile, config);
-    log(`✅ Created functions error tracking config: ${path.relative(this.rootPath, configFile)}`, colors.green);
+    log(
+      `✅ Created functions error tracking config: ${path.relative(this.rootPath, configFile)}`,
+      colors.green
+    );
   }
 
   /**
@@ -630,18 +639,24 @@ export class ErrorBoundaryUtils {
 `;
 
     fs.writeFileSync(configFile, config);
-    log(`✅ Created shared error tracking config: ${path.relative(this.rootPath, configFile)}`, colors.green);
+    log(
+      `✅ Created shared error tracking config: ${path.relative(this.rootPath, configFile)}`,
+      colors.green
+    );
   }
 
   /**
    * Update CI/CD workflows to include error tracking
    */
   updateCIWorkflows() {
-    const prWorkflowPath = path.join(this.rootPath, '.github/workflows/pr-validation.yml');
-    
+    const prWorkflowPath = path.join(
+      this.rootPath,
+      '.github/workflows/pr-validation.yml'
+    );
+
     if (fs.existsSync(prWorkflowPath)) {
       let workflow = fs.readFileSync(prWorkflowPath, 'utf8');
-      
+
       // Add error tracking validation step
       if (!workflow.includes('Error tracking validation')) {
         const insertAfter = '      - name: Security audit';
@@ -654,10 +669,16 @@ export class ErrorBoundaryUtils {
             console.log('✅ Error tracking configuration validated');
           "
         continue-on-error: true`;
-        
-        workflow = workflow.replace(insertAfter, insertAfter + '\n\n' + newStep);
+
+        workflow = workflow.replace(
+          insertAfter,
+          insertAfter + '\n\n' + newStep
+        );
         fs.writeFileSync(prWorkflowPath, workflow);
-        log(`✅ Updated PR workflow with error tracking validation`, colors.green);
+        log(
+          `✅ Updated PR workflow with error tracking validation`,
+          colors.green
+        );
       }
     }
   }
@@ -667,7 +688,7 @@ export class ErrorBoundaryUtils {
    */
   createEnvTemplate() {
     const envTemplatePath = path.join(this.rootPath, '.env.example');
-    
+
     let envTemplate = '';
     if (fs.existsSync(envTemplatePath)) {
       envTemplate = fs.readFileSync(envTemplatePath, 'utf8');
@@ -685,7 +706,10 @@ SENTRY_PROJECT=protour
     if (!envTemplate.includes('Error Tracking Configuration')) {
       envTemplate += errorTrackingEnvs;
       fs.writeFileSync(envTemplatePath, envTemplate);
-      log(`✅ Updated .env.example with error tracking variables`, colors.green);
+      log(
+        `✅ Updated .env.example with error tracking variables`,
+        colors.green
+      );
     }
   }
 
@@ -705,11 +729,13 @@ SENTRY_PROJECT=protour
 
       log('\n🎉 Error tracking setup completed successfully!', colors.green);
       log('\nNext steps:', colors.blue);
-      log('1. Sign up for Sentry (sentry.io) and create a new project', colors.cyan);
+      log(
+        '1. Sign up for Sentry (sentry.io) and create a new project',
+        colors.cyan
+      );
       log('2. Add your Sentry DSN to environment variables', colors.cyan);
       log('3. Initialize error tracking in your app entry points', colors.cyan);
       log('4. Test error reporting in development environment', colors.cyan);
-
     } catch (error) {
       log(`❌ Error during setup: ${error.message}`, colors.red);
       throw error;

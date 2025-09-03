@@ -7,22 +7,22 @@ const monorepoRoot = path.resolve(projectRoot, '../..');
 const config = {
   // Watch for changes in the monorepo
   watchFolders: [monorepoRoot],
-  
+
   resolver: {
     // Support for monorepo structure
     nodeModulesPaths: [
       path.resolve(projectRoot, 'node_modules'),
       path.resolve(monorepoRoot, 'node_modules'),
     ],
-    
+
     // Resolve shared packages
     alias: {
       '@protour/shared': path.resolve(monorepoRoot, 'packages/shared/src'),
     },
-    
+
     // Platform-specific extensions
     platforms: ['ios', 'android', 'native', 'web'],
-    
+
     // Asset extensions
     assetExts: [
       'bmp',
@@ -46,11 +46,11 @@ const config = {
       'aac',
       'oga',
     ],
-    
+
     // Source extensions
     sourceExts: ['js', 'jsx', 'ts', 'tsx', 'json', 'cjs'],
   },
-  
+
   // Transformer configuration
   transformer: {
     // Use default transformer from React Native
@@ -61,8 +61,8 @@ const config = {
       },
     }),
   },
-  
-  // Maximum number of workers  
+
+  // Maximum number of workers
   maxWorkers: require('os').cpus().length,
 };
 

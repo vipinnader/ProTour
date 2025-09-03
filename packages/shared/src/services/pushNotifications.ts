@@ -97,7 +97,7 @@ export abstract class PushNotificationService {
   }
 
   abstract initialize(): Promise<void>;
-  
+
   abstract sendNotification(
     payload: PushNotificationPayload,
     target: NotificationTarget
@@ -123,7 +123,9 @@ export abstract class PushNotificationService {
     timezone?: string
   ): Promise<ScheduledNotification>;
 
-  abstract cancelScheduledNotification(notificationId: string): Promise<boolean>;
+  abstract cancelScheduledNotification(
+    notificationId: string
+  ): Promise<boolean>;
 
   abstract subscribeToTopic(
     registrationToken: string,
@@ -185,13 +187,13 @@ export class FirebasePushService extends PushNotificationService {
       // Initialize Firebase Admin SDK
       // const admin = require('firebase-admin');
       // const serviceAccount = require(this.config.serviceAccountPath);
-      // 
+      //
       // if (!admin.apps.length) {
       //   admin.initializeApp({
       //     credential: admin.credential.cert(serviceAccount),
       //   });
       // }
-      // 
+      //
       // this.messaging = admin.messaging();
 
       this.initialized = true;
@@ -268,7 +270,11 @@ export class FirebasePushService extends PushNotificationService {
       if (message.tokens) {
         // Multicast message
         // response = await this.messaging.sendMulticast(message);
-        response = { successCount: 1, failureCount: 0, responses: [{ success: true, messageId: `fcm_${Date.now()}` }] };
+        response = {
+          successCount: 1,
+          failureCount: 0,
+          responses: [{ success: true, messageId: `fcm_${Date.now()}` }],
+        };
       } else {
         // Single message
         // response = await this.messaging.send(message);
@@ -335,11 +341,13 @@ export class FirebasePushService extends PushNotificationService {
     try {
       // Get template from storage (Firestore)
       const template = await this.getTemplate(templateId);
-      
+
       const payload: PushNotificationPayload = {
         title: this.replaceVariables(template.title, variables),
         body: this.replaceVariables(template.body, variables),
-        data: template.data ? this.replaceVariablesInData(template.data, variables) : undefined,
+        data: template.data
+          ? this.replaceVariablesInData(template.data, variables)
+          : undefined,
       };
 
       return this.sendNotification(payload, target);
@@ -353,7 +361,10 @@ export class FirebasePushService extends PushNotificationService {
     }
   }
 
-  private replaceVariables(template: string, variables: Record<string, string>): string {
+  private replaceVariables(
+    template: string,
+    variables: Record<string, string>
+  ): string {
     let result = template;
     Object.entries(variables).forEach(([key, value]) => {
       result = result.replace(new RegExp(`{${key}}`, 'g'), value);
@@ -393,7 +404,10 @@ export class FirebasePushService extends PushNotificationService {
     // Store in Firestore collection 'scheduledNotifications'
     // await this.firestore.collection('scheduledNotifications').doc(scheduledNotification.id).set(scheduledNotification);
 
-    console.log('[PushService] Scheduled notification created:', scheduledNotification.id);
+    console.log(
+      '[PushService] Scheduled notification created:',
+      scheduledNotification.id
+    );
     return scheduledNotification;
   }
 
@@ -405,10 +419,16 @@ export class FirebasePushService extends PushNotificationService {
       //   updatedAt: new Date(),
       // });
 
-      console.log('[PushService] Scheduled notification cancelled:', notificationId);
+      console.log(
+        '[PushService] Scheduled notification cancelled:',
+        notificationId
+      );
       return true;
     } catch (error) {
-      console.error('[PushService] Failed to cancel scheduled notification:', error);
+      console.error(
+        '[PushService] Failed to cancel scheduled notification:',
+        error
+      );
       return false;
     }
   }
@@ -419,7 +439,9 @@ export class FirebasePushService extends PushNotificationService {
   ): Promise<boolean> {
     try {
       // await this.messaging.subscribeToTopic([registrationToken], topic);
-      console.log(`[PushService] Subscribed ${registrationToken} to topic ${topic}`);
+      console.log(
+        `[PushService] Subscribed ${registrationToken} to topic ${topic}`
+      );
       return true;
     } catch (error) {
       console.error('[PushService] Failed to subscribe to topic:', error);
@@ -433,7 +455,9 @@ export class FirebasePushService extends PushNotificationService {
   ): Promise<boolean> {
     try {
       // await this.messaging.unsubscribeFromTopic([registrationToken], topic);
-      console.log(`[PushService] Unsubscribed ${registrationToken} from topic ${topic}`);
+      console.log(
+        `[PushService] Unsubscribed ${registrationToken} from topic ${topic}`
+      );
       return true;
     } catch (error) {
       console.error('[PushService] Failed to unsubscribe from topic:', error);
@@ -670,7 +694,9 @@ export class OneSignalPushService extends PushNotificationService {
   private parseCondition(condition: string): any[] {
     // Parse OneSignal filter conditions
     // This is a simplified implementation
-    return [{ field: 'tag', key: 'user_type', relation: '=', value: condition }];
+    return [
+      { field: 'tag', key: 'user_type', relation: '=', value: condition },
+    ];
   }
 
   async sendBulkNotifications(
@@ -685,8 +711,14 @@ export class OneSignalPushService extends PushNotificationService {
       )
     );
 
-    const successCount = results.reduce((sum, r) => sum + (r.successCount || 0), 0);
-    const failureCount = results.reduce((sum, r) => sum + (r.failureCount || 0), 0);
+    const successCount = results.reduce(
+      (sum, r) => sum + (r.successCount || 0),
+      0
+    );
+    const failureCount = results.reduce(
+      (sum, r) => sum + (r.failureCount || 0),
+      0
+    );
 
     return {
       success: failureCount === 0,
@@ -710,7 +742,9 @@ export class OneSignalPushService extends PushNotificationService {
 
       // Set target
       if (target.type === 'token') {
-        notificationData.include_player_ids = Array.isArray(target.value) ? target.value : [target.value];
+        notificationData.include_player_ids = Array.isArray(target.value)
+          ? target.value
+          : [target.value];
       } else if (target.type === 'topic') {
         notificationData.included_segments = [target.value];
       }
@@ -761,12 +795,18 @@ export class OneSignalPushService extends PushNotificationService {
     }
   }
 
-  async subscribeToTopic(registrationToken: string, topic: string): Promise<boolean> {
+  async subscribeToTopic(
+    registrationToken: string,
+    topic: string
+  ): Promise<boolean> {
     // OneSignal uses segments instead of topics
     return true;
   }
 
-  async unsubscribeFromTopic(registrationToken: string, topic: string): Promise<boolean> {
+  async unsubscribeFromTopic(
+    registrationToken: string,
+    topic: string
+  ): Promise<boolean> {
     // OneSignal uses segments instead of topics
     return true;
   }
@@ -796,7 +836,9 @@ export class OneSignalPushService extends PushNotificationService {
   }
 
   // Template methods would be similar to Firebase implementation
-  async createNotificationTemplate(template: Omit<NotificationTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<NotificationTemplate> {
+  async createNotificationTemplate(
+    template: Omit<NotificationTemplate, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<NotificationTemplate> {
     return {
       id: `onesignal_template_${Date.now()}`,
       ...template,
@@ -805,7 +847,10 @@ export class OneSignalPushService extends PushNotificationService {
     };
   }
 
-  async updateNotificationTemplate(id: string, updates: Partial<NotificationTemplate>): Promise<NotificationTemplate> {
+  async updateNotificationTemplate(
+    id: string,
+    updates: Partial<NotificationTemplate>
+  ): Promise<NotificationTemplate> {
     return {
       id,
       name: updates.name || 'Updated Template',
@@ -910,16 +955,40 @@ export class PusherBeamsService extends PushNotificationService {
   }
 
   // Other methods would be implemented similar to other providers
-  async sendBulkNotifications(): Promise<NotificationResult> { return { success: true, successCount: 0, failureCount: 0 }; }
-  async sendTemplatedNotification(): Promise<NotificationResult> { return { success: true, successCount: 0, failureCount: 0 }; }
-  async scheduleNotification(): Promise<ScheduledNotification> { return {} as ScheduledNotification; }
-  async cancelScheduledNotification(): Promise<boolean> { return true; }
-  async subscribeToTopic(): Promise<boolean> { return true; }
-  async unsubscribeFromTopic(): Promise<boolean> { return true; }
-  async validateRegistrationToken(): Promise<boolean> { return true; }
-  async getNotificationStats(): Promise<NotificationStats> { return {} as NotificationStats; }
-  async createNotificationTemplate(): Promise<NotificationTemplate> { return {} as NotificationTemplate; }
-  async updateNotificationTemplate(): Promise<NotificationTemplate> { return {} as NotificationTemplate; }
-  async deleteNotificationTemplate(): Promise<boolean> { return true; }
-  async listNotificationTemplates(): Promise<NotificationTemplate[]> { return []; }
+  async sendBulkNotifications(): Promise<NotificationResult> {
+    return { success: true, successCount: 0, failureCount: 0 };
+  }
+  async sendTemplatedNotification(): Promise<NotificationResult> {
+    return { success: true, successCount: 0, failureCount: 0 };
+  }
+  async scheduleNotification(): Promise<ScheduledNotification> {
+    return {} as ScheduledNotification;
+  }
+  async cancelScheduledNotification(): Promise<boolean> {
+    return true;
+  }
+  async subscribeToTopic(): Promise<boolean> {
+    return true;
+  }
+  async unsubscribeFromTopic(): Promise<boolean> {
+    return true;
+  }
+  async validateRegistrationToken(): Promise<boolean> {
+    return true;
+  }
+  async getNotificationStats(): Promise<NotificationStats> {
+    return {} as NotificationStats;
+  }
+  async createNotificationTemplate(): Promise<NotificationTemplate> {
+    return {} as NotificationTemplate;
+  }
+  async updateNotificationTemplate(): Promise<NotificationTemplate> {
+    return {} as NotificationTemplate;
+  }
+  async deleteNotificationTemplate(): Promise<boolean> {
+    return true;
+  }
+  async listNotificationTemplates(): Promise<NotificationTemplate[]> {
+    return [];
+  }
 }

@@ -12,17 +12,8 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "references": [
-    { "path": "./packages/shared" }
-  ],
+  "references": [{ "path": "./packages/shared" }],
   "files": [],
   "include": [],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "lib",
-    ".next",
-    "android",
-    "ios"
-  ]
+  "exclude": ["node_modules", "dist", "lib", ".next", "android", "ios"]
 }

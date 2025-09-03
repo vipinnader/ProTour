@@ -1,7 +1,7 @@
 {
   "projects": {
     "default": "protour-dev",
-    "staging": "protour-staging", 
+    "staging": "protour-staging",
     "production": "protour-prod"
   },
   "functions": [

@@ -76,7 +76,10 @@ export class BasicAuthManager {
     return `${salt}:${hash}`;
   }
 
-  async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+  async verifyPassword(
+    password: string,
+    hashedPassword: string
+  ): Promise<boolean> {
     const [salt, hash] = hashedPassword.split(':');
     const hashBuffer = crypto.scryptSync(password, salt, 64);
     return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), hashBuffer);
@@ -97,13 +100,18 @@ export class BasicAuthManager {
   private parseExpiry(expiry: string): number {
     const unit = expiry.slice(-1);
     const value = parseInt(expiry.slice(0, -1));
-    
+
     switch (unit) {
-      case 's': return value;
-      case 'm': return value * 60;
-      case 'h': return value * 60 * 60;
-      case 'd': return value * 60 * 60 * 24;
-      default: return 3600; // 1 hour default
+      case 's':
+        return value;
+      case 'm':
+        return value * 60;
+      case 'h':
+        return value * 60 * 60;
+      case 'd':
+        return value * 60 * 60 * 24;
+      default:
+        return 3600; // 1 hour default
     }
   }
 }

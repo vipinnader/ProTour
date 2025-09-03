@@ -1,16 +1,16 @@
 // Player service for ProTour - Epic 1-3 Implementation
 
 import { DatabaseService } from './DatabaseService';
-import { 
-  Player, 
-  PlayerImportData, 
-  CSVImportResult, 
-  CSVImportError, 
+import {
+  Player,
+  PlayerImportData,
+  CSVImportResult,
+  CSVImportError,
   CSVDuplicate,
   PlayerProfile,
   PlayerFollow,
   PlayerStatistics,
-  PlayerTournamentHistory
+  PlayerTournamentHistory,
 } from '../types';
 import firestore from '@react-native-firebase/firestore';
 
@@ -19,7 +19,9 @@ export class PlayerService extends DatabaseService {
   private readonly PROFILES_COLLECTION = 'player_profiles';
   private readonly FOLLOWS_COLLECTION = 'player_follows';
 
-  async createPlayer(data: Omit<Player, 'id' | 'createdAt' | 'updatedAt'>): Promise<Player> {
+  async createPlayer(
+    data: Omit<Player, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<Player> {
     // Validate required fields
     this.validateRequired(data, ['name', 'email', 'tournamentId']);
 
@@ -76,13 +78,13 @@ export class PlayerService extends DatabaseService {
 
   async getPlayersByTournament(tournamentId: string): Promise<Player[]> {
     return this.query<Player>(this.COLLECTION, [
-      { fieldPath: 'tournamentId', opStr: '==', value: tournamentId }
+      { fieldPath: 'tournamentId', opStr: '==', value: tournamentId },
     ]);
   }
 
   async deletePlayersByTournament(tournamentId: string): Promise<void> {
     const players = await this.getPlayersByTournament(tournamentId);
-    
+
     if (players.length === 0) {
       return;
     }
@@ -108,7 +110,9 @@ export class PlayerService extends DatabaseService {
 
     // Get existing players to check for duplicates
     const existingPlayers = await this.getPlayersByTournament(tournamentId);
-    const existingEmails = new Set(existingPlayers.map(p => p.email.toLowerCase()));
+    const existingEmails = new Set(
+      existingPlayers.map(p => p.email.toLowerCase())
+    );
     const seenEmails = new Map<string, number>(); // email -> row number
 
     csvData.forEach((player, index) => {
@@ -124,7 +128,9 @@ export class PlayerService extends DatabaseService {
 
       // Check for duplicates in existing players
       if (existingEmails.has(email)) {
-        const existingPlayer = existingPlayers.find(p => p.email.toLowerCase() === email);
+        const existingPlayer = existingPlayers.find(
+          p => p.email.toLowerCase() === email
+        );
         duplicates.push({
           row,
           existingRow: -1, // Existing in database
@@ -180,7 +186,10 @@ export class PlayerService extends DatabaseService {
   }
 
   // Player seeding functionality
-  async assignSeedPositions(tournamentId: string, seedingMethod: 'random' | 'ranking' | 'manual'): Promise<void> {
+  async assignSeedPositions(
+    tournamentId: string,
+    seedingMethod: 'random' | 'ranking' | 'manual'
+  ): Promise<void> {
     const players = await this.getPlayersByTournament(tournamentId);
 
     if (players.length === 0) {
@@ -217,7 +226,10 @@ export class PlayerService extends DatabaseService {
   }
 
   // Private helper methods
-  private validatePlayerData(player: PlayerImportData, row: number): CSVImportError[] {
+  private validatePlayerData(
+    player: PlayerImportData,
+    row: number
+  ): CSVImportError[] {
     const errors: CSVImportError[] = [];
 
     // Validate name
@@ -254,7 +266,10 @@ export class PlayerService extends DatabaseService {
     }
 
     // Validate ranking if provided
-    if (player.ranking !== undefined && (player.ranking < 0 || player.ranking > 10000)) {
+    if (
+      player.ranking !== undefined &&
+      (player.ranking < 0 || player.ranking > 10000)
+    ) {
       errors.push({
         row,
         field: 'ranking',
@@ -273,18 +288,24 @@ export class PlayerService extends DatabaseService {
     return phoneRegex.test(phone);
   }
 
-  private async checkDuplicateEmail(email: string, tournamentId: string, excludeId?: string): Promise<void> {
+  private async checkDuplicateEmail(
+    email: string,
+    tournamentId: string,
+    excludeId?: string
+  ): Promise<void> {
     const players = await this.query<Player>(this.COLLECTION, [
       { fieldPath: 'tournamentId', opStr: '==', value: tournamentId },
-      { fieldPath: 'email', opStr: '==', value: email.toLowerCase() }
+      { fieldPath: 'email', opStr: '==', value: email.toLowerCase() },
     ]);
 
-    const duplicates = excludeId 
+    const duplicates = excludeId
       ? players.filter(p => p.id !== excludeId)
       : players;
 
     if (duplicates.length > 0) {
-      throw new Error('A player with this email already exists in this tournament');
+      throw new Error(
+        'A player with this email already exists in this tournament'
+      );
     }
   }
 
@@ -294,7 +315,7 @@ export class PlayerService extends DatabaseService {
       if (a.ranking === undefined && b.ranking === undefined) return 0;
       if (a.ranking === undefined) return 1;
       if (b.ranking === undefined) return -1;
-      
+
       // Lower ranking number = higher seed (ranking 1 is best)
       return a.ranking - b.ranking;
     });
@@ -329,7 +350,7 @@ export class PlayerService extends DatabaseService {
   }
 
   async updatePlayerProfile(
-    playerId: string, 
+    playerId: string,
     updates: Partial<PlayerProfile>
   ): Promise<void> {
     return this.update<PlayerProfile>(this.PROFILES_COLLECTION, playerId, {
@@ -339,12 +360,18 @@ export class PlayerService extends DatabaseService {
   }
 
   // Player Following System
-  async followPlayer(followerId: string, playerId: string): Promise<PlayerFollow> {
+  async followPlayer(
+    followerId: string,
+    playerId: string
+  ): Promise<PlayerFollow> {
     // Check if already following
-    const existingFollow = await this.query<PlayerFollow>(this.FOLLOWS_COLLECTION, [
-      { fieldPath: 'followerId', opStr: '==', value: followerId },
-      { fieldPath: 'followedPlayerId', opStr: '==', value: playerId }
-    ]);
+    const existingFollow = await this.query<PlayerFollow>(
+      this.FOLLOWS_COLLECTION,
+      [
+        { fieldPath: 'followerId', opStr: '==', value: followerId },
+        { fieldPath: 'followedPlayerId', opStr: '==', value: playerId },
+      ]
+    );
 
     if (existingFollow.length > 0) {
       throw new Error('Already following this player');
@@ -363,7 +390,7 @@ export class PlayerService extends DatabaseService {
   async unfollowPlayer(followerId: string, playerId: string): Promise<void> {
     const follows = await this.query<PlayerFollow>(this.FOLLOWS_COLLECTION, [
       { fieldPath: 'followerId', opStr: '==', value: followerId },
-      { fieldPath: 'followedPlayerId', opStr: '==', value: playerId }
+      { fieldPath: 'followedPlayerId', opStr: '==', value: playerId },
     ]);
 
     if (follows.length === 0) {
@@ -373,10 +400,13 @@ export class PlayerService extends DatabaseService {
     await this.delete(this.FOLLOWS_COLLECTION, follows[0].id);
   }
 
-  async isFollowingPlayer(followerId: string, playerId: string): Promise<boolean> {
+  async isFollowingPlayer(
+    followerId: string,
+    playerId: string
+  ): Promise<boolean> {
     const follows = await this.query<PlayerFollow>(this.FOLLOWS_COLLECTION, [
       { fieldPath: 'followerId', opStr: '==', value: followerId },
-      { fieldPath: 'followedPlayerId', opStr: '==', value: playerId }
+      { fieldPath: 'followedPlayerId', opStr: '==', value: playerId },
     ]);
 
     return follows.length > 0;
@@ -384,26 +414,29 @@ export class PlayerService extends DatabaseService {
 
   async getPlayerFollowers(playerId: string): Promise<PlayerFollow[]> {
     return this.query<PlayerFollow>(this.FOLLOWS_COLLECTION, [
-      { fieldPath: 'followedPlayerId', opStr: '==', value: playerId }
+      { fieldPath: 'followedPlayerId', opStr: '==', value: playerId },
     ]);
   }
 
   async getFollowedPlayers(followerId: string): Promise<PlayerFollow[]> {
     return this.query<PlayerFollow>(this.FOLLOWS_COLLECTION, [
-      { fieldPath: 'followerId', opStr: '==', value: followerId }
+      { fieldPath: 'followerId', opStr: '==', value: followerId },
     ]);
   }
 
   // Privacy and Permission Methods
-  async sharesTournamentWithUser(playerId: string, userId: string): Promise<boolean> {
+  async sharesTournamentWithUser(
+    playerId: string,
+    userId: string
+  ): Promise<boolean> {
     // Check if both users have participated in any common tournaments
     // This is a simplified implementation - in production, you'd check tournament_registrations
     const playerTournaments = await this.query<Player>(this.COLLECTION, [
-      { fieldPath: 'id', opStr: '==', value: playerId }
+      { fieldPath: 'id', opStr: '==', value: playerId },
     ]);
 
     const userTournaments = await this.query<Player>(this.COLLECTION, [
-      { fieldPath: 'id', opStr: '==', value: userId }
+      { fieldPath: 'id', opStr: '==', value: userId },
     ]);
 
     // Simple check - if both have tournament records, they share tournaments
@@ -422,16 +455,16 @@ export class PlayerService extends DatabaseService {
       queryConstraints.push({
         fieldPath: 'tournamentId',
         opStr: '==',
-        value: query.tournamentId
+        value: query.tournamentId,
       });
     }
 
     const players = await this.query<Player>(this.COLLECTION, queryConstraints);
-    
+
     // Filter by name if provided (simple contains check)
     let filteredPlayers = players;
     if (query.name) {
-      filteredPlayers = players.filter(player => 
+      filteredPlayers = players.filter(player =>
         player.name.toLowerCase().includes(query.name!.toLowerCase())
       );
     }
@@ -468,16 +501,19 @@ export class PlayerService extends DatabaseService {
       'Summer Open',
       'Winter Cup',
       'City Tournament',
-      'Regional Finals'
+      'Regional Finals',
     ];
 
     for (let i = 0; i < Math.floor(Math.random() * 5) + 1; i++) {
       tournaments.push({
         tournamentId: `tournament_${i}`,
-        tournamentName: tournamentNames[Math.floor(Math.random() * tournamentNames.length)],
+        tournamentName:
+          tournamentNames[Math.floor(Math.random() * tournamentNames.length)],
         sport: sports[Math.floor(Math.random() * sports.length)],
         date: firestore.Timestamp.fromDate(
-          new Date(Date.now() - Math.floor(Math.random() * 365 * 24 * 60 * 60 * 1000))
+          new Date(
+            Date.now() - Math.floor(Math.random() * 365 * 24 * 60 * 60 * 1000)
+          )
         ),
         finalPosition: Math.floor(Math.random() * 16) + 1,
         totalParticipants: Math.floor(Math.random() * 32) + 16,

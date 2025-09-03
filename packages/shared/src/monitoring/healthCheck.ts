@@ -52,20 +52,25 @@ export abstract class HealthCheck {
 
   abstract execute(): Promise<HealthCheckResult>;
 
-  protected async measure<T>(operation: () => Promise<T>): Promise<{ result: T; responseTime: number }> {
+  protected async measure<T>(
+    operation: () => Promise<T>
+  ): Promise<{ result: T; responseTime: number }> {
     const startTime = Date.now();
     const result = await operation();
     const responseTime = Date.now() - startTime;
     return { result, responseTime };
   }
 
-  protected determineStatus(responseTime: number, isHealthy: boolean): 'healthy' | 'unhealthy' | 'degraded' {
+  protected determineStatus(
+    responseTime: number,
+    isHealthy: boolean
+  ): 'healthy' | 'unhealthy' | 'degraded' {
     if (!isHealthy) return 'unhealthy';
-    
+
     const thresholds = this.config.thresholds!;
     if (responseTime > thresholds.unhealthy!) return 'unhealthy';
     if (responseTime > thresholds.degraded!) return 'degraded';
-    
+
     return 'healthy';
   }
 
@@ -92,20 +97,27 @@ export abstract class HealthCheck {
 export class DatabaseHealthCheck extends HealthCheck {
   private connectionTest: () => Promise<boolean>;
 
-  constructor(config: HealthCheckConfig, connectionTest: () => Promise<boolean>) {
+  constructor(
+    config: HealthCheckConfig,
+    connectionTest: () => Promise<boolean>
+  ) {
     super(config);
     this.connectionTest = connectionTest;
   }
 
   async execute(): Promise<HealthCheckResult> {
     try {
-      const { result: isConnected, responseTime } = await this.measure(this.connectionTest);
+      const { result: isConnected, responseTime } = await this.measure(
+        this.connectionTest
+      );
       const status = this.determineStatus(responseTime, isConnected);
-      
+
       return this.createResult(
         status,
         responseTime,
-        isConnected ? 'Database connection successful' : 'Database connection failed',
+        isConnected
+          ? 'Database connection successful'
+          : 'Database connection failed',
         isConnected ? undefined : 'Connection test failed'
       );
     } catch (error) {
@@ -126,13 +138,13 @@ export class FirebaseHealthCheck extends HealthCheck {
       const { responseTime } = await this.measure(async () => {
         // Test Firestore connection
         // const testDoc = await admin.firestore().collection('_health_check').doc('test').get();
-        
+
         // Test Authentication
         // await admin.auth().listUsers(1);
-        
+
         // Test Cloud Functions
         // const functions = admin.functions();
-        
+
         return true;
       });
 
@@ -179,16 +191,20 @@ export class HttpHealthCheck extends HealthCheck {
 
   async execute(): Promise<HealthCheckResult> {
     try {
-      const { result: response, responseTime } = await this.measure(async () => {
-        // Mock HTTP request - replace with actual HTTP client
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
-        
-        return {
-          status: 200,
-          statusText: 'OK',
-          headers: {},
-        };
-      });
+      const { result: response, responseTime } = await this.measure(
+        async () => {
+          // Mock HTTP request - replace with actual HTTP client
+          await new Promise(resolve =>
+            setTimeout(resolve, Math.random() * 100)
+          );
+
+          return {
+            status: 200,
+            statusText: 'OK',
+            headers: {},
+          };
+        }
+      );
 
       const isHealthy = response.status === this.expectedStatus;
       const status = this.determineStatus(responseTime, isHealthy);
@@ -197,7 +213,9 @@ export class HttpHealthCheck extends HealthCheck {
         status,
         responseTime,
         `HTTP ${this.method} ${this.url} returned ${response.status}`,
-        isHealthy ? undefined : `Expected status ${this.expectedStatus}, got ${response.status}`,
+        isHealthy
+          ? undefined
+          : `Expected status ${this.expectedStatus}, got ${response.status}`,
         { url: this.url, method: this.method, status: response.status }
       );
     } catch (error) {
@@ -250,11 +268,19 @@ export class RedisHealthCheck extends HealthCheck {
 
 // External service health check
 export class ExternalServiceHealthCheck extends HealthCheck {
-  private testFunction: () => Promise<{ healthy: boolean; message?: string; metadata?: any }>;
+  private testFunction: () => Promise<{
+    healthy: boolean;
+    message?: string;
+    metadata?: any;
+  }>;
 
   constructor(
     config: HealthCheckConfig,
-    testFunction: () => Promise<{ healthy: boolean; message?: string; metadata?: any }>
+    testFunction: () => Promise<{
+      healthy: boolean;
+      message?: string;
+      metadata?: any;
+    }>
   ) {
     super(config);
     this.testFunction = testFunction;
@@ -268,7 +294,8 @@ export class ExternalServiceHealthCheck extends HealthCheck {
       return this.createResult(
         status,
         responseTime,
-        result.message || (result.healthy ? 'Service is healthy' : 'Service is unhealthy'),
+        result.message ||
+          (result.healthy ? 'Service is healthy' : 'Service is unhealthy'),
         result.healthy ? undefined : result.message,
         result.metadata
       );
@@ -290,7 +317,9 @@ export class HealthMonitor {
   private listeners: Array<(health: SystemHealth) => void> = [];
   private startTime: Date = new Date();
 
-  constructor(private config: { environment?: string; version?: string } = {}) {}
+  constructor(
+    private config: { environment?: string; version?: string } = {}
+  ) {}
 
   addHealthCheck(check: HealthCheck): void {
     this.checks.set(check.config.name, check);
@@ -326,13 +355,13 @@ export class HealthMonitor {
     const results: HealthCheckResult[] = [];
 
     // Run all health checks in parallel
-    const checkPromises = Array.from(this.checks.values()).map(async (check) => {
+    const checkPromises = Array.from(this.checks.values()).map(async check => {
       try {
         const result = await Promise.race([
           check.execute(),
           this.timeoutPromise(check.config.timeout, check.config.name),
         ]);
-        
+
         this.lastResults.set(check.config.name, result);
         return result;
       } catch (error) {
@@ -343,17 +372,17 @@ export class HealthMonitor {
           error: error.message || 'Health check timeout',
           timestamp: new Date(),
         };
-        
+
         this.lastResults.set(check.config.name, timeoutResult);
         return timeoutResult;
       }
     });
 
-    results.push(...await Promise.all(checkPromises));
+    results.push(...(await Promise.all(checkPromises)));
 
     const systemHealth = this.calculateSystemHealth(results);
     this.notifyListeners(systemHealth);
-    
+
     return systemHealth;
   }
 
@@ -373,7 +402,7 @@ export class HealthMonitor {
         error: error.message,
         timestamp: new Date(),
       };
-      
+
       this.lastResults.set(name, errorResult);
       return errorResult;
     }
@@ -392,8 +421,10 @@ export class HealthMonitor {
     let overall: 'healthy' | 'unhealthy' | 'degraded' = 'healthy';
 
     // Determine overall health based on critical services
-    const criticalChecks = Array.from(this.checks.values()).filter(check => check.config.critical);
-    const criticalResults = results.filter(result => 
+    const criticalChecks = Array.from(this.checks.values()).filter(
+      check => check.config.critical
+    );
+    const criticalResults = results.filter(result =>
       criticalChecks.some(check => check.config.name === result.name)
     );
 
@@ -461,9 +492,13 @@ export class HealthMonitor {
     return async (req: any, res: any) => {
       try {
         const health = await this.runAllChecks();
-        const statusCode = health.overall === 'healthy' ? 200 : 
-                          health.overall === 'degraded' ? 200 : 503;
-        
+        const statusCode =
+          health.overall === 'healthy'
+            ? 200
+            : health.overall === 'degraded'
+              ? 200
+              : 503;
+
         res.status(statusCode).json(health);
       } catch (error) {
         res.status(500).json({
@@ -480,7 +515,7 @@ export class HealthMonitor {
     return async (req: any, res: any) => {
       const health = await this.runAllChecks();
       const statusCode = health.overall === 'unhealthy' ? 503 : 200;
-      
+
       res.status(statusCode).json(health);
     };
   }
@@ -500,54 +535,69 @@ export const HealthCheckPresets = {
 
   // Database and cache
   database: (connectionTest: () => Promise<boolean>): HealthCheck[] => [
-    new DatabaseHealthCheck({
-      name: 'database',
-      timeout: 5000,
-      interval: 30000,
-      critical: true,
-    }, connectionTest),
+    new DatabaseHealthCheck(
+      {
+        name: 'database',
+        timeout: 5000,
+        interval: 30000,
+        critical: true,
+      },
+      connectionTest
+    ),
   ],
 
   // External APIs
-  externalApis: (apis: Array<{ name: string; url: string }>): HealthCheck[] => 
-    apis.map(api => new HttpHealthCheck({
-      name: api.name,
-      timeout: 10000,
-      interval: 120000,
-      critical: false,
-    }, { url: api.url, method: 'HEAD' })),
+  externalApis: (apis: Array<{ name: string; url: string }>): HealthCheck[] =>
+    apis.map(
+      api =>
+        new HttpHealthCheck(
+          {
+            name: api.name,
+            timeout: 10000,
+            interval: 120000,
+            critical: false,
+          },
+          { url: api.url, method: 'HEAD' }
+        )
+    ),
 
   // Payment gateways
   paymentGateways: (): HealthCheck[] => [
-    new ExternalServiceHealthCheck({
-      name: 'razorpay',
-      timeout: 8000,
-      interval: 300000,
-      critical: false,
-    }, async () => {
-      // Test Razorpay API connectivity
-      try {
-        // Mock API test
-        return { healthy: true, message: 'Razorpay API accessible' };
-      } catch (error) {
-        return { healthy: false, message: error.message };
+    new ExternalServiceHealthCheck(
+      {
+        name: 'razorpay',
+        timeout: 8000,
+        interval: 300000,
+        critical: false,
+      },
+      async () => {
+        // Test Razorpay API connectivity
+        try {
+          // Mock API test
+          return { healthy: true, message: 'Razorpay API accessible' };
+        } catch (error) {
+          return { healthy: false, message: error.message };
+        }
       }
-    }),
-    
-    new ExternalServiceHealthCheck({
-      name: 'stripe',
-      timeout: 8000,
-      interval: 300000,
-      critical: false,
-    }, async () => {
-      // Test Stripe API connectivity
-      try {
-        // Mock API test
-        return { healthy: true, message: 'Stripe API accessible' };
-      } catch (error) {
-        return { healthy: false, message: error.message };
+    ),
+
+    new ExternalServiceHealthCheck(
+      {
+        name: 'stripe',
+        timeout: 8000,
+        interval: 300000,
+        critical: false,
+      },
+      async () => {
+        // Test Stripe API connectivity
+        try {
+          // Mock API test
+          return { healthy: true, message: 'Stripe API accessible' };
+        } catch (error) {
+          return { healthy: false, message: error.message };
+        }
       }
-    }),
+    ),
   ],
 
   // Comprehensive monitoring for production
@@ -562,22 +612,30 @@ export const HealthCheckPresets = {
         interval: 60000,
         critical: true,
       }),
-      
-      new DatabaseHealthCheck({
-        name: 'database',
-        timeout: 5000,
-        interval: 30000,
-        critical: true,
-      }, databaseTest),
+
+      new DatabaseHealthCheck(
+        {
+          name: 'database',
+          timeout: 5000,
+          interval: 30000,
+          critical: true,
+        },
+        databaseTest
+      ),
     ];
 
     if (redisClient) {
-      checks.push(new RedisHealthCheck({
-        name: 'redis',
-        timeout: 3000,
-        interval: 60000,
-        critical: false,
-      }, redisClient));
+      checks.push(
+        new RedisHealthCheck(
+          {
+            name: 'redis',
+            timeout: 3000,
+            interval: 60000,
+            critical: false,
+          },
+          redisClient
+        )
+      );
     }
 
     return checks;

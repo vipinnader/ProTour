@@ -77,18 +77,21 @@ export class MigrationService extends DatabaseService {
     try {
       // Record migration start
       const recordId = await this.recordMigration(migrationRecord);
-      
-      console.log(`Running migration ${migration.version}: ${migration.description}`);
-      
+
+      console.log(
+        `Running migration ${migration.version}: ${migration.description}`
+      );
+
       // Execute migration
       await migration.up();
 
       // Mark as completed
       await this.updateMigrationRecord(recordId, { status: 'completed' });
-      
+
       console.log(`Migration ${migration.version} completed successfully`);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       console.error(`Migration ${migration.version} failed:`, errorMessage);
 
       // Record the failure
@@ -120,7 +123,8 @@ export class MigrationService extends DatabaseService {
       await this.removeMigrationRecord(version);
       console.log(`Migration ${version} rolled back successfully`);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
       console.error(`Rollback of migration ${version} failed:`, errorMessage);
       throw new Error(`Rollback failed: ${errorMessage}`);
     }
@@ -142,29 +146,49 @@ export class MigrationService extends DatabaseService {
   }
 
   // Private helper methods
-  private async recordMigration(migration: Omit<MigrationRecord, 'id'>): Promise<string> {
-    const doc = await this.create<MigrationRecord>(this.MIGRATIONS_COLLECTION, migration);
+  private async recordMigration(
+    migration: Omit<MigrationRecord, 'id'>
+  ): Promise<string> {
+    const doc = await this.create<MigrationRecord>(
+      this.MIGRATIONS_COLLECTION,
+      migration
+    );
     return doc.id;
   }
 
-  private async updateMigrationRecord(versionOrId: string, updates: Partial<MigrationRecord>): Promise<void> {
+  private async updateMigrationRecord(
+    versionOrId: string,
+    updates: Partial<MigrationRecord>
+  ): Promise<void> {
     // Try to find by version first, then by ID
-    const migrations = await this.query<MigrationRecord>(this.MIGRATIONS_COLLECTION, [
-      { fieldPath: 'version', opStr: '==', value: versionOrId }
-    ]);
+    const migrations = await this.query<MigrationRecord>(
+      this.MIGRATIONS_COLLECTION,
+      [{ fieldPath: 'version', opStr: '==', value: versionOrId }]
+    );
 
     if (migrations.length > 0) {
-      await this.update<MigrationRecord>(this.MIGRATIONS_COLLECTION, migrations[0].id, updates);
+      await this.update<MigrationRecord>(
+        this.MIGRATIONS_COLLECTION,
+        migrations[0].id,
+        updates
+      );
     } else {
       // Assume it's an ID
-      await this.update<MigrationRecord>(this.MIGRATIONS_COLLECTION, versionOrId, updates);
+      await this.update<MigrationRecord>(
+        this.MIGRATIONS_COLLECTION,
+        versionOrId,
+        updates
+      );
     }
   }
 
-  private async getMigrationRecord(version: string): Promise<MigrationRecord | null> {
-    const migrations = await this.query<MigrationRecord>(this.MIGRATIONS_COLLECTION, [
-      { fieldPath: 'version', opStr: '==', value: version }
-    ]);
+  private async getMigrationRecord(
+    version: string
+  ): Promise<MigrationRecord | null> {
+    const migrations = await this.query<MigrationRecord>(
+      this.MIGRATIONS_COLLECTION,
+      [{ fieldPath: 'version', opStr: '==', value: version }]
+    );
 
     return migrations.length > 0 ? migrations[0] : null;
   }
@@ -190,14 +214,15 @@ export class MigrationService extends DatabaseService {
     // Epic 1 Initial Schema Migration
     this.registerMigration({
       version: '1.0.0',
-      description: 'Epic 1: Create initial tournament, player, and match collections with indexes',
+      description:
+        'Epic 1: Create initial tournament, player, and match collections with indexes',
       createdAt: new Date('2024-01-01'),
       up: async () => {
         console.log('Creating initial collection structure for Epic 1');
-        
+
         // Create sample documents to establish collections
         // This ensures Firestore creates the collections and applies security rules
-        
+
         // Create tournaments collection structure
         const tempTournament = await this.db.collection('tournaments').add({
           name: 'TEMP_MIGRATION_TOURNAMENT',
@@ -206,8 +231,8 @@ export class MigrationService extends DatabaseService {
           createdAt: firestore.Timestamp.now(),
           updatedAt: firestore.Timestamp.now(),
         });
-        
-        // Create players collection structure  
+
+        // Create players collection structure
         const tempPlayer = await this.db.collection('players').add({
           name: 'TEMP_MIGRATION_PLAYER',
           email: 'temp@migration.com',
@@ -215,7 +240,7 @@ export class MigrationService extends DatabaseService {
           createdAt: firestore.Timestamp.now(),
           updatedAt: firestore.Timestamp.now(),
         });
-        
+
         // Create matches collection structure
         const tempMatch = await this.db.collection('matches').add({
           tournamentId: tempTournament.id,
@@ -235,10 +260,12 @@ export class MigrationService extends DatabaseService {
         console.log('Epic 1 collections created successfully');
       },
       down: async () => {
-        console.log('Epic 1 rollback: Collections will remain but can be manually cleaned');
+        console.log(
+          'Epic 1 rollback: Collections will remain but can be manually cleaned'
+        );
         // Note: Firestore doesn't support dropping collections via client SDK
         // This would need to be done via Admin SDK or console
-      }
+      },
     });
 
     // Future migration example
@@ -248,27 +275,27 @@ export class MigrationService extends DatabaseService {
       createdAt: new Date('2024-01-15'),
       up: async () => {
         console.log('Updating tournaments with new fields');
-        
+
         // Get all tournaments without the new fields
         const tournaments = await this.db.collection('tournaments').get();
-        
+
         const batch = this.db.batch();
         tournaments.docs.forEach(doc => {
           const data = doc.data();
           const updates: any = {
-            updatedAt: firestore.Timestamp.now()
+            updatedAt: firestore.Timestamp.now(),
           };
-          
+
           // Add tournamentCode if missing
           if (!data.tournamentCode) {
             updates.tournamentCode = this.generateTournamentCode();
           }
-          
+
           // Add maxPlayers if missing
           if (!data.maxPlayers) {
             updates.maxPlayers = 32; // Default value
           }
-          
+
           // Add currentPlayerCount if missing
           if (data.currentPlayerCount === undefined) {
             updates.currentPlayerCount = 0;
@@ -276,28 +303,32 @@ export class MigrationService extends DatabaseService {
 
           batch.update(doc.ref, updates);
         });
-        
+
         await batch.commit();
-        console.log(`Updated ${tournaments.docs.length} tournaments with new fields`);
+        console.log(
+          `Updated ${tournaments.docs.length} tournaments with new fields`
+        );
       },
       down: async () => {
         console.log('Removing tournamentCode and maxPlayers fields');
-        
+
         const tournaments = await this.db.collection('tournaments').get();
         const batch = this.db.batch();
-        
+
         tournaments.docs.forEach(doc => {
           batch.update(doc.ref, {
             tournamentCode: firestore.FieldValue.delete(),
             maxPlayers: firestore.FieldValue.delete(),
             currentPlayerCount: firestore.FieldValue.delete(),
-            updatedAt: firestore.Timestamp.now()
+            updatedAt: firestore.Timestamp.now(),
           });
         });
-        
+
         await batch.commit();
-        console.log(`Removed new fields from ${tournaments.docs.length} tournaments`);
-      }
+        console.log(
+          `Removed new fields from ${tournaments.docs.length} tournaments`
+        );
+      },
     });
   }
 

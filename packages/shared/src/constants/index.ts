@@ -70,31 +70,31 @@ export const ERROR_CODES = {
   TOKEN_EXPIRED: 'TOKEN_EXPIRED',
   TOKEN_INVALID: 'TOKEN_INVALID',
   UNAUTHORIZED: 'UNAUTHORIZED',
-  
+
   // Authorization errors
   FORBIDDEN: 'FORBIDDEN',
   INSUFFICIENT_PERMISSIONS: 'INSUFFICIENT_PERMISSIONS',
-  
+
   // Validation errors
   VALIDATION_ERROR: 'VALIDATION_ERROR',
   INVALID_INPUT: 'INVALID_INPUT',
   MISSING_REQUIRED_FIELD: 'MISSING_REQUIRED_FIELD',
-  
+
   // Resource errors
   NOT_FOUND: 'NOT_FOUND',
   ALREADY_EXISTS: 'ALREADY_EXISTS',
   CONFLICT: 'CONFLICT',
-  
+
   // Tournament specific errors
   TOURNAMENT_FULL: 'TOURNAMENT_FULL',
   REGISTRATION_CLOSED: 'REGISTRATION_CLOSED',
   TOURNAMENT_STARTED: 'TOURNAMENT_STARTED',
-  
+
   // Payment errors
   PAYMENT_FAILED: 'PAYMENT_FAILED',
   PAYMENT_REQUIRED: 'PAYMENT_REQUIRED',
   INSUFFICIENT_FUNDS: 'INSUFFICIENT_FUNDS',
-  
+
   // System errors
   INTERNAL_ERROR: 'INTERNAL_ERROR',
   SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
@@ -151,11 +151,15 @@ export const SPORTS_LIST = [
   'Other',
 ] as const;
 
-export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
-export type TournamentFormat = typeof TOURNAMENT_FORMATS[keyof typeof TOURNAMENT_FORMATS];
-export type TournamentStatus = typeof TOURNAMENT_STATUSES[keyof typeof TOURNAMENT_STATUSES];
-export type MatchStatus = typeof MATCH_STATUSES[keyof typeof MATCH_STATUSES];
-export type ParticipantStatus = typeof PARTICIPANT_STATUSES[keyof typeof PARTICIPANT_STATUSES];
-export type SubscriptionPlan = typeof SUBSCRIPTION_PLANS[keyof typeof SUBSCRIPTION_PLANS];
-export type ErrorCode = typeof ERROR_CODES[keyof typeof ERROR_CODES];
-export type SportType = typeof SPORTS_LIST[number];
+export type UserRole = (typeof USER_ROLES)[keyof typeof USER_ROLES];
+export type TournamentFormat =
+  (typeof TOURNAMENT_FORMATS)[keyof typeof TOURNAMENT_FORMATS];
+export type TournamentStatus =
+  (typeof TOURNAMENT_STATUSES)[keyof typeof TOURNAMENT_STATUSES];
+export type MatchStatus = (typeof MATCH_STATUSES)[keyof typeof MATCH_STATUSES];
+export type ParticipantStatus =
+  (typeof PARTICIPANT_STATUSES)[keyof typeof PARTICIPANT_STATUSES];
+export type SubscriptionPlan =
+  (typeof SUBSCRIPTION_PLANS)[keyof typeof SUBSCRIPTION_PLANS];
+export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
+export type SportType = (typeof SPORTS_LIST)[number];

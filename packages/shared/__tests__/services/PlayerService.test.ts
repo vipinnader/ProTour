@@ -63,7 +63,7 @@ describe('PlayerService', () => {
     it('should create a player with valid data', async () => {
       const mockPlayerId = 'player-123';
       mockCollection.add.mockResolvedValue({ id: mockPlayerId });
-      
+
       // Mock duplicate check query
       mockCollection.where.mockReturnValue({
         get: jest.fn().mockResolvedValue({ docs: [] }),
@@ -89,38 +89,43 @@ describe('PlayerService', () => {
     it('should validate required fields', async () => {
       const invalidData = { ...validPlayerData, name: '' };
 
-      await expect(
-        playerService.createPlayer(invalidData)
-      ).rejects.toThrow('Missing required fields');
+      await expect(playerService.createPlayer(invalidData)).rejects.toThrow(
+        'Missing required fields'
+      );
     });
 
     it('should validate email format', async () => {
       const invalidData = { ...validPlayerData, email: 'invalid-email' };
 
-      await expect(
-        playerService.createPlayer(invalidData)
-      ).rejects.toThrow('Invalid email format');
+      await expect(playerService.createPlayer(invalidData)).rejects.toThrow(
+        'Invalid email format'
+      );
     });
 
     it('should validate name length', async () => {
       const invalidData = { ...validPlayerData, name: 'A' };
 
-      await expect(
-        playerService.createPlayer(invalidData)
-      ).rejects.toThrow('Player name must be at least 2 characters');
+      await expect(playerService.createPlayer(invalidData)).rejects.toThrow(
+        'Player name must be at least 2 characters'
+      );
     });
 
     it('should check for duplicate emails', async () => {
       // Mock existing player with same email
       mockCollection.where.mockReturnValue({
         get: jest.fn().mockResolvedValue({
-          docs: [{ id: 'existing-player', data: () => ({ email: validPlayerData.email }) }],
+          docs: [
+            {
+              id: 'existing-player',
+              data: () => ({ email: validPlayerData.email }),
+            },
+          ],
         }),
       });
 
-      await expect(
-        playerService.createPlayer(validPlayerData)
-      ).rejects.toThrow('A player with this email already exists in this tournament');
+      await expect(playerService.createPlayer(validPlayerData)).rejects.toThrow(
+        'A player with this email already exists in this tournament'
+      );
     });
 
     it('should trim and normalize data', async () => {
@@ -222,7 +227,9 @@ describe('PlayerService', () => {
       // Mock existing player with new email
       mockCollection.where.mockReturnValue({
         get: jest.fn().mockResolvedValue({
-          docs: [{ id: 'other-player', data: () => ({ email: 'new@example.com' }) }],
+          docs: [
+            { id: 'other-player', data: () => ({ email: 'new@example.com' }) },
+          ],
         }),
       });
 
@@ -230,7 +237,9 @@ describe('PlayerService', () => {
 
       await expect(
         playerService.updatePlayer(playerId, updates)
-      ).rejects.toThrow('A player with this email already exists in this tournament');
+      ).rejects.toThrow(
+        'A player with this email already exists in this tournament'
+      );
     });
   });
 
@@ -288,7 +297,10 @@ describe('PlayerService', () => {
         };
         mockCollection.where.mockReturnValue(mockQuery);
 
-        const result = await playerService.importPlayersFromCSV(csvData, tournamentId);
+        const result = await playerService.importPlayersFromCSV(
+          csvData,
+          tournamentId
+        );
 
         expect(result.validPlayers).toHaveLength(2);
         expect(result.errors).toHaveLength(0);
@@ -313,7 +325,10 @@ describe('PlayerService', () => {
         };
         mockCollection.where.mockReturnValue(mockQuery);
 
-        const result = await playerService.importPlayersFromCSV(csvData, tournamentId);
+        const result = await playerService.importPlayersFromCSV(
+          csvData,
+          tournamentId
+        );
 
         expect(result.validPlayers).toHaveLength(0);
         expect(result.errors).toHaveLength(2);
@@ -338,7 +353,10 @@ describe('PlayerService', () => {
         };
         mockCollection.where.mockReturnValue(mockQuery);
 
-        const result = await playerService.importPlayersFromCSV(csvData, tournamentId);
+        const result = await playerService.importPlayersFromCSV(
+          csvData,
+          tournamentId
+        );
 
         expect(result.validPlayers).toHaveLength(1);
         expect(result.duplicates).toHaveLength(1);
@@ -356,15 +374,20 @@ describe('PlayerService', () => {
         // Mock existing player with same email
         const mockQuery = {
           get: jest.fn().mockResolvedValue({
-            docs: [{
-              id: 'existing-player',
-              data: () => ({ email: 'existing@example.com' }),
-            }],
+            docs: [
+              {
+                id: 'existing-player',
+                data: () => ({ email: 'existing@example.com' }),
+              },
+            ],
           }),
         };
         mockCollection.where.mockReturnValue(mockQuery);
 
-        const result = await playerService.importPlayersFromCSV(csvData, tournamentId);
+        const result = await playerService.importPlayersFromCSV(
+          csvData,
+          tournamentId
+        );
 
         expect(result.validPlayers).toHaveLength(0);
         expect(result.duplicates).toHaveLength(1);
@@ -385,7 +408,10 @@ describe('PlayerService', () => {
         };
         mockCollection.where.mockReturnValue(mockQuery);
 
-        const result = await playerService.importPlayersFromCSV(csvData, tournamentId);
+        const result = await playerService.importPlayersFromCSV(
+          csvData,
+          tournamentId
+        );
 
         expect(result.errors).toHaveLength(1);
         expect(result.errors[0].field).toBe('phone');
@@ -411,7 +437,10 @@ describe('PlayerService', () => {
         };
         mockCollection.where.mockReturnValue(mockQuery);
 
-        const result = await playerService.importPlayersFromCSV(csvData, tournamentId);
+        const result = await playerService.importPlayersFromCSV(
+          csvData,
+          tournamentId
+        );
 
         expect(result.errors).toHaveLength(2);
         expect(result.errors[0].field).toBe('ranking');
@@ -427,18 +456,34 @@ describe('PlayerService', () => {
         ];
 
         const expectedPlayers = [
-          { id: 'player-1', name: 'John Smith', email: 'john@example.com', tournamentId },
-          { id: 'player-2', name: 'Jane Doe', email: 'jane@example.com', tournamentId },
+          {
+            id: 'player-1',
+            name: 'John Smith',
+            email: 'john@example.com',
+            tournamentId,
+          },
+          {
+            id: 'player-2',
+            name: 'Jane Doe',
+            email: 'jane@example.com',
+            tournamentId,
+          },
         ];
 
         // Mock the batchCreate method from DatabaseService
         const mockBatchCreate = jest.spyOn(playerService as any, 'batchCreate');
         mockBatchCreate.mockResolvedValue(expectedPlayers);
 
-        const result = await playerService.batchCreatePlayers(playersData, tournamentId);
+        const result = await playerService.batchCreatePlayers(
+          playersData,
+          tournamentId
+        );
 
         expect(result).toHaveLength(2);
-        expect(mockBatchCreate).toHaveBeenCalledWith('players', expect.any(Array));
+        expect(mockBatchCreate).toHaveBeenCalledWith(
+          'players',
+          expect.any(Array)
+        );
         expect(result[0].tournamentId).toBe(tournamentId);
       });
     });
@@ -451,7 +496,12 @@ describe('PlayerService', () => {
       const mockPlayers = [
         { id: 'player-1', name: 'John Smith', ranking: 1000, tournamentId },
         { id: 'player-2', name: 'Jane Doe', ranking: 1500, tournamentId },
-        { id: 'player-3', name: 'Bob Wilson', ranking: undefined, tournamentId },
+        {
+          id: 'player-3',
+          name: 'Bob Wilson',
+          ranking: undefined,
+          tournamentId,
+        },
       ];
 
       beforeEach(() => {
@@ -470,8 +520,9 @@ describe('PlayerService', () => {
 
         expect(mockBatch.update).toHaveBeenCalledTimes(3);
         // Lower ranking number gets higher seed (position 1)
-        expect(mockBatch.update).toHaveBeenNthCalledWith(1, 
-          expect.anything(), 
+        expect(mockBatch.update).toHaveBeenNthCalledWith(
+          1,
+          expect.anything(),
           expect.objectContaining({ seedPosition: 1 })
         );
       });
@@ -479,7 +530,8 @@ describe('PlayerService', () => {
       it('should assign random seed positions', async () => {
         // Mock Math.random for predictable results
         const originalRandom = Math.random;
-        Math.random = jest.fn()
+        Math.random = jest
+          .fn()
           .mockReturnValueOnce(0.1)
           .mockReturnValueOnce(0.9)
           .mockReturnValueOnce(0.5);

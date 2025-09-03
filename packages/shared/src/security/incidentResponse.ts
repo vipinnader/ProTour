@@ -2,8 +2,14 @@ import { EventEmitter } from 'events';
 import crypto from 'crypto';
 
 export type IncidentSeverity = 'low' | 'medium' | 'high' | 'critical';
-export type IncidentStatus = 'detected' | 'analyzing' | 'containing' | 'investigating' | 'resolving' | 'closed';
-export type IncidentCategory = 
+export type IncidentStatus =
+  | 'detected'
+  | 'analyzing'
+  | 'containing'
+  | 'investigating'
+  | 'resolving'
+  | 'closed';
+export type IncidentCategory =
   | 'data_breach'
   | 'malware'
   | 'phishing'
@@ -112,7 +118,12 @@ export interface ResponseAction {
 
 export interface ContainmentAction {
   id: string;
-  action: 'isolate_system' | 'block_ip' | 'disable_account' | 'quarantine_file' | 'network_segmentation';
+  action:
+    | 'isolate_system'
+    | 'block_ip'
+    | 'disable_account'
+    | 'quarantine_file'
+    | 'network_segmentation';
   target: string;
   implementedAt?: Date;
   effectiveUntil?: Date;
@@ -122,7 +133,11 @@ export interface ContainmentAction {
 
 export interface EradicationAction {
   id: string;
-  action: 'remove_malware' | 'patch_vulnerability' | 'update_credentials' | 'fix_configuration';
+  action:
+    | 'remove_malware'
+    | 'patch_vulnerability'
+    | 'update_credentials'
+    | 'fix_configuration';
   target: string;
   implementedAt?: Date;
   verified: boolean;
@@ -131,7 +146,11 @@ export interface EradicationAction {
 
 export interface RecoveryAction {
   id: string;
-  action: 'restore_system' | 'restore_data' | 'resume_service' | 'renable_account';
+  action:
+    | 'restore_system'
+    | 'restore_data'
+    | 'resume_service'
+    | 'renable_account';
   target: string;
   implementedAt?: Date;
   testResults?: string[];
@@ -187,7 +206,10 @@ export interface CommunicationPlan {
 export class IncidentResponseManager extends EventEmitter {
   private incidents = new Map<string, SecurityIncident>();
   private templates = new Map<IncidentCategory, IncidentTemplate>();
-  private stakeholders = new Map<string, { email: string; role: string; phone?: string }>();
+  private stakeholders = new Map<
+    string,
+    { email: string; role: string; phone?: string }
+  >();
   private escalationRules: EscalationRule[] = [];
 
   constructor() {
@@ -199,136 +221,167 @@ export class IncidentResponseManager extends EventEmitter {
 
   private initializeTemplates(): void {
     const templates: Array<[IncidentCategory, IncidentTemplate]> = [
-      ['data_breach', {
-        category: 'data_breach',
-        defaultSeverity: 'high',
-        responsePlaybook: [
-          'Immediately isolate affected systems',
-          'Preserve evidence and logs',
-          'Identify scope of data exposure',
-          'Notify legal and compliance teams',
-          'Prepare customer communications',
-          'Contact law enforcement if required',
-          'Document all actions taken',
-        ],
-        requiredActions: [
-          { type: 'immediate', title: 'Isolate affected systems', priority: 1 },
-          { type: 'containment', title: 'Preserve evidence', priority: 2 },
-          { type: 'investigation', title: 'Assess data exposure', priority: 3 },
-        ],
-        escalationRules: [
-          {
-            condition: 'severity >= high',
-            severity: 'high',
-            stakeholders: ['ciso', 'legal', 'ceo'],
-            actions: ['immediate_notification', 'legal_review'],
-          },
-        ],
-        communicationPlan: {
-          internal: {
-            immediate: ['security_team', 'legal_team', 'ciso'],
-            hourly: ['exec_team'],
-            daily: ['board'],
-          },
-          external: {
-            customers: { threshold: 'medium', template: 'data_breach_notification' },
-            partners: { threshold: 'high', template: 'partner_notification' },
-            media: { threshold: 'critical', template: 'press_release' },
-          },
-          regulatory: {
-            threshold: 'medium',
-            timeframe: 72, // GDPR requirement
-            contacts: ['data_protection_authority'],
+      [
+        'data_breach',
+        {
+          category: 'data_breach',
+          defaultSeverity: 'high',
+          responsePlaybook: [
+            'Immediately isolate affected systems',
+            'Preserve evidence and logs',
+            'Identify scope of data exposure',
+            'Notify legal and compliance teams',
+            'Prepare customer communications',
+            'Contact law enforcement if required',
+            'Document all actions taken',
+          ],
+          requiredActions: [
+            {
+              type: 'immediate',
+              title: 'Isolate affected systems',
+              priority: 1,
+            },
+            { type: 'containment', title: 'Preserve evidence', priority: 2 },
+            {
+              type: 'investigation',
+              title: 'Assess data exposure',
+              priority: 3,
+            },
+          ],
+          escalationRules: [
+            {
+              condition: 'severity >= high',
+              severity: 'high',
+              stakeholders: ['ciso', 'legal', 'ceo'],
+              actions: ['immediate_notification', 'legal_review'],
+            },
+          ],
+          communicationPlan: {
+            internal: {
+              immediate: ['security_team', 'legal_team', 'ciso'],
+              hourly: ['exec_team'],
+              daily: ['board'],
+            },
+            external: {
+              customers: {
+                threshold: 'medium',
+                template: 'data_breach_notification',
+              },
+              partners: { threshold: 'high', template: 'partner_notification' },
+              media: { threshold: 'critical', template: 'press_release' },
+            },
+            regulatory: {
+              threshold: 'medium',
+              timeframe: 72, // GDPR requirement
+              contacts: ['data_protection_authority'],
+            },
           },
         },
-      }],
+      ],
 
-      ['malware', {
-        category: 'malware',
-        defaultSeverity: 'medium',
-        responsePlaybook: [
-          'Isolate infected systems',
-          'Identify malware variant',
-          'Check for lateral movement',
-          'Remove malware from affected systems',
-          'Update security controls',
-          'Monitor for reinfection',
-        ],
-        requiredActions: [
-          { type: 'immediate', title: 'Isolate infected systems', priority: 1 },
-          { type: 'investigation', title: 'Analyze malware', priority: 2 },
-          { type: 'containment', title: 'Prevent spread', priority: 3 },
-        ],
-        escalationRules: [
-          {
-            condition: 'lateral_movement_detected',
-            severity: 'high',
-            stakeholders: ['security_team', 'it_team'],
-            actions: ['network_isolation', 'forensic_analysis'],
-          },
-        ],
-        communicationPlan: {
-          internal: {
-            immediate: ['security_team', 'it_team'],
-            hourly: ['ciso'],
-            daily: ['exec_team'],
-          },
-          external: {
-            customers: { threshold: 'high', template: 'service_disruption' },
-            partners: { threshold: 'critical', template: 'security_incident' },
-            media: { threshold: 'critical', template: 'security_statement' },
-          },
-          regulatory: {
-            threshold: 'high',
-            timeframe: 24,
-            contacts: ['cybersecurity_authority'],
+      [
+        'malware',
+        {
+          category: 'malware',
+          defaultSeverity: 'medium',
+          responsePlaybook: [
+            'Isolate infected systems',
+            'Identify malware variant',
+            'Check for lateral movement',
+            'Remove malware from affected systems',
+            'Update security controls',
+            'Monitor for reinfection',
+          ],
+          requiredActions: [
+            {
+              type: 'immediate',
+              title: 'Isolate infected systems',
+              priority: 1,
+            },
+            { type: 'investigation', title: 'Analyze malware', priority: 2 },
+            { type: 'containment', title: 'Prevent spread', priority: 3 },
+          ],
+          escalationRules: [
+            {
+              condition: 'lateral_movement_detected',
+              severity: 'high',
+              stakeholders: ['security_team', 'it_team'],
+              actions: ['network_isolation', 'forensic_analysis'],
+            },
+          ],
+          communicationPlan: {
+            internal: {
+              immediate: ['security_team', 'it_team'],
+              hourly: ['ciso'],
+              daily: ['exec_team'],
+            },
+            external: {
+              customers: { threshold: 'high', template: 'service_disruption' },
+              partners: {
+                threshold: 'critical',
+                template: 'security_incident',
+              },
+              media: { threshold: 'critical', template: 'security_statement' },
+            },
+            regulatory: {
+              threshold: 'high',
+              timeframe: 24,
+              contacts: ['cybersecurity_authority'],
+            },
           },
         },
-      }],
+      ],
 
-      ['ddos', {
-        category: 'ddos',
-        defaultSeverity: 'medium',
-        responsePlaybook: [
-          'Activate DDoS mitigation',
-          'Scale infrastructure if needed',
-          'Block malicious traffic',
-          'Monitor service availability',
-          'Communicate with customers',
-          'Document attack patterns',
-        ],
-        requiredActions: [
-          { type: 'immediate', title: 'Activate DDoS protection', priority: 1 },
-          { type: 'containment', title: 'Block attack traffic', priority: 2 },
-          { type: 'recovery', title: 'Restore full service', priority: 3 },
-        ],
-        escalationRules: [
-          {
-            condition: 'service_unavailable > 30min',
-            severity: 'high',
-            timeThreshold: 30,
-            stakeholders: ['cto', 'customer_success'],
-            actions: ['customer_notification', 'media_statement'],
-          },
-        ],
-        communicationPlan: {
-          internal: {
-            immediate: ['ops_team', 'security_team'],
-            hourly: ['cto'],
-            daily: ['exec_team'],
-          },
-          external: {
-            customers: { threshold: 'medium', template: 'service_status' },
-            partners: { threshold: 'high', template: 'service_impact' },
-            media: { threshold: 'high', template: 'service_statement' },
-          },
-          regulatory: {
-            threshold: 'critical',
-            timeframe: 24,
-            contacts: [],
+      [
+        'ddos',
+        {
+          category: 'ddos',
+          defaultSeverity: 'medium',
+          responsePlaybook: [
+            'Activate DDoS mitigation',
+            'Scale infrastructure if needed',
+            'Block malicious traffic',
+            'Monitor service availability',
+            'Communicate with customers',
+            'Document attack patterns',
+          ],
+          requiredActions: [
+            {
+              type: 'immediate',
+              title: 'Activate DDoS protection',
+              priority: 1,
+            },
+            { type: 'containment', title: 'Block attack traffic', priority: 2 },
+            { type: 'recovery', title: 'Restore full service', priority: 3 },
+          ],
+          escalationRules: [
+            {
+              condition: 'service_unavailable > 30min',
+              severity: 'high',
+              timeThreshold: 30,
+              stakeholders: ['cto', 'customer_success'],
+              actions: ['customer_notification', 'media_statement'],
+            },
+          ],
+          communicationPlan: {
+            internal: {
+              immediate: ['ops_team', 'security_team'],
+              hourly: ['cto'],
+              daily: ['exec_team'],
+            },
+            external: {
+              customers: { threshold: 'medium', template: 'service_status' },
+              partners: { threshold: 'high', template: 'service_impact' },
+              media: { threshold: 'high', template: 'service_statement' },
+            },
+            regulatory: {
+              threshold: 'critical',
+              timeframe: 24,
+              contacts: [],
+            },
           },
         },
-      }],
+      ],
     ];
 
     templates.forEach(([category, template]) => {
@@ -338,14 +391,34 @@ export class IncidentResponseManager extends EventEmitter {
 
   private initializeStakeholders(): void {
     const stakeholders = [
-      { id: 'ciso', email: 'ciso@protour.app', role: 'Chief Information Security Officer' },
+      {
+        id: 'ciso',
+        email: 'ciso@protour.app',
+        role: 'Chief Information Security Officer',
+      },
       { id: 'cto', email: 'cto@protour.app', role: 'Chief Technology Officer' },
       { id: 'ceo', email: 'ceo@protour.app', role: 'Chief Executive Officer' },
       { id: 'legal', email: 'legal@protour.app', role: 'Legal Counsel' },
-      { id: 'security_team', email: 'security-team@protour.app', role: 'Security Team' },
-      { id: 'it_team', email: 'it-team@protour.app', role: 'IT Operations Team' },
-      { id: 'ops_team', email: 'ops-team@protour.app', role: 'Operations Team' },
-      { id: 'customer_success', email: 'support@protour.app', role: 'Customer Success Team' },
+      {
+        id: 'security_team',
+        email: 'security-team@protour.app',
+        role: 'Security Team',
+      },
+      {
+        id: 'it_team',
+        email: 'it-team@protour.app',
+        role: 'IT Operations Team',
+      },
+      {
+        id: 'ops_team',
+        email: 'ops-team@protour.app',
+        role: 'Operations Team',
+      },
+      {
+        id: 'customer_success',
+        email: 'support@protour.app',
+        role: 'Customer Success Team',
+      },
     ];
 
     stakeholders.forEach(stakeholder => {
@@ -377,7 +450,9 @@ export class IncidentResponseManager extends EventEmitter {
       category: data.category,
       severity: data.severity || template?.defaultSeverity || 'medium',
       status: 'detected',
-      priority: this.calculatePriority(data.severity || template?.defaultSeverity || 'medium'),
+      priority: this.calculatePriority(
+        data.severity || template?.defaultSeverity || 'medium'
+      ),
       detectedAt: now,
       source: data.source,
       affected: {
@@ -386,14 +461,16 @@ export class IncidentResponseManager extends EventEmitter {
         data: data.affected?.data || [],
         locations: data.affected?.locations || [],
       },
-      timeline: [{
-        id: crypto.randomUUID(),
-        timestamp: now,
-        type: 'detection',
-        description: `Incident detected: ${data.title}`,
-        actor: data.createdBy,
-        automated: data.source.automated,
-      }],
+      timeline: [
+        {
+          id: crypto.randomUUID(),
+          timestamp: now,
+          type: 'detection',
+          description: `Incident detected: ${data.title}`,
+          actor: data.createdBy,
+          automated: data.source.automated,
+        },
+      ],
       indicators: {
         ips: data.indicators?.ips || [],
         domains: data.indicators?.domains || [],
@@ -441,17 +518,21 @@ export class IncidentResponseManager extends EventEmitter {
 
     // Create initial response actions from template
     if (template) {
-      incident.response.actions = template.requiredActions.map((action, index) => ({
-        id: crypto.randomUUID(),
-        type: action.type || 'investigation',
-        title: action.title || '',
-        description: action.description || '',
-        assignedTo: '',
-        deadline: new Date(now.getTime() + (action.priority || index + 1) * 60 * 60 * 1000), // Hours based on priority
-        status: 'pending',
-        priority: action.priority || index + 1,
-        dependencies: action.dependencies || [],
-      }));
+      incident.response.actions = template.requiredActions.map(
+        (action, index) => ({
+          id: crypto.randomUUID(),
+          type: action.type || 'investigation',
+          title: action.title || '',
+          description: action.description || '',
+          assignedTo: '',
+          deadline: new Date(
+            now.getTime() + (action.priority || index + 1) * 60 * 60 * 1000
+          ), // Hours based on priority
+          status: 'pending',
+          priority: action.priority || index + 1,
+          dependencies: action.dependencies || [],
+        })
+      );
     }
 
     this.incidents.set(incidentId, incident);
@@ -463,7 +544,10 @@ export class IncidentResponseManager extends EventEmitter {
     return incident;
   }
 
-  updateIncident(incidentId: string, updates: Partial<SecurityIncident>): SecurityIncident | null {
+  updateIncident(
+    incidentId: string,
+    updates: Partial<SecurityIncident>
+  ): SecurityIncident | null {
     const incident = this.incidents.get(incidentId);
     if (!incident) {
       return null;
@@ -493,7 +577,7 @@ export class IncidentResponseManager extends EventEmitter {
         actor: 'system',
         automated: false,
       });
-      
+
       // Recalculate priority and check escalation
       incident.priority = this.calculatePriority(updates.severity);
       this.checkEscalation(incident);
@@ -517,7 +601,7 @@ export class IncidentResponseManager extends EventEmitter {
 
     incident.timeline.push(timelineEvent);
     incident.lastUpdatedAt = new Date();
-    
+
     this.incidents.set(incident.id, incident);
     this.emit('timelineUpdated', { incident, event: timelineEvent });
   }
@@ -552,7 +636,11 @@ export class IncidentResponseManager extends EventEmitter {
     return responseAction;
   }
 
-  completeAction(incidentId: string, actionId: string, result: string): boolean {
+  completeAction(
+    incidentId: string,
+    actionId: string,
+    result: string
+  ): boolean {
     const incident = this.incidents.get(incidentId);
     if (!incident) {
       return false;
@@ -640,12 +728,15 @@ export class IncidentResponseManager extends EventEmitter {
     }
   }
 
-  private shouldEscalate(incident: SecurityIncident, rule: EscalationRule): boolean {
+  private shouldEscalate(
+    incident: SecurityIncident,
+    rule: EscalationRule
+  ): boolean {
     // Simple condition parsing (in production, use a proper rule engine)
     if (rule.condition.includes('severity >= high')) {
       return ['high', 'critical'].includes(incident.severity);
     }
-    
+
     if (rule.condition.includes('service_unavailable') && rule.timeThreshold) {
       const now = new Date();
       const timeSinceDetection = now.getTime() - incident.detectedAt.getTime();
@@ -655,7 +746,10 @@ export class IncidentResponseManager extends EventEmitter {
     return false;
   }
 
-  private escalateIncident(incident: SecurityIncident, rule: EscalationRule): void {
+  private escalateIncident(
+    incident: SecurityIncident,
+    rule: EscalationRule
+  ): void {
     this.addTimelineEvent(incident, {
       type: 'escalation',
       description: `Incident escalated: ${rule.condition}`,
@@ -672,7 +766,11 @@ export class IncidentResponseManager extends EventEmitter {
     this.emit('incidentEscalated', { incident, rule });
   }
 
-  private notifyStakeholder(incident: SecurityIncident, stakeholderId: string, type: string): void {
+  private notifyStakeholder(
+    incident: SecurityIncident,
+    stakeholderId: string,
+    type: string
+  ): void {
     const stakeholder = this.stakeholders.get(stakeholderId);
     if (!stakeholder) return;
 
@@ -687,7 +785,11 @@ export class IncidentResponseManager extends EventEmitter {
     };
 
     incident.communication.internal.push(notification);
-    this.emit('stakeholderNotified', { incident, stakeholder: stakeholderId, notification });
+    this.emit('stakeholderNotified', {
+      incident,
+      stakeholder: stakeholderId,
+      notification,
+    });
   }
 
   getIncident(incidentId: string): SecurityIncident | null {
@@ -714,7 +816,7 @@ export class IncidentResponseManager extends EventEmitter {
         incidents = incidents.filter(i => i.category === filter.category);
       }
       if (filter.assignedTo) {
-        incidents = incidents.filter(i => 
+        incidents = incidents.filter(i =>
           i.response.actions.some(a => a.assignedTo === filter.assignedTo)
         );
       }
@@ -723,14 +825,21 @@ export class IncidentResponseManager extends EventEmitter {
       }
     }
 
-    return incidents.sort((a, b) => b.priority - a.priority || b.detectedAt.getTime() - a.detectedAt.getTime());
+    return incidents.sort(
+      (a, b) =>
+        b.priority - a.priority ||
+        b.detectedAt.getTime() - a.detectedAt.getTime()
+    );
   }
 
   private startMonitoringProcess(): void {
     // Check for overdue actions every 5 minutes
-    setInterval(() => {
-      this.checkOverdueActions();
-    }, 5 * 60 * 1000);
+    setInterval(
+      () => {
+        this.checkOverdueActions();
+      },
+      5 * 60 * 1000
+    );
   }
 
   private checkOverdueActions(): void {
@@ -766,8 +875,8 @@ export class IncidentResponseManager extends EventEmitter {
     let incidents = Array.from(this.incidents.values());
 
     if (period) {
-      incidents = incidents.filter(i => 
-        i.detectedAt >= period.start && i.detectedAt <= period.end
+      incidents = incidents.filter(
+        i => i.detectedAt >= period.start && i.detectedAt <= period.end
       );
     }
 
@@ -775,19 +884,25 @@ export class IncidentResponseManager extends EventEmitter {
     const incidentsBySeverity: Record<IncidentSeverity, number> = {} as any;
 
     incidents.forEach(incident => {
-      incidentsByCategory[incident.category] = (incidentsByCategory[incident.category] || 0) + 1;
-      incidentsBySeverity[incident.severity] = (incidentsBySeverity[incident.severity] || 0) + 1;
+      incidentsByCategory[incident.category] =
+        (incidentsByCategory[incident.category] || 0) + 1;
+      incidentsBySeverity[incident.severity] =
+        (incidentsBySeverity[incident.severity] || 0) + 1;
     });
 
-    const closedIncidents = incidents.filter(i => i.status === 'closed' && i.closedAt);
-    const averageResolutionTime = closedIncidents.length > 0
-      ? closedIncidents.reduce((sum, incident) => {
-          const resolutionTime = incident.closedAt!.getTime() - incident.detectedAt.getTime();
-          return sum + resolutionTime;
-        }, 0) / closedIncidents.length
-      : 0;
+    const closedIncidents = incidents.filter(
+      i => i.status === 'closed' && i.closedAt
+    );
+    const averageResolutionTime =
+      closedIncidents.length > 0
+        ? closedIncidents.reduce((sum, incident) => {
+            const resolutionTime =
+              incident.closedAt!.getTime() - incident.detectedAt.getTime();
+            return sum + resolutionTime;
+          }, 0) / closedIncidents.length
+        : 0;
 
-    const escalatedIncidents = incidents.filter(i => 
+    const escalatedIncidents = incidents.filter(i =>
       i.timeline.some(event => event.type === 'escalation')
     ).length;
 

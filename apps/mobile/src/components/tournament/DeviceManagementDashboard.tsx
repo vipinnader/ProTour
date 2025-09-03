@@ -23,7 +23,12 @@ interface DeviceManagementDashboardProps {
 
 interface ActivityItem {
   id: string;
-  type: 'score_entry' | 'match_start' | 'match_complete' | 'connection' | 'error';
+  type:
+    | 'score_entry'
+    | 'match_start'
+    | 'match_complete'
+    | 'connection'
+    | 'error';
   deviceId: string;
   deviceName: string;
   userId: string;
@@ -69,7 +74,8 @@ const DeviceManagementDashboard: React.FC<DeviceManagementDashboardProps> = ({
 
   const loadData = async () => {
     try {
-      const data = await multiDeviceService.getDeviceManagementData(tournamentId);
+      const data =
+        await multiDeviceService.getDeviceManagementData(tournamentId);
       setActiveDevices(data.activeDevices);
       setRecentActivity(data.recentActivity);
       setConnectionStats(data.connectionStats);
@@ -84,7 +90,10 @@ const DeviceManagementDashboard: React.FC<DeviceManagementDashboardProps> = ({
     setRefreshing(false);
   };
 
-  const handleDisconnectDevice = async (deviceId: string, reason = 'Disconnected by organizer') => {
+  const handleDisconnectDevice = async (
+    deviceId: string,
+    reason = 'Disconnected by organizer'
+  ) => {
     try {
       await multiDeviceService.disconnectDevice(deviceId, reason);
       Alert.alert('Success', 'Device has been disconnected');
@@ -97,11 +106,9 @@ const DeviceManagementDashboard: React.FC<DeviceManagementDashboardProps> = ({
 
   const handleAssignMatches = async (deviceId: string) => {
     // This would open a modal to select matches to assign
-    Alert.alert(
-      'Assign Matches',
-      'Match assignment feature coming soon',
-      [{ text: 'OK' }]
-    );
+    Alert.alert('Assign Matches', 'Match assignment feature coming soon', [
+      { text: 'OK' },
+    ]);
   };
 
   const getDeviceStatusColor = (device: DeviceInfo): string => {
@@ -113,30 +120,42 @@ const DeviceManagementDashboard: React.FC<DeviceManagementDashboardProps> = ({
 
   const getActivityTypeIcon = (type: string): string => {
     switch (type) {
-      case 'score_entry': return '🏓';
-      case 'match_start': return '▶️';
-      case 'match_complete': return '✅';
-      case 'connection': return '🔗';
-      case 'error': return '⚠️';
-      default: return '📱';
+      case 'score_entry':
+        return '🏓';
+      case 'match_start':
+        return '▶️';
+      case 'match_complete':
+        return '✅';
+      case 'connection':
+        return '🔗';
+      case 'error':
+        return '⚠️';
+      default:
+        return '📱';
     }
   };
 
   const getActivityTypeColor = (type: string): string => {
     switch (type) {
-      case 'score_entry': return '#007bff';
-      case 'match_start': return '#28a745';
-      case 'match_complete': return '#6c757d';
-      case 'connection': return '#17a2b8';
-      case 'error': return '#dc3545';
-      default: return '#6c757d';
+      case 'score_entry':
+        return '#007bff';
+      case 'match_start':
+        return '#28a745';
+      case 'match_complete':
+        return '#6c757d';
+      case 'connection':
+        return '#17a2b8';
+      case 'error':
+        return '#dc3545';
+      default:
+        return '#6c757d';
     }
   };
 
   const formatConnectionTime = (timestamp: number): string => {
     const now = Date.now();
     const diff = now - timestamp;
-    
+
     if (diff < 60000) return 'Just now';
     if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
@@ -158,14 +177,16 @@ const DeviceManagementDashboard: React.FC<DeviceManagementDashboardProps> = ({
           <Text style={styles.deviceUser}>{device.userId}</Text>
         </View>
         <View style={styles.deviceStatus}>
-          <View style={[
-            styles.statusIndicator,
-            { backgroundColor: getDeviceStatusColor(device) }
-          ]} />
+          <View
+            style={[
+              styles.statusIndicator,
+              { backgroundColor: getDeviceStatusColor(device) },
+            ]}
+          />
           <Text style={styles.deviceRole}>{device.role}</Text>
         </View>
       </View>
-      
+
       <View style={styles.deviceDetails}>
         <Text style={styles.deviceDetail}>
           Last seen: {formatConnectionTime(device.lastSeen)}
@@ -182,7 +203,7 @@ const DeviceManagementDashboard: React.FC<DeviceManagementDashboardProps> = ({
         >
           <Text style={styles.actionButtonText}>Assign</Text>
         </TouchableOpacity>
-        
+
         {device.role !== 'organizer' && (
           <TouchableOpacity
             style={[styles.actionButton, styles.disconnectButton]}
@@ -205,22 +226,24 @@ const DeviceManagementDashboard: React.FC<DeviceManagementDashboardProps> = ({
           {getActivityTypeIcon(item.type)}
         </Text>
       </View>
-      
+
       <View style={styles.activityContent}>
         <View style={styles.activityHeader}>
           <Text style={styles.activityTitle}>{item.details}</Text>
           <Text style={styles.activityTime}>{item.timeAgo}</Text>
         </View>
-        
+
         <Text style={styles.activitySubtitle}>
           {item.deviceName} • {item.userId}
         </Text>
       </View>
-      
-      <View style={[
-        styles.activityTypeBadge,
-        { backgroundColor: getActivityTypeColor(item.type) }
-      ]}>
+
+      <View
+        style={[
+          styles.activityTypeBadge,
+          { backgroundColor: getActivityTypeColor(item.type) },
+        ]}
+      >
         <Text style={styles.activityTypeText}>
           {item.type.replace('_', ' ')}
         </Text>
@@ -230,7 +253,11 @@ const DeviceManagementDashboard: React.FC<DeviceManagementDashboardProps> = ({
 
   if (!currentSession || currentSession.role !== 'organizer') {
     return (
-      <Modal visible={visible} animationType="slide" presentationStyle="formSheet">
+      <Modal
+        visible={visible}
+        animationType="slide"
+        presentationStyle="formSheet"
+      >
         <View style={styles.container}>
           <View style={styles.header}>
             <Text style={styles.title}>Access Denied</Text>
@@ -249,7 +276,11 @@ const DeviceManagementDashboard: React.FC<DeviceManagementDashboardProps> = ({
   }
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen">
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="fullScreen"
+    >
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Device Management</Text>
@@ -267,23 +298,29 @@ const DeviceManagementDashboard: React.FC<DeviceManagementDashboardProps> = ({
           {/* Connection Statistics */}
           <View style={styles.statsContainer}>
             <Text style={styles.sectionTitle}>Connection Statistics</Text>
-            
+
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
-                <Text style={styles.statNumber}>{connectionStats.totalDevices}</Text>
+                <Text style={styles.statNumber}>
+                  {connectionStats.totalDevices}
+                </Text>
                 <Text style={styles.statLabel}>Total Devices</Text>
               </View>
-              
+
               <View style={styles.statCard}>
-                <Text style={styles.statNumber}>{connectionStats.refereeDevices}</Text>
+                <Text style={styles.statNumber}>
+                  {connectionStats.refereeDevices}
+                </Text>
                 <Text style={styles.statLabel}>Referees</Text>
               </View>
-              
+
               <View style={styles.statCard}>
-                <Text style={styles.statNumber}>{connectionStats.spectatorDevices}</Text>
+                <Text style={styles.statNumber}>
+                  {connectionStats.spectatorDevices}
+                </Text>
                 <Text style={styles.statLabel}>Spectators</Text>
               </View>
-              
+
               <View style={styles.statCard}>
                 <Text style={styles.statNumber}>
                   {connectionStats.averageResponseTime.toFixed(1)}s
@@ -298,7 +335,7 @@ const DeviceManagementDashboard: React.FC<DeviceManagementDashboardProps> = ({
             <Text style={styles.sectionTitle}>
               Active Devices ({activeDevices.length})
             </Text>
-            
+
             {activeDevices.length === 0 ? (
               <View style={styles.emptySection}>
                 <Text style={styles.emptySectionText}>
@@ -315,18 +352,16 @@ const DeviceManagementDashboard: React.FC<DeviceManagementDashboardProps> = ({
           {/* Recent Activity */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Recent Activity</Text>
-            
+
             {recentActivity.length === 0 ? (
               <View style={styles.emptySection}>
-                <Text style={styles.emptySectionText}>
-                  No recent activity.
-                </Text>
+                <Text style={styles.emptySectionText}>No recent activity.</Text>
               </View>
             ) : (
               <FlatList
                 data={recentActivity}
                 renderItem={renderActivityItem}
-                keyExtractor={(item) => item.id}
+                keyExtractor={item => item.id}
                 style={styles.activityList}
                 scrollEnabled={false}
               />
@@ -351,39 +386,47 @@ const DeviceManagementDashboard: React.FC<DeviceManagementDashboardProps> = ({
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
             </View>
-            
+
             {selectedDevice && (
               <View style={styles.deviceDetailsContainer}>
                 <View style={styles.deviceDetailRow}>
                   <Text style={styles.deviceDetailLabel}>Device Name:</Text>
-                  <Text style={styles.deviceDetailValue}>{selectedDevice.deviceName}</Text>
+                  <Text style={styles.deviceDetailValue}>
+                    {selectedDevice.deviceName}
+                  </Text>
                 </View>
-                
+
                 <View style={styles.deviceDetailRow}>
                   <Text style={styles.deviceDetailLabel}>User ID:</Text>
-                  <Text style={styles.deviceDetailValue}>{selectedDevice.userId}</Text>
+                  <Text style={styles.deviceDetailValue}>
+                    {selectedDevice.userId}
+                  </Text>
                 </View>
-                
+
                 <View style={styles.deviceDetailRow}>
                   <Text style={styles.deviceDetailLabel}>Role:</Text>
-                  <Text style={styles.deviceDetailValue}>{selectedDevice.role}</Text>
+                  <Text style={styles.deviceDetailValue}>
+                    {selectedDevice.role}
+                  </Text>
                 </View>
-                
+
                 <View style={styles.deviceDetailRow}>
                   <Text style={styles.deviceDetailLabel}>Last Seen:</Text>
                   <Text style={styles.deviceDetailValue}>
                     {formatConnectionTime(selectedDevice.lastSeen)}
                   </Text>
                 </View>
-                
+
                 <View style={styles.deviceDetailRow}>
                   <Text style={styles.deviceDetailLabel}>Status:</Text>
-                  <View style={[
-                    styles.statusIndicator,
-                    { backgroundColor: getDeviceStatusColor(selectedDevice) }
-                  ]} />
+                  <View
+                    style={[
+                      styles.statusIndicator,
+                      { backgroundColor: getDeviceStatusColor(selectedDevice) },
+                    ]}
+                  />
                 </View>
-                
+
                 <Text style={styles.permissionsTitle}>Permissions:</Text>
                 <View style={styles.permissionsList}>
                   {selectedDevice.capabilities.map((permission, index) => (
@@ -408,10 +451,10 @@ const DeviceManagementDashboard: React.FC<DeviceManagementDashboardProps> = ({
             <View style={styles.confirmationModal}>
               <Text style={styles.confirmationTitle}>Disconnect Device</Text>
               <Text style={styles.confirmationText}>
-                Are you sure you want to disconnect{' '}
-                {selectedDevice?.deviceName}? This will end their current session.
+                Are you sure you want to disconnect {selectedDevice?.deviceName}
+                ? This will end their current session.
               </Text>
-              
+
               <View style={styles.confirmationButtons}>
                 <TouchableOpacity
                   style={[styles.confirmationButton, styles.cancelButton]}
@@ -419,10 +462,14 @@ const DeviceManagementDashboard: React.FC<DeviceManagementDashboardProps> = ({
                 >
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity
-                  style={[styles.confirmationButton, styles.confirmDisconnectButton]}
-                  onPress={() => selectedDevice && 
+                  style={[
+                    styles.confirmationButton,
+                    styles.confirmDisconnectButton,
+                  ]}
+                  onPress={() =>
+                    selectedDevice &&
                     handleDisconnectDevice(selectedDevice.deviceId)
                   }
                 >

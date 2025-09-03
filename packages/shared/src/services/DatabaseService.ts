@@ -1,7 +1,7 @@
 // Base database service for ProTour - Epic 1 Implementation
 
-import firestore, { 
-  FirebaseFirestoreTypes 
+import firestore, {
+  FirebaseFirestoreTypes,
 } from '@react-native-firebase/firestore';
 
 export class DatabaseService {
@@ -22,7 +22,7 @@ export class DatabaseService {
       };
 
       const docRef = await this.db.collection(collection).add(docData);
-      
+
       return {
         ...docData,
         id: docRef.id,
@@ -36,7 +36,7 @@ export class DatabaseService {
   async read<T>(collection: string, id: string): Promise<T | null> {
     try {
       const doc = await this.db.collection(collection).doc(id).get();
-      
+
       if (!doc.exists) {
         return null;
       }
@@ -51,7 +51,11 @@ export class DatabaseService {
     }
   }
 
-  async update<T>(collection: string, id: string, data: Partial<T>): Promise<void> {
+  async update<T>(
+    collection: string,
+    id: string,
+    data: Partial<T>
+  ): Promise<void> {
     try {
       const updateData = {
         ...data,
@@ -76,7 +80,11 @@ export class DatabaseService {
 
   async query<T>(
     collection: string,
-    queryConstraints: Array<{fieldPath: string, opStr: string, value: any}> = []
+    queryConstraints: Array<{
+      fieldPath: string;
+      opStr: string;
+      value: any;
+    }> = []
   ): Promise<T[]> {
     try {
       let query = this.db.collection(collection) as any;
@@ -91,7 +99,7 @@ export class DatabaseService {
       });
 
       const querySnapshot = await query.get();
-      
+
       return querySnapshot.docs.map((doc: any) => ({
         id: doc.id,
         ...doc.data(),
@@ -103,20 +111,23 @@ export class DatabaseService {
   }
 
   // Batch operations for efficiency
-  async batchCreate<T>(collection: string, items: Omit<T, 'id'>[]): Promise<T[]> {
+  async batchCreate<T>(
+    collection: string,
+    items: Omit<T, 'id'>[]
+  ): Promise<T[]> {
     try {
       const batch = this.db.batch();
       const timestamp = firestore.Timestamp.now();
       const results: T[] = [];
 
-      items.forEach((item) => {
+      items.forEach(item => {
         const docRef = this.db.collection(collection).doc();
         const docData = {
           ...item,
           createdAt: timestamp,
           updatedAt: timestamp,
         };
-        
+
         batch.set(docRef, docData);
         results.push({
           ...docData,
@@ -135,13 +146,17 @@ export class DatabaseService {
   // Validation helper
   protected validateRequired(data: any, requiredFields: string[]): void {
     const missingFields = requiredFields.filter(field => !data[field]);
-    
+
     if (missingFields.length > 0) {
       throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
     }
   }
 
-  protected validateEnum(value: string, allowedValues: string[], fieldName: string): void {
+  protected validateEnum(
+    value: string,
+    allowedValues: string[],
+    fieldName: string
+  ): void {
     if (!allowedValues.includes(value)) {
       throw new Error(
         `Invalid ${fieldName}: ${value}. Allowed values: ${allowedValues.join(', ')}`

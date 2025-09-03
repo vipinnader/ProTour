@@ -1,13 +1,7 @@
 // Match service for ProTour - Epic 1-3 Implementation
 
 import { DatabaseService } from './DatabaseService';
-import { 
-  Match, 
-  MatchScore, 
-  MatchTimeline, 
-  MatchEvent,
-  Player 
-} from '../types';
+import { Match, MatchScore, MatchTimeline, MatchEvent, Player } from '../types';
 import firestore from '@react-native-firebase/firestore';
 
 export class MatchService extends DatabaseService {
@@ -15,9 +9,16 @@ export class MatchService extends DatabaseService {
   private readonly TIMELINES_COLLECTION = 'match_timelines';
   private readonly FOLLOWS_COLLECTION = 'match_follows';
 
-  async createMatch(data: Omit<Match, 'id' | 'createdAt' | 'updatedAt'>): Promise<Match> {
+  async createMatch(
+    data: Omit<Match, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<Match> {
     // Validate required fields
-    this.validateRequired(data, ['tournamentId', 'round', 'matchNumber', 'player1Id']);
+    this.validateRequired(data, [
+      'tournamentId',
+      'round',
+      'matchNumber',
+      'player1Id',
+    ]);
 
     // Validate constraints
     if (data.round < 1) {
@@ -30,8 +31,8 @@ export class MatchService extends DatabaseService {
 
     // Validate status
     this.validateEnum(
-      data.status, 
-      ['pending', 'in-progress', 'completed'], 
+      data.status,
+      ['pending', 'in-progress', 'completed'],
       'status'
     );
 
@@ -88,14 +89,14 @@ export class MatchService extends DatabaseService {
     } = {}
   ): Promise<Match[]> {
     const queryConstraints = [
-      { fieldPath: 'tournamentId', opStr: '==', value: tournamentId }
+      { fieldPath: 'tournamentId', opStr: '==', value: tournamentId },
     ];
 
     if (filters.round !== undefined) {
       queryConstraints.push({
         fieldPath: 'round',
         opStr: '==',
-        value: filters.round
+        value: filters.round,
       });
     }
 
@@ -103,16 +104,19 @@ export class MatchService extends DatabaseService {
       queryConstraints.push({
         fieldPath: 'status',
         opStr: '==',
-        value: filters.status
+        value: filters.status,
       });
     }
 
     return this.query<Match>(this.COLLECTION, queryConstraints);
   }
 
-  async getMatchesByPlayer(playerId: string, tournamentId?: string): Promise<Match[]> {
+  async getMatchesByPlayer(
+    playerId: string,
+    tournamentId?: string
+  ): Promise<Match[]> {
     let queryConstraints;
-    
+
     if (tournamentId) {
       queryConstraints = [
         { fieldPath: 'tournamentId', opStr: '==', value: tournamentId },
@@ -124,18 +128,18 @@ export class MatchService extends DatabaseService {
     // Note: Firestore doesn't support OR queries directly, so we need to make two queries
     const player1Matches = await this.query<Match>(this.COLLECTION, [
       ...queryConstraints,
-      { fieldPath: 'player1Id', opStr: '==', value: playerId }
+      { fieldPath: 'player1Id', opStr: '==', value: playerId },
     ]);
 
     const player2Matches = await this.query<Match>(this.COLLECTION, [
       ...queryConstraints,
-      { fieldPath: 'player2Id', opStr: '==', value: playerId }
+      { fieldPath: 'player2Id', opStr: '==', value: playerId },
     ]);
 
     // Combine and deduplicate matches
     const allMatches = [...player1Matches, ...player2Matches];
-    const uniqueMatches = allMatches.filter((match, index, array) => 
-      array.findIndex(m => m.id === match.id) === index
+    const uniqueMatches = allMatches.filter(
+      (match, index, array) => array.findIndex(m => m.id === match.id) === index
     );
 
     return uniqueMatches;
@@ -143,7 +147,7 @@ export class MatchService extends DatabaseService {
 
   async deleteMatchesByTournament(tournamentId: string): Promise<void> {
     const matches = await this.getMatchesByTournament(tournamentId);
-    
+
     if (matches.length === 0) {
       return;
     }
@@ -183,8 +187,8 @@ export class MatchService extends DatabaseService {
   }
 
   async completeMatch(
-    matchId: string, 
-    winnerId: string, 
+    matchId: string,
+    winnerId: string,
     score?: MatchScore
   ): Promise<void> {
     const match = await this.getMatch(matchId);
@@ -244,12 +248,17 @@ export class MatchService extends DatabaseService {
   }
 
   // Batch operations for bracket generation
-  async batchCreateMatches(matches: Omit<Match, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<Match[]> {
+  async batchCreateMatches(
+    matches: Omit<Match, 'id' | 'createdAt' | 'updatedAt'>[]
+  ): Promise<Match[]> {
     return this.batchCreate<Match>(this.COLLECTION, matches);
   }
 
   // Private helper methods
-  private async validateMatchStatusTransition(matchId: string, newStatus: Match['status']): Promise<void> {
+  private async validateMatchStatusTransition(
+    matchId: string,
+    newStatus: Match['status']
+  ): Promise<void> {
     const match = await this.getMatch(matchId);
     if (!match) {
       throw new Error('Match not found');
@@ -257,9 +266,9 @@ export class MatchService extends DatabaseService {
 
     const currentStatus = match.status;
     const validTransitions: Record<string, string[]> = {
-      'pending': ['in-progress'],
+      pending: ['in-progress'],
       'in-progress': ['completed'],
-      'completed': [], // No transitions allowed from completed
+      completed: [], // No transitions allowed from completed
     };
 
     const allowedStatuses = validTransitions[currentStatus];
@@ -270,7 +279,10 @@ export class MatchService extends DatabaseService {
     }
   }
 
-  private async validateWinner(matchId: string, winnerId: string): Promise<void> {
+  private async validateWinner(
+    matchId: string,
+    winnerId: string
+  ): Promise<void> {
     const match = await this.getMatch(matchId);
     if (!match) {
       throw new Error('Match not found');
@@ -302,9 +314,13 @@ export class MatchService extends DatabaseService {
     });
   }
 
-  private validateScoreConsistency(score: MatchScore, winnerId: string, player1Id: string): void {
+  private validateScoreConsistency(
+    score: MatchScore,
+    winnerId: string,
+    player1Id: string
+  ): void {
     const isPlayer1Winner = winnerId === player1Id;
-    
+
     // Count sets won by each player
     let player1Sets = 0;
     let player2Sets = 0;
@@ -319,9 +335,11 @@ export class MatchService extends DatabaseService {
 
     // Verify the winner actually won more sets
     const actualWinner = player1Sets > player2Sets ? 'player1' : 'player2';
-    
-    if ((isPlayer1Winner && actualWinner !== 'player1') || 
-        (!isPlayer1Winner && actualWinner !== 'player2')) {
+
+    if (
+      (isPlayer1Winner && actualWinner !== 'player1') ||
+      (!isPlayer1Winner && actualWinner !== 'player2')
+    ) {
       throw new Error('Winner does not match the score provided');
     }
 
@@ -329,7 +347,10 @@ export class MatchService extends DatabaseService {
     score.winner = actualWinner;
   }
 
-  private async progressWinner(nextMatchId: string, winnerId: string): Promise<void> {
+  private async progressWinner(
+    nextMatchId: string,
+    winnerId: string
+  ): Promise<void> {
     const nextMatch = await this.getMatch(nextMatchId);
     if (!nextMatch) {
       return; // Next match doesn't exist yet
@@ -362,11 +383,11 @@ export class MatchService extends DatabaseService {
   }
 
   async addMatchEvent(
-    matchId: string, 
+    matchId: string,
     event: Omit<MatchEvent, 'id'>
   ): Promise<void> {
     let timeline = await this.getMatchTimeline(matchId);
-    
+
     if (!timeline) {
       timeline = await this.createMatchTimeline(matchId);
     }
@@ -377,7 +398,7 @@ export class MatchService extends DatabaseService {
     };
 
     const updatedEvents = [...timeline.events, newEvent];
-    
+
     await this.update<MatchTimeline>(this.TIMELINES_COLLECTION, timeline.id, {
       events: updatedEvents,
       updatedAt: firestore.Timestamp.now(),
@@ -389,7 +410,7 @@ export class MatchService extends DatabaseService {
     // Check if already following
     const existingFollow = await this.query<any>(this.FOLLOWS_COLLECTION, [
       { fieldPath: 'userId', opStr: '==', value: userId },
-      { fieldPath: 'matchId', opStr: '==', value: matchId }
+      { fieldPath: 'matchId', opStr: '==', value: matchId },
     ]);
 
     if (existingFollow.length > 0) {
@@ -408,7 +429,7 @@ export class MatchService extends DatabaseService {
   async unfollowMatch(userId: string, matchId: string): Promise<void> {
     const follows = await this.query<any>(this.FOLLOWS_COLLECTION, [
       { fieldPath: 'userId', opStr: '==', value: userId },
-      { fieldPath: 'matchId', opStr: '==', value: matchId }
+      { fieldPath: 'matchId', opStr: '==', value: matchId },
     ]);
 
     if (follows.length > 0) {
@@ -419,7 +440,7 @@ export class MatchService extends DatabaseService {
   async isFollowingMatch(userId: string, matchId: string): Promise<boolean> {
     const follows = await this.query<any>(this.FOLLOWS_COLLECTION, [
       { fieldPath: 'userId', opStr: '==', value: userId },
-      { fieldPath: 'matchId', opStr: '==', value: matchId }
+      { fieldPath: 'matchId', opStr: '==', value: matchId },
     ]);
 
     return follows.length > 0;
@@ -432,7 +453,7 @@ export class MatchService extends DatabaseService {
 
   // Live Match Updates
   async updateMatchScore(
-    matchId: string, 
+    matchId: string,
     score: MatchScore,
     addToTimeline: boolean = true
   ): Promise<void> {
@@ -443,7 +464,7 @@ export class MatchService extends DatabaseService {
       await this.addMatchEvent(matchId, {
         timestamp: new Date(),
         type: 'point-scored',
-        details: { score }
+        details: { score },
       });
     }
   }
@@ -460,28 +481,28 @@ export class MatchService extends DatabaseService {
 
     await this.updateMatch(matchId, {
       status: 'in-progress',
-      startTime: firestore.Timestamp.now()
+      startTime: firestore.Timestamp.now(),
     });
 
     // Add to timeline
     await this.addMatchEvent(matchId, {
       timestamp: new Date(),
       type: 'match-start',
-      details: {}
+      details: {},
     });
   }
 
   // Search and Filter Methods
   async getLiveMatches(tournamentId?: string): Promise<Match[]> {
     const queryConstraints: any[] = [
-      { fieldPath: 'status', opStr: '==', value: 'in-progress' }
+      { fieldPath: 'status', opStr: '==', value: 'in-progress' },
     ];
 
     if (tournamentId) {
       queryConstraints.push({
         fieldPath: 'tournamentId',
         opStr: '==',
-        value: tournamentId
+        value: tournamentId,
       });
     }
 
@@ -493,19 +514,19 @@ export class MatchService extends DatabaseService {
     limit?: number
   ): Promise<Match[]> {
     const queryConstraints: any[] = [
-      { fieldPath: 'status', opStr: '==', value: 'pending' }
+      { fieldPath: 'status', opStr: '==', value: 'pending' },
     ];
 
     if (tournamentId) {
       queryConstraints.push({
         fieldPath: 'tournamentId',
         opStr: '==',
-        value: tournamentId
+        value: tournamentId,
       });
     }
 
     const matches = await this.query<Match>(this.COLLECTION, queryConstraints);
-    
+
     // Sort by round and match number
     matches.sort((a, b) => {
       if (a.round !== b.round) {

@@ -21,7 +21,7 @@ export type MainStackParamList = {
   LiveScoring: { matchId: string; tournamentId: string };
   TournamentProgress: { tournamentId: string };
   RefereeTools: { matchId: string; tournamentId: string };
-  
+
   // Epic 3 - Multi-Role Tournament Experience
   PlayerDashboard: undefined;
   JoinTournament: undefined;

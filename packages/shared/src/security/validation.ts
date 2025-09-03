@@ -6,7 +6,17 @@ import { z, ZodSchema, ZodError } from 'zod';
 export interface ValidationRule {
   field: string;
   required?: boolean;
-  type?: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'email' | 'url' | 'uuid' | 'date' | 'phone';
+  type?:
+    | 'string'
+    | 'number'
+    | 'boolean'
+    | 'array'
+    | 'object'
+    | 'email'
+    | 'url'
+    | 'uuid'
+    | 'date'
+    | 'phone';
   minLength?: number;
   maxLength?: number;
   min?: number;
@@ -43,13 +53,16 @@ export class InputValidator {
     escapeHTML: true,
   };
 
-  validate(data: any, rules: ValidationRule[]): { isValid: boolean; errors: ValidationError[] } {
+  validate(
+    data: any,
+    rules: ValidationRule[]
+  ): { isValid: boolean; errors: ValidationError[] } {
     const errors: ValidationError[] = [];
 
     for (const rule of rules) {
       const value = this.getNestedValue(data, rule.field);
       const error = this.validateField(rule.field, value, rule);
-      
+
       if (error) {
         errors.push(error);
       }
@@ -66,17 +79,21 @@ export class InputValidator {
     return this.sanitizeRecursive(data, finalConfig);
   }
 
-  sanitizeAndValidate(data: any, rules: ValidationRule[], sanitizationConfig?: SanitizationConfig): {
+  sanitizeAndValidate(
+    data: any,
+    rules: ValidationRule[],
+    sanitizationConfig?: SanitizationConfig
+  ): {
     data: any;
     isValid: boolean;
     errors: ValidationError[];
   } {
     // First sanitize
     const sanitizedData = this.sanitize(data, sanitizationConfig);
-    
+
     // Then validate
     const validation = this.validate(sanitizedData, rules);
-    
+
     return {
       data: sanitizedData,
       isValid: validation.isValid,
@@ -84,9 +101,16 @@ export class InputValidator {
     };
   }
 
-  private validateField(fieldName: string, value: any, rule: ValidationRule): ValidationError | null {
+  private validateField(
+    fieldName: string,
+    value: any,
+    rule: ValidationRule
+  ): ValidationError | null {
     // Check if field is required
-    if (rule.required && (value === undefined || value === null || value === '')) {
+    if (
+      rule.required &&
+      (value === undefined || value === null || value === '')
+    ) {
       return {
         field: fieldName,
         message: `${fieldName} is required`,
@@ -95,7 +119,10 @@ export class InputValidator {
     }
 
     // Skip validation if field is not required and empty
-    if (!rule.required && (value === undefined || value === null || value === '')) {
+    if (
+      !rule.required &&
+      (value === undefined || value === null || value === '')
+    ) {
       return null;
     }
 
@@ -185,7 +212,10 @@ export class InputValidator {
       if (customResult !== true) {
         return {
           field: fieldName,
-          message: typeof customResult === 'string' ? customResult : `${fieldName} is invalid`,
+          message:
+            typeof customResult === 'string'
+              ? customResult
+              : `${fieldName} is invalid`,
           value,
         };
       }
@@ -194,65 +224,116 @@ export class InputValidator {
     return null;
   }
 
-  private validateType(fieldName: string, value: any, type: ValidationRule['type']): ValidationError | null {
+  private validateType(
+    fieldName: string,
+    value: any,
+    type: ValidationRule['type']
+  ): ValidationError | null {
     switch (type) {
       case 'string':
         if (typeof value !== 'string') {
-          return { field: fieldName, message: `${fieldName} must be a string`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be a string`,
+            value,
+          };
         }
         break;
-      
+
       case 'number':
         if (typeof value !== 'number' || isNaN(value)) {
-          return { field: fieldName, message: `${fieldName} must be a number`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be a number`,
+            value,
+          };
         }
         break;
-      
+
       case 'boolean':
         if (typeof value !== 'boolean') {
-          return { field: fieldName, message: `${fieldName} must be a boolean`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be a boolean`,
+            value,
+          };
         }
         break;
-      
+
       case 'array':
         if (!Array.isArray(value)) {
-          return { field: fieldName, message: `${fieldName} must be an array`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be an array`,
+            value,
+          };
         }
         break;
-      
+
       case 'object':
-        if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-          return { field: fieldName, message: `${fieldName} must be an object`, value };
+        if (
+          typeof value !== 'object' ||
+          value === null ||
+          Array.isArray(value)
+        ) {
+          return {
+            field: fieldName,
+            message: `${fieldName} must be an object`,
+            value,
+          };
         }
         break;
-      
+
       case 'email':
         if (typeof value !== 'string' || !validator.isEmail(value)) {
-          return { field: fieldName, message: `${fieldName} must be a valid email`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be a valid email`,
+            value,
+          };
         }
         break;
-      
+
       case 'url':
         if (typeof value !== 'string' || !validator.isURL(value)) {
-          return { field: fieldName, message: `${fieldName} must be a valid URL`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be a valid URL`,
+            value,
+          };
         }
         break;
-      
+
       case 'uuid':
         if (typeof value !== 'string' || !validator.isUUID(value)) {
-          return { field: fieldName, message: `${fieldName} must be a valid UUID`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be a valid UUID`,
+            value,
+          };
         }
         break;
-      
+
       case 'date':
         if (!validator.isISO8601(String(value))) {
-          return { field: fieldName, message: `${fieldName} must be a valid date`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be a valid date`,
+            value,
+          };
         }
         break;
-      
+
       case 'phone':
-        if (typeof value !== 'string' || !validator.isMobilePhone(value, 'any')) {
-          return { field: fieldName, message: `${fieldName} must be a valid phone number`, value };
+        if (
+          typeof value !== 'string' ||
+          !validator.isMobilePhone(value, 'any')
+        ) {
+          return {
+            field: fieldName,
+            message: `${fieldName} must be a valid phone number`,
+            value,
+          };
         }
         break;
     }
@@ -322,10 +403,13 @@ export class InputValidator {
 }
 
 export class ZodValidator {
-  validate<T>(data: any, schema: ZodSchema<T>): { 
-    isValid: boolean; 
-    data?: T; 
-    errors?: ValidationError[] 
+  validate<T>(
+    data: any,
+    schema: ZodSchema<T>
+  ): {
+    isValid: boolean;
+    data?: T;
+    errors?: ValidationError[];
   } {
     try {
       const validatedData = schema.parse(data);
@@ -354,7 +438,10 @@ export class ZodValidator {
     }
   }
 
-  middleware<T>(schema: ZodSchema<T>, target: 'body' | 'query' | 'params' = 'body') {
+  middleware<T>(
+    schema: ZodSchema<T>,
+    target: 'body' | 'query' | 'params' = 'body'
+  ) {
     return (req: Request, res: Response, next: NextFunction) => {
       const data = req[target];
       const result = this.validate(data, schema);
@@ -395,7 +482,12 @@ export const commonSchemas = {
     name: z.string().min(1).max(100),
     description: z.string().max(1000).optional(),
     sport: z.string().min(1).max(50),
-    format: z.enum(['single-elimination', 'double-elimination', 'round-robin', 'swiss']),
+    format: z.enum([
+      'single-elimination',
+      'double-elimination',
+      'round-robin',
+      'swiss',
+    ]),
     maxParticipants: z.number().int().min(2).max(10000),
     registrationDeadline: z.string().datetime(),
     startDate: z.string().datetime(),
@@ -407,8 +499,16 @@ export const commonSchemas = {
 
   // API validation schemas
   pagination: z.object({
-    page: z.string().transform(val => parseInt(val)).pipe(z.number().int().min(1)).default('1'),
-    limit: z.string().transform(val => parseInt(val)).pipe(z.number().int().min(1).max(100)).default('10'),
+    page: z
+      .string()
+      .transform(val => parseInt(val))
+      .pipe(z.number().int().min(1))
+      .default('1'),
+    limit: z
+      .string()
+      .transform(val => parseInt(val))
+      .pipe(z.number().int().min(1).max(100))
+      .default('10'),
     sortBy: z.string().optional(),
     sortOrder: z.enum(['asc', 'desc']).default('desc'),
   }),
@@ -416,17 +516,28 @@ export const commonSchemas = {
   // File upload schemas
   fileUpload: z.object({
     filename: z.string().min(1).max(255),
-    mimetype: z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_.]*$/),
-    size: z.number().int().min(1).max(10 * 1024 * 1024), // 10MB max
+    mimetype: z
+      .string()
+      .regex(
+        /^[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_]*\/[a-zA-Z0-9][a-zA-Z0-9!#$&\-\^_.]*$/
+      ),
+    size: z
+      .number()
+      .int()
+      .min(1)
+      .max(10 * 1024 * 1024), // 10MB max
   }),
 };
 
 // Validation middleware factory
 export const validateInput = (rules: ValidationRule[]) => {
   const validator = new InputValidator();
-  
+
   return (req: Request, res: Response, next: NextFunction) => {
-    const { data, isValid, errors } = validator.sanitizeAndValidate(req.body, rules);
+    const { data, isValid, errors } = validator.sanitizeAndValidate(
+      req.body,
+      rules
+    );
 
     if (!isValid) {
       return res.status(400).json({
@@ -457,7 +568,7 @@ export const validateRateLimit = (maxRequests: number, windowMs: number) => {
     }
 
     const current = requests.get(identifier);
-    
+
     if (!current) {
       requests.set(identifier, { count: 1, resetTime: now + windowMs });
       return next();
@@ -494,21 +605,23 @@ export const preventSQLInjection = () => {
       if (typeof obj === 'string') {
         return sqlPatterns.some(pattern => pattern.test(obj));
       }
-      
+
       if (Array.isArray(obj)) {
         return obj.some(checkForSQLInjection);
       }
-      
+
       if (obj && typeof obj === 'object') {
         return Object.values(obj).some(checkForSQLInjection);
       }
-      
+
       return false;
     };
 
-    if (checkForSQLInjection(req.body) || 
-        checkForSQLInjection(req.query) || 
-        checkForSQLInjection(req.params)) {
+    if (
+      checkForSQLInjection(req.body) ||
+      checkForSQLInjection(req.query) ||
+      checkForSQLInjection(req.params)
+    ) {
       return res.status(400).json({
         error: 'Invalid input detected',
       });

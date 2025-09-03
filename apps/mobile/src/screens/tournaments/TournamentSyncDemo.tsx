@@ -9,7 +9,11 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { useSync, usePermissions, useConflictResolution } from '../../contexts/SyncContext';
+import {
+  useSync,
+  usePermissions,
+  useConflictResolution,
+} from '../../contexts/SyncContext';
 import SyncStatusIndicator from '../../components/sync/SyncStatusIndicator';
 import ConflictResolutionModal from '../../components/sync/ConflictResolutionModal';
 import MultiDeviceManager from '../../components/tournament/MultiDeviceManager';
@@ -25,19 +29,11 @@ const TournamentSyncDemo: React.FC = () => {
     isOnline,
     lastSyncTime,
   } = useSync();
-  
-  const {
-    isOrganizer,
-    isReferee,
-    isSpectator,
-    hasPermission,
-    tournamentId,
-  } = usePermissions();
-  
-  const {
-    hasConflicts,
-    conflicts,
-  } = useConflictResolution();
+
+  const { isOrganizer, isReferee, isSpectator, hasPermission, tournamentId } =
+    usePermissions();
+
+  const { hasConflicts, conflicts } = useConflictResolution();
 
   const [showDeviceManager, setShowDeviceManager] = useState(false);
   const [showAccessCodeJoin, setShowAccessCodeJoin] = useState(false);
@@ -61,7 +57,7 @@ const TournamentSyncDemo: React.FC = () => {
     ];
 
     const permissionResults: Record<string, boolean> = {};
-    
+
     for (const permission of permissionList) {
       try {
         permissionResults[permission] = await hasPermission(permission);
@@ -69,7 +65,7 @@ const TournamentSyncDemo: React.FC = () => {
         permissionResults[permission] = false;
       }
     }
-    
+
     setPermissions(permissionResults);
   };
 
@@ -88,34 +84,36 @@ const TournamentSyncDemo: React.FC = () => {
       <View style={styles.statusGrid}>
         <View style={styles.statusItem}>
           <Text style={styles.statusLabel}>Connection</Text>
-          <Text style={[
-            styles.statusValue,
-            { color: isOnline ? '#28a745' : '#dc3545' }
-          ]}>
+          <Text
+            style={[
+              styles.statusValue,
+              { color: isOnline ? '#28a745' : '#dc3545' },
+            ]}
+          >
             {isOnline ? 'Online' : 'Offline'}
           </Text>
         </View>
-        
+
         <View style={styles.statusItem}>
           <Text style={styles.statusLabel}>Pending Operations</Text>
-          <Text style={styles.statusValue}>
-            {syncStatus.pendingOperations}
-          </Text>
+          <Text style={styles.statusValue}>{syncStatus.pendingOperations}</Text>
         </View>
-        
+
         <View style={styles.statusItem}>
           <Text style={styles.statusLabel}>Last Sync</Text>
           <Text style={styles.statusValue}>
             {lastSyncTime ? lastSyncTime.toLocaleTimeString() : 'Never'}
           </Text>
         </View>
-        
+
         <View style={styles.statusItem}>
           <Text style={styles.statusLabel}>Conflicts</Text>
-          <Text style={[
-            styles.statusValue,
-            { color: hasConflicts ? '#dc3545' : '#28a745' }
-          ]}>
+          <Text
+            style={[
+              styles.statusValue,
+              { color: hasConflicts ? '#dc3545' : '#28a745' },
+            ]}
+          >
             {conflicts.length}
           </Text>
         </View>
@@ -125,7 +123,7 @@ const TournamentSyncDemo: React.FC = () => {
         <TouchableOpacity
           style={[
             styles.actionButton,
-            !isOnline && styles.actionButtonDisabled
+            !isOnline && styles.actionButtonDisabled,
           ]}
           onPress={handleForceSync}
           disabled={!isOnline || syncStatus.syncInProgress}
@@ -152,13 +150,13 @@ const TournamentSyncDemo: React.FC = () => {
   const renderDeviceInfo = () => (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Device Information</Text>
-      
+
       {currentDevice && (
         <View style={styles.deviceCard}>
           <Text style={styles.deviceName}>{currentDevice.deviceName}</Text>
           <Text style={styles.deviceRole}>Role: {currentDevice.role}</Text>
           <Text style={styles.deviceUser}>User: {currentDevice.userId}</Text>
-          
+
           {currentSession && (
             <>
               <Text style={styles.deviceTournament}>
@@ -199,12 +197,16 @@ const TournamentSyncDemo: React.FC = () => {
         {Object.entries(permissions).map(([permission, hasAccess]) => (
           <View key={permission} style={styles.permissionItem}>
             <Text style={styles.permissionName}>
-              {permission.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              {permission
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, l => l.toUpperCase())}
             </Text>
-            <Text style={[
-              styles.permissionStatus,
-              { color: hasAccess ? '#28a745' : '#dc3545' }
-            ]}>
+            <Text
+              style={[
+                styles.permissionStatus,
+                { color: hasAccess ? '#28a745' : '#dc3545' },
+              ]}
+            >
               {hasAccess ? '✓' : '✗'}
             </Text>
           </View>
@@ -218,20 +220,20 @@ const TournamentSyncDemo: React.FC = () => {
       <Text style={styles.sectionTitle}>
         Active Devices ({activeDevices.length})
       </Text>
-      
+
       {activeDevices.length === 0 ? (
         <Text style={styles.emptyText}>
           No other devices are currently active
         </Text>
       ) : (
-        activeDevices.slice(0, 3).map((device) => (
+        activeDevices.slice(0, 3).map(device => (
           <View key={device.deviceId} style={styles.deviceListItem}>
             <Text style={styles.deviceListName}>{device.deviceName}</Text>
             <Text style={styles.deviceListRole}>{device.role}</Text>
           </View>
         ))
       )}
-      
+
       {activeDevices.length > 3 && (
         <Text style={styles.moreDevicesText}>
           +{activeDevices.length - 3} more devices
@@ -254,8 +256,12 @@ const TournamentSyncDemo: React.FC = () => {
 
       <View style={styles.demoInfo}>
         <Text style={styles.demoInfoTitle}>Epic 2B Features Demonstrated:</Text>
-        <Text style={styles.demoInfoItem}>• Offline-first data architecture</Text>
-        <Text style={styles.demoInfoItem}>• Real-time sync with conflict resolution</Text>
+        <Text style={styles.demoInfoItem}>
+          • Offline-first data architecture
+        </Text>
+        <Text style={styles.demoInfoItem}>
+          • Real-time sync with conflict resolution
+        </Text>
         <Text style={styles.demoInfoItem}>• Multi-device coordination</Text>
         <Text style={styles.demoInfoItem}>• Role-based access control</Text>
         <Text style={styles.demoInfoItem}>• Device session management</Text>
@@ -271,7 +277,7 @@ const TournamentSyncDemo: React.FC = () => {
       <AccessCodeJoin
         visible={showAccessCodeJoin}
         onClose={() => setShowAccessCodeJoin(false)}
-        onSuccess={(session) => {
+        onSuccess={session => {
           console.log('Joined tournament:', session);
         }}
       />

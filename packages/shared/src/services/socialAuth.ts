@@ -45,12 +45,12 @@ export interface SocialAuthConfig {
   customParameters?: Record<string, string>;
 }
 
-export type AuthProvider = 
-  | 'google' 
-  | 'facebook' 
-  | 'apple' 
-  | 'twitter' 
-  | 'github' 
+export type AuthProvider =
+  | 'google'
+  | 'facebook'
+  | 'apple'
+  | 'twitter'
+  | 'github'
   | 'phone'
   | 'discord'
   | 'microsoft';
@@ -79,8 +79,11 @@ export abstract class SocialAuthProvider {
     this.config = config;
   }
 
-  abstract getAuthorizationUrl(state: string, customParams?: Record<string, string>): string;
-  
+  abstract getAuthorizationUrl(
+    state: string,
+    customParams?: Record<string, string>
+  ): string;
+
   abstract exchangeCodeForTokens(
     code: string,
     state: string,
@@ -167,9 +170,13 @@ export class SocialAuthFactory {
 export class GoogleAuthProvider extends SocialAuthProvider {
   private readonly baseUrl = 'https://accounts.google.com/oauth2/v2/auth';
   private readonly tokenUrl = 'https://oauth2.googleapis.com/token';
-  private readonly userInfoUrl = 'https://www.googleapis.com/oauth2/v2/userinfo';
+  private readonly userInfoUrl =
+    'https://www.googleapis.com/oauth2/v2/userinfo';
 
-  getAuthorizationUrl(state: string, customParams?: Record<string, string>): string {
+  getAuthorizationUrl(
+    state: string,
+    customParams?: Record<string, string>
+  ): string {
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       redirect_uri: this.config.redirectUri,
@@ -224,7 +231,9 @@ export class GoogleAuthProvider extends SocialAuthProvider {
 
   async getUserInfo(credentials: AuthCredentials): Promise<SocialAuthUser> {
     try {
-      const response = await fetch(`${this.userInfoUrl}?access_token=${credentials.accessToken}`);
+      const response = await fetch(
+        `${this.userInfoUrl}?access_token=${credentials.accessToken}`
+      );
       const data = await response.json();
 
       if (!response.ok) {
@@ -312,10 +321,14 @@ export class GoogleAuthProvider extends SocialAuthProvider {
  */
 export class FacebookAuthProvider extends SocialAuthProvider {
   private readonly baseUrl = 'https://www.facebook.com/v18.0/dialog/oauth';
-  private readonly tokenUrl = 'https://graph.facebook.com/v18.0/oauth/access_token';
+  private readonly tokenUrl =
+    'https://graph.facebook.com/v18.0/oauth/access_token';
   private readonly userInfoUrl = 'https://graph.facebook.com/v18.0/me';
 
-  getAuthorizationUrl(state: string, customParams?: Record<string, string>): string {
+  getAuthorizationUrl(
+    state: string,
+    customParams?: Record<string, string>
+  ): string {
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       redirect_uri: this.config.redirectUri,
@@ -328,15 +341,19 @@ export class FacebookAuthProvider extends SocialAuthProvider {
     return `${this.baseUrl}?${params.toString()}`;
   }
 
-  async exchangeCodeForTokens(code: string, state: string): Promise<AuthCredentials> {
+  async exchangeCodeForTokens(
+    code: string,
+    state: string
+  ): Promise<AuthCredentials> {
     try {
       const response = await fetch(
-        `${this.tokenUrl}?` + new URLSearchParams({
-          client_id: this.config.clientId,
-          client_secret: this.config.clientSecret!,
-          code,
-          redirect_uri: this.config.redirectUri,
-        })
+        `${this.tokenUrl}?` +
+          new URLSearchParams({
+            client_id: this.config.clientId,
+            client_secret: this.config.clientSecret!,
+            code,
+            redirect_uri: this.config.redirectUri,
+          })
       );
 
       const data = await response.json();
@@ -416,7 +433,10 @@ export class AppleAuthProvider extends SocialAuthProvider {
   private readonly baseUrl = 'https://appleid.apple.com/auth/authorize';
   private readonly tokenUrl = 'https://appleid.apple.com/auth/token';
 
-  getAuthorizationUrl(state: string, customParams?: Record<string, string>): string {
+  getAuthorizationUrl(
+    state: string,
+    customParams?: Record<string, string>
+  ): string {
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       redirect_uri: this.config.redirectUri,
@@ -430,7 +450,10 @@ export class AppleAuthProvider extends SocialAuthProvider {
     return `${this.baseUrl}?${params.toString()}`;
   }
 
-  async exchangeCodeForTokens(code: string, state: string): Promise<AuthCredentials> {
+  async exchangeCodeForTokens(
+    code: string,
+    state: string
+  ): Promise<AuthCredentials> {
     try {
       // Apple requires a JWT client secret
       const clientSecret = this.generateClientSecret();
@@ -579,12 +602,16 @@ export class TwitterAuthProvider extends SocialAuthProvider {
   private readonly tokenUrl = 'https://api.twitter.com/2/oauth2/token';
   private readonly userInfoUrl = 'https://api.twitter.com/2/users/me';
 
-  getAuthorizationUrl(state: string, customParams?: Record<string, string>): string {
+  getAuthorizationUrl(
+    state: string,
+    customParams?: Record<string, string>
+  ): string {
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       redirect_uri: this.config.redirectUri,
       response_type: 'code',
-      scope: this.config.scopes?.join(' ') || 'tweet.read users.read offline.access',
+      scope:
+        this.config.scopes?.join(' ') || 'tweet.read users.read offline.access',
       state,
       code_challenge_method: 'S256',
       code_challenge: this.generateCodeChallenge(),
@@ -600,11 +627,21 @@ export class TwitterAuthProvider extends SocialAuthProvider {
   }
 
   // Implement remaining methods similar to other providers
-  async exchangeCodeForTokens(): Promise<AuthCredentials> { return {}; }
-  async getUserInfo(): Promise<SocialAuthUser> { return {} as SocialAuthUser; }
-  async refreshAccessToken(): Promise<AuthCredentials> { return {}; }
-  async revokeAccess(): Promise<boolean> { return true; }
-  async validateToken(): Promise<boolean> { return true; }
+  async exchangeCodeForTokens(): Promise<AuthCredentials> {
+    return {};
+  }
+  async getUserInfo(): Promise<SocialAuthUser> {
+    return {} as SocialAuthUser;
+  }
+  async refreshAccessToken(): Promise<AuthCredentials> {
+    return {};
+  }
+  async revokeAccess(): Promise<boolean> {
+    return true;
+  }
+  async validateToken(): Promise<boolean> {
+    return true;
+  }
 }
 
 /**
@@ -615,7 +652,10 @@ export class GitHubAuthProvider extends SocialAuthProvider {
   private readonly tokenUrl = 'https://github.com/login/oauth/access_token';
   private readonly userInfoUrl = 'https://api.github.com/user';
 
-  getAuthorizationUrl(state: string, customParams?: Record<string, string>): string {
+  getAuthorizationUrl(
+    state: string,
+    customParams?: Record<string, string>
+  ): string {
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       redirect_uri: this.config.redirectUri,
@@ -628,11 +668,21 @@ export class GitHubAuthProvider extends SocialAuthProvider {
   }
 
   // Implement remaining methods
-  async exchangeCodeForTokens(): Promise<AuthCredentials> { return {}; }
-  async getUserInfo(): Promise<SocialAuthUser> { return {} as SocialAuthUser; }
-  async refreshAccessToken(): Promise<AuthCredentials> { return {}; }
-  async revokeAccess(): Promise<boolean> { return true; }
-  async validateToken(): Promise<boolean> { return true; }
+  async exchangeCodeForTokens(): Promise<AuthCredentials> {
+    return {};
+  }
+  async getUserInfo(): Promise<SocialAuthUser> {
+    return {} as SocialAuthUser;
+  }
+  async refreshAccessToken(): Promise<AuthCredentials> {
+    return {};
+  }
+  async revokeAccess(): Promise<boolean> {
+    return true;
+  }
+  async validateToken(): Promise<boolean> {
+    return true;
+  }
 }
 
 /**
@@ -640,12 +690,24 @@ export class GitHubAuthProvider extends SocialAuthProvider {
  */
 export class DiscordAuthProvider extends SocialAuthProvider {
   // Similar implementation to other providers
-  getAuthorizationUrl(): string { return ''; }
-  async exchangeCodeForTokens(): Promise<AuthCredentials> { return {}; }
-  async getUserInfo(): Promise<SocialAuthUser> { return {} as SocialAuthUser; }
-  async refreshAccessToken(): Promise<AuthCredentials> { return {}; }
-  async revokeAccess(): Promise<boolean> { return true; }
-  async validateToken(): Promise<boolean> { return true; }
+  getAuthorizationUrl(): string {
+    return '';
+  }
+  async exchangeCodeForTokens(): Promise<AuthCredentials> {
+    return {};
+  }
+  async getUserInfo(): Promise<SocialAuthUser> {
+    return {} as SocialAuthUser;
+  }
+  async refreshAccessToken(): Promise<AuthCredentials> {
+    return {};
+  }
+  async revokeAccess(): Promise<boolean> {
+    return true;
+  }
+  async validateToken(): Promise<boolean> {
+    return true;
+  }
 }
 
 /**
@@ -653,12 +715,24 @@ export class DiscordAuthProvider extends SocialAuthProvider {
  */
 export class MicrosoftAuthProvider extends SocialAuthProvider {
   // Similar implementation to other providers
-  getAuthorizationUrl(): string { return ''; }
-  async exchangeCodeForTokens(): Promise<AuthCredentials> { return {}; }
-  async getUserInfo(): Promise<SocialAuthUser> { return {} as SocialAuthUser; }
-  async refreshAccessToken(): Promise<AuthCredentials> { return {}; }
-  async revokeAccess(): Promise<boolean> { return true; }
-  async validateToken(): Promise<boolean> { return true; }
+  getAuthorizationUrl(): string {
+    return '';
+  }
+  async exchangeCodeForTokens(): Promise<AuthCredentials> {
+    return {};
+  }
+  async getUserInfo(): Promise<SocialAuthUser> {
+    return {} as SocialAuthUser;
+  }
+  async refreshAccessToken(): Promise<AuthCredentials> {
+    return {};
+  }
+  async revokeAccess(): Promise<boolean> {
+    return true;
+  }
+  async validateToken(): Promise<boolean> {
+    return true;
+  }
 }
 
 /**
@@ -673,9 +747,9 @@ export class TwilioPhoneAuthProvider extends PhoneAuthProvider {
     try {
       // Twilio Verify API call
       const verificationId = `twilio_${Date.now()}`;
-      
+
       console.log(`[PhoneAuth] Sending verification code to ${phoneNumber}`);
-      
+
       return {
         success: true,
         verificationId,
@@ -695,8 +769,9 @@ export class TwilioPhoneAuthProvider extends PhoneAuthProvider {
   ): Promise<AuthResult> {
     try {
       // Twilio Verify API call to check code
-      
-      if (code === '123456') { // Mock successful verification
+
+      if (code === '123456') {
+        // Mock successful verification
         const user: SocialAuthUser = {
           id: `phone_${phoneNumber.replace(/\D/g, '')}`,
           phoneNumber,
@@ -724,7 +799,10 @@ export class TwilioPhoneAuthProvider extends PhoneAuthProvider {
     }
   }
 
-  async resendCode(phoneNumber: string, verificationId?: string): Promise<{
+  async resendCode(
+    phoneNumber: string,
+    verificationId?: string
+  ): Promise<{
     success: boolean;
     verificationId?: string;
     error?: string;
@@ -745,7 +823,7 @@ export class FirebasePhoneAuthProvider extends PhoneAuthProvider {
     try {
       // Firebase Auth phone verification
       const verificationId = `firebase_${Date.now()}`;
-      
+
       return {
         success: true,
         verificationId,
@@ -807,7 +885,7 @@ export class MSG91PhoneAuthProvider extends PhoneAuthProvider {
     try {
       // MSG91 OTP API call
       const verificationId = `msg91_${Date.now()}`;
-      
+
       return {
         success: true,
         verificationId,

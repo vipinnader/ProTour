@@ -27,16 +27,7 @@
       "@protour/shared": ["../../packages/shared/src"]
     }
   },
-  "references": [
-    { "path": "../../packages/shared" }
-  ],
-  "include": [
-    "next-env.d.ts",
-    "src/**/*",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    ".next"
-  ]
+  "references": [{ "path": "../../packages/shared" }],
+  "include": ["next-env.d.ts", "src/**/*", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", ".next"]
 }

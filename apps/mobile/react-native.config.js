@@ -48,7 +48,7 @@ module.exports = {
   autolink: {
     // Platforms to auto-link for
     platforms: ['ios', 'android'],
-    
+
     // Dependencies to exclude from auto-linking
     exclude: [],
   },

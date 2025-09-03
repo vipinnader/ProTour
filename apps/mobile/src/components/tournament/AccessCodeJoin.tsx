@@ -25,7 +25,7 @@ const AccessCodeJoin: React.FC<AccessCodeJoinProps> = ({
   onSuccess,
 }) => {
   const { joinWithAccessCode } = useSync();
-  
+
   const [accessCode, setAccessCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
 
@@ -36,24 +36,20 @@ const AccessCodeJoin: React.FC<AccessCodeJoinProps> = ({
     }
 
     setIsJoining(true);
-    
+
     try {
       const session = await joinWithAccessCode(accessCode.trim().toUpperCase());
-      
-      Alert.alert(
-        'Success!',
-        `Joined tournament as ${session.role}`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              onSuccess?.(session);
-              onClose();
-              setAccessCode('');
-            },
+
+      Alert.alert('Success!', `Joined tournament as ${session.role}`, [
+        {
+          text: 'OK',
+          onPress: () => {
+            onSuccess?.(session);
+            onClose();
+            setAccessCode('');
           },
-        ]
-      );
+        },
+      ]);
     } catch (error: any) {
       Alert.alert(
         'Join Failed',
@@ -94,7 +90,7 @@ const AccessCodeJoin: React.FC<AccessCodeJoinProps> = ({
             <TextInput
               style={styles.textInput}
               value={accessCode}
-              onChangeText={(text) => setAccessCode(text.toUpperCase())}
+              onChangeText={text => setAccessCode(text.toUpperCase())}
               placeholder="Enter 8-character code"
               placeholderTextColor="#999"
               maxLength={8}
@@ -107,7 +103,7 @@ const AccessCodeJoin: React.FC<AccessCodeJoinProps> = ({
           <TouchableOpacity
             style={[
               styles.joinButton,
-              (!accessCode.trim() || isJoining) && styles.joinButtonDisabled
+              (!accessCode.trim() || isJoining) && styles.joinButtonDisabled,
             ]}
             onPress={handleJoin}
             disabled={!accessCode.trim() || isJoining}

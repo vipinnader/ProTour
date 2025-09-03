@@ -15,13 +15,23 @@ import {
   Share,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { refereeAccessService, RefereeInvitation, RefereePermissions } from '@protour/shared';
+import {
+  refereeAccessService,
+  RefereeInvitation,
+  RefereePermissions,
+} from '@protour/shared';
 import { useSync } from '../../contexts/SyncContext';
 
 interface RefereeInvitationManagerProps {
   tournamentId: string;
   tournamentName: string;
-  matches: Array<{ id: string; player1Name: string; player2Name?: string; round: number; court?: string }>;
+  matches: Array<{
+    id: string;
+    player1Name: string;
+    player2Name?: string;
+    round: number;
+    court?: string;
+  }>;
   onInvitationCreated?: (invitation: RefereeInvitation) => void;
 }
 
@@ -48,7 +58,8 @@ const RefereeInvitationManager: React.FC<RefereeInvitationManagerProps> = ({
   const [invitations, setInvitations] = useState<RefereeInvitation[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
-  const [selectedInvitation, setSelectedInvitation] = useState<RefereeInvitation | null>(null);
+  const [selectedInvitation, setSelectedInvitation] =
+    useState<RefereeInvitation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const [formData, setFormData] = useState<InvitationFormData>({
@@ -70,7 +81,8 @@ const RefereeInvitationManager: React.FC<RefereeInvitationManagerProps> = ({
 
   const loadInvitations = async () => {
     try {
-      const tournamentInvitations = refereeAccessService.getTournamentInvitations(tournamentId);
+      const tournamentInvitations =
+        refereeAccessService.getTournamentInvitations(tournamentId);
       setInvitations(tournamentInvitations);
     } catch (error) {
       console.error('Failed to load invitations:', error);
@@ -132,21 +144,20 @@ const RefereeInvitationManager: React.FC<RefereeInvitationManagerProps> = ({
         `Access code: ${invitation.accessCode}\n\nWould you like to share this invitation?`,
         [
           { text: 'Later', style: 'cancel' },
-          { 
+          {
             text: 'Share',
-            onPress: () => shareInvitation(invitation)
+            onPress: () => shareInvitation(invitation),
           },
           {
             text: 'QR Code',
-            onPress: () => showQRCode(invitation)
-          }
+            onPress: () => showQRCode(invitation),
+          },
         ]
       );
 
       if (onInvitationCreated) {
         onInvitationCreated(invitation);
       }
-
     } catch (error) {
       console.error('Failed to create invitation:', error);
       Alert.alert('Error', 'Failed to create referee invitation');
@@ -196,14 +207,14 @@ Download the ProTour app and use this code to join.`;
                   'Invitation revoked by organizer'
                 );
               }
-              
+
               await loadInvitations();
               Alert.alert('Success', 'Invitation has been revoked');
             } catch (error) {
               Alert.alert('Error', 'Failed to revoke invitation');
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -213,27 +224,37 @@ Download the ProTour app and use this code to join.`;
       ...prev,
       assignedMatches: prev.assignedMatches.includes(matchId)
         ? prev.assignedMatches.filter(id => id !== matchId)
-        : [...prev.assignedMatches, matchId]
+        : [...prev.assignedMatches, matchId],
     }));
   };
 
   const getStatusColor = (status: string): string => {
     switch (status) {
-      case 'pending': return '#ffc107';
-      case 'accepted': return '#28a745';
-      case 'expired': return '#6c757d';
-      case 'revoked': return '#dc3545';
-      default: return '#6c757d';
+      case 'pending':
+        return '#ffc107';
+      case 'accepted':
+        return '#28a745';
+      case 'expired':
+        return '#6c757d';
+      case 'revoked':
+        return '#dc3545';
+      default:
+        return '#6c757d';
     }
   };
 
   const getStatusText = (status: string): string => {
     switch (status) {
-      case 'pending': return 'Pending';
-      case 'accepted': return 'Active';
-      case 'expired': return 'Expired';
-      case 'revoked': return 'Revoked';
-      default: return status;
+      case 'pending':
+        return 'Pending';
+      case 'accepted':
+        return 'Active';
+      case 'expired':
+        return 'Expired';
+      case 'revoked':
+        return 'Revoked';
+      default:
+        return status;
     }
   };
 
@@ -249,31 +270,36 @@ Download the ProTour app and use this code to join.`;
             Expires: {new Date(item.expiresAt).toLocaleString()}
           </Text>
         </View>
-        
-        <View style={[
-          styles.statusBadge,
-          { backgroundColor: getStatusColor(item.status) }
-        ]}>
+
+        <View
+          style={[
+            styles.statusBadge,
+            { backgroundColor: getStatusColor(item.status) },
+          ]}
+        >
           <Text style={styles.statusBadgeText}>
             {getStatusText(item.status)}
           </Text>
         </View>
       </View>
-      
+
       <View style={styles.invitationDetails}>
         <Text style={styles.assignedMatchesText}>
           Assigned matches: {item.permissions.assignedMatches.length}
         </Text>
         <Text style={styles.permissionsText}>
-          Permissions: {[
+          Permissions:{' '}
+          {[
             item.permissions.canStartMatches && 'Start',
             item.permissions.canCompleteMatches && 'Complete',
             item.permissions.canEditScores && 'Edit Scores',
             item.permissions.canViewAllMatches && 'View All',
-          ].filter(Boolean).join(', ')}
+          ]
+            .filter(Boolean)
+            .join(', ')}
         </Text>
       </View>
-      
+
       <View style={styles.invitationActions}>
         <TouchableOpacity
           style={styles.actionButton}
@@ -281,14 +307,14 @@ Download the ProTour app and use this code to join.`;
         >
           <Text style={styles.actionButtonText}>Share</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => showQRCode(item)}
         >
           <Text style={styles.actionButtonText}>QR Code</Text>
         </TouchableOpacity>
-        
+
         {item.status !== 'revoked' && item.status !== 'expired' && (
           <TouchableOpacity
             style={[styles.actionButton, styles.revokeButton]}
@@ -305,7 +331,7 @@ Download the ProTour app and use this code to join.`;
     <TouchableOpacity
       style={[
         styles.matchItem,
-        formData.assignedMatches.includes(item.id) && styles.matchItemSelected
+        formData.assignedMatches.includes(item.id) && styles.matchItemSelected,
       ]}
       onPress={() => toggleMatchAssignment(item.id)}
     >
@@ -317,11 +343,13 @@ Download the ProTour app and use this code to join.`;
           Round {item.round} {item.court && `• Court ${item.court}`}
         </Text>
       </View>
-      
-      <View style={[
-        styles.checkbox,
-        formData.assignedMatches.includes(item.id) && styles.checkboxSelected
-      ]}>
+
+      <View
+        style={[
+          styles.checkbox,
+          formData.assignedMatches.includes(item.id) && styles.checkboxSelected,
+        ]}
+      >
         {formData.assignedMatches.includes(item.id) && (
           <Text style={styles.checkboxText}>✓</Text>
         )}
@@ -354,7 +382,7 @@ Download the ProTour app and use this code to join.`;
       <FlatList
         data={invitations}
         renderItem={renderInvitation}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         style={styles.invitationsList}
         ListEmptyComponent={
           <View style={styles.emptyState}>
@@ -365,7 +393,9 @@ Download the ProTour app and use this code to join.`;
               style={styles.createFirstButton}
               onPress={() => setShowCreateForm(true)}
             >
-              <Text style={styles.createFirstButtonText}>Create First Invitation</Text>
+              <Text style={styles.createFirstButtonText}>
+                Create First Invitation
+              </Text>
             </TouchableOpacity>
           </View>
         }
@@ -392,22 +422,28 @@ Download the ProTour app and use this code to join.`;
           <ScrollView style={styles.formContainer}>
             {/* Contact Information */}
             <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>Contact Information (Optional)</Text>
-              
+              <Text style={styles.sectionTitle}>
+                Contact Information (Optional)
+              </Text>
+
               <TextInput
                 style={styles.textInput}
                 placeholder="Email address"
                 value={formData.email}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, email: text }))}
+                onChangeText={text =>
+                  setFormData(prev => ({ ...prev, email: text }))
+                }
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
-              
+
               <TextInput
                 style={styles.textInput}
                 placeholder="Phone number"
                 value={formData.phone}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, phone: text }))}
+                onChangeText={text =>
+                  setFormData(prev => ({ ...prev, phone: text }))
+                }
                 keyboardType="phone-pad"
               />
             </View>
@@ -417,11 +453,11 @@ Download the ProTour app and use this code to join.`;
               <Text style={styles.sectionTitle}>
                 Assigned Matches ({formData.assignedMatches.length} selected)
               </Text>
-              
+
               <FlatList
                 data={matches}
                 renderItem={renderMatchSelector}
-                keyExtractor={(item) => item.id}
+                keyExtractor={item => item.id}
                 style={styles.matchSelectorList}
                 scrollEnabled={false}
               />
@@ -430,84 +466,113 @@ Download the ProTour app and use this code to join.`;
             {/* Permissions */}
             <View style={styles.formSection}>
               <Text style={styles.sectionTitle}>Permissions</Text>
-              
+
               <View style={styles.permissionsList}>
                 {[
                   { key: 'canStartMatches', label: 'Can start matches' },
                   { key: 'canCompleteMatches', label: 'Can complete matches' },
                   { key: 'canEditScores', label: 'Can edit scores' },
-                  { key: 'canViewAllMatches', label: 'Can view all matches (spectate)' },
-                ].map((permission) => (
+                  {
+                    key: 'canViewAllMatches',
+                    label: 'Can view all matches (spectate)',
+                  },
+                ].map(permission => (
                   <TouchableOpacity
                     key={permission.key}
                     style={styles.permissionItem}
-                    onPress={() => setFormData(prev => ({
-                      ...prev,
-                      [permission.key]: !prev[permission.key as keyof InvitationFormData]
-                    }))}
+                    onPress={() =>
+                      setFormData(prev => ({
+                        ...prev,
+                        [permission.key]:
+                          !prev[permission.key as keyof InvitationFormData],
+                      }))
+                    }
                   >
-                    <View style={[
-                      styles.checkbox,
-                      formData[permission.key as keyof InvitationFormData] && styles.checkboxSelected
-                    ]}>
+                    <View
+                      style={[
+                        styles.checkbox,
+                        formData[permission.key as keyof InvitationFormData] &&
+                          styles.checkboxSelected,
+                      ]}
+                    >
                       {formData[permission.key as keyof InvitationFormData] && (
                         <Text style={styles.checkboxText}>✓</Text>
                       )}
                     </View>
-                    <Text style={styles.permissionLabel}>{permission.label}</Text>
+                    <Text style={styles.permissionLabel}>
+                      {permission.label}
+                    </Text>
                   </TouchableOpacity>
                 ))}
-              </div>
+              </View>
             </View>
 
             {/* Settings */}
             <View style={styles.formSection}>
               <Text style={styles.sectionTitle}>Settings</Text>
-              
+
               <View style={styles.settingRow}>
                 <Text style={styles.settingLabel}>Max concurrent matches:</Text>
                 <View style={styles.numberInput}>
                   <TouchableOpacity
                     style={styles.numberButton}
-                    onPress={() => setFormData(prev => ({
-                      ...prev,
-                      maxConcurrentMatches: Math.max(1, prev.maxConcurrentMatches - 1)
-                    }))}
+                    onPress={() =>
+                      setFormData(prev => ({
+                        ...prev,
+                        maxConcurrentMatches: Math.max(
+                          1,
+                          prev.maxConcurrentMatches - 1
+                        ),
+                      }))
+                    }
                   >
                     <Text style={styles.numberButtonText}>-</Text>
                   </TouchableOpacity>
-                  <Text style={styles.numberValue}>{formData.maxConcurrentMatches}</Text>
+                  <Text style={styles.numberValue}>
+                    {formData.maxConcurrentMatches}
+                  </Text>
                   <TouchableOpacity
                     style={styles.numberButton}
-                    onPress={() => setFormData(prev => ({
-                      ...prev,
-                      maxConcurrentMatches: Math.min(10, prev.maxConcurrentMatches + 1)
-                    }))}
+                    onPress={() =>
+                      setFormData(prev => ({
+                        ...prev,
+                        maxConcurrentMatches: Math.min(
+                          10,
+                          prev.maxConcurrentMatches + 1
+                        ),
+                      }))
+                    }
                   >
                     <Text style={styles.numberButtonText}>+</Text>
                   </TouchableOpacity>
                 </View>
               </View>
-              
+
               <View style={styles.settingRow}>
                 <Text style={styles.settingLabel}>Validity (hours):</Text>
                 <View style={styles.numberInput}>
                   <TouchableOpacity
                     style={styles.numberButton}
-                    onPress={() => setFormData(prev => ({
-                      ...prev,
-                      validityHours: Math.max(1, prev.validityHours - 1)
-                    }))}
+                    onPress={() =>
+                      setFormData(prev => ({
+                        ...prev,
+                        validityHours: Math.max(1, prev.validityHours - 1),
+                      }))
+                    }
                   >
                     <Text style={styles.numberButtonText}>-</Text>
                   </TouchableOpacity>
-                  <Text style={styles.numberValue}>{formData.validityHours}</Text>
+                  <Text style={styles.numberValue}>
+                    {formData.validityHours}
+                  </Text>
                   <TouchableOpacity
                     style={styles.numberButton}
-                    onPress={() => setFormData(prev => ({
-                      ...prev,
-                      validityHours: Math.min(72, prev.validityHours + 1)
-                    }))}
+                    onPress={() =>
+                      setFormData(prev => ({
+                        ...prev,
+                        validityHours: Math.min(72, prev.validityHours + 1),
+                      }))
+                    }
                   >
                     <Text style={styles.numberButtonText}>+</Text>
                   </TouchableOpacity>
@@ -522,14 +587,19 @@ Download the ProTour app and use this code to join.`;
                 style={[styles.textInput, styles.textArea]}
                 placeholder="Add a custom message to the invitation..."
                 value={formData.customMessage}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, customMessage: text }))}
+                onChangeText={text =>
+                  setFormData(prev => ({ ...prev, customMessage: text }))
+                }
                 multiline
                 numberOfLines={3}
               />
             </View>
 
             <TouchableOpacity
-              style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
+              style={[
+                styles.submitButton,
+                isLoading && styles.submitButtonDisabled,
+              ]}
               onPress={handleCreateInvitation}
               disabled={isLoading || formData.assignedMatches.length === 0}
             >
@@ -551,7 +621,7 @@ Download the ProTour app and use this code to join.`;
         <View style={styles.qrModalOverlay}>
           <View style={styles.qrModalContainer}>
             <Text style={styles.qrModalTitle}>Referee Access QR Code</Text>
-            
+
             {selectedInvitation && (
               <>
                 <View style={styles.qrCodeContainer}>
@@ -562,14 +632,15 @@ Download the ProTour app and use this code to join.`;
                     color="black"
                   />
                 </View>
-                
+
                 <Text style={styles.qrCodeText}>
                   Access Code: {selectedInvitation.accessCode}
                 </Text>
                 <Text style={styles.qrExpiryText}>
-                  Expires: {new Date(selectedInvitation.expiresAt).toLocaleString()}
+                  Expires:{' '}
+                  {new Date(selectedInvitation.expiresAt).toLocaleString()}
                 </Text>
-                
+
                 <View style={styles.qrModalButtons}>
                   <TouchableOpacity
                     style={styles.qrModalButton}
@@ -577,14 +648,14 @@ Download the ProTour app and use this code to join.`;
                   >
                     <Text style={styles.qrModalButtonText}>Share</Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     style={[styles.qrModalButton, styles.qrCloseButton]}
                     onPress={() => setShowQRModal(false)}
                   >
                     <Text style={styles.qrModalButtonText}>Close</Text>
                   </TouchableOpacity>
-                </div>
+                </View>
               </>
             )}
           </View>

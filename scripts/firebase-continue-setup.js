@@ -25,10 +25,10 @@ function log(message, color = colors.reset) {
 function execCommand(command, options = {}) {
   try {
     log(`Running: ${command}`, colors.cyan);
-    const output = execSync(command, { 
-      stdio: 'inherit', 
+    const output = execSync(command, {
+      stdio: 'inherit',
       encoding: 'utf8',
-      ...options 
+      ...options,
     });
     return output;
   } catch (error) {
@@ -39,7 +39,7 @@ function execCommand(command, options = {}) {
 
 async function checkFirebaseProjects() {
   log('\n📋 Checking existing Firebase projects...', colors.blue);
-  
+
   try {
     const output = execSync('firebase projects:list', { encoding: 'utf8' });
     log('✅ Firebase projects:', colors.green);
@@ -65,7 +65,6 @@ async function initializeFirebaseConfig() {
     // Set to development project
     execCommand('firebase use protour-dev');
     log('✅ Switched to protour-dev project', colors.green);
-
   } catch (error) {
     log('❌ Failed to initialize Firebase configuration', colors.red);
     throw error;
@@ -99,7 +98,6 @@ async function deployFirebaseRules() {
     } catch (error) {
       log('⚠️  Could not deploy Firestore indexes', colors.yellow);
     }
-
   } catch (error) {
     log('❌ Failed to deploy Firebase rules', colors.red);
     throw error;
@@ -109,10 +107,7 @@ async function deployFirebaseRules() {
 async function createEnvironmentFiles() {
   log('\n🌍 Creating environment files...', colors.blue);
 
-  const envFiles = [
-    'apps/mobile/.env',
-    'functions/.env'
-  ];
+  const envFiles = ['apps/mobile/.env', 'functions/.env'];
 
   for (const envFile of envFiles) {
     const exampleFile = `${envFile}.example`;
@@ -122,7 +117,10 @@ async function createEnvironmentFiles() {
     if (!fs.existsSync(fullPath) && fs.existsSync(examplePath)) {
       fs.copyFileSync(examplePath, fullPath);
       log(`✅ Created ${envFile} (copy of .env.example)`, colors.green);
-      log(`⚠️  Please update ${envFile} with your Firebase configuration`, colors.yellow);
+      log(
+        `⚠️  Please update ${envFile} with your Firebase configuration`,
+        colors.yellow
+      );
     } else if (fs.existsSync(fullPath)) {
       log(`⚠️  ${envFile} already exists`, colors.yellow);
     } else {
@@ -136,10 +134,13 @@ async function testEmulators() {
 
   try {
     log('Starting emulators (this will run briefly to test)...', colors.cyan);
-    const child = execSync('timeout 10 firebase emulators:start --only auth,firestore,storage', {
-      stdio: 'ignore',
-      encoding: 'utf8'
-    });
+    const child = execSync(
+      'timeout 10 firebase emulators:start --only auth,firestore,storage',
+      {
+        stdio: 'ignore',
+        encoding: 'utf8',
+      }
+    );
     log('✅ Emulators can start successfully', colors.green);
   } catch (error) {
     // Expected timeout
@@ -159,9 +160,12 @@ async function displayStatus() {
   log('✅ Deployed security rules', colors.green);
   log('✅ Created environment files', colors.green);
   log('✅ Tested emulators', colors.green);
-  
+
   log('\n📋 Next steps:', colors.blue);
-  log('1. Update environment files with your Firebase configuration:', colors.cyan);
+  log(
+    '1. Update environment files with your Firebase configuration:',
+    colors.cyan
+  );
   log('   • apps/mobile/.env', colors.cyan);
   log('   • functions/.env', colors.cyan);
   log('2. Start development:', colors.cyan);
@@ -182,8 +186,14 @@ async function main() {
     await testEmulators();
     await displayStatus();
   } catch (error) {
-    log(`\n❌ Firebase setup continuation failed: ${error.message}`, colors.red);
-    log('Please check the error messages above and try manual steps.', colors.red);
+    log(
+      `\n❌ Firebase setup continuation failed: ${error.message}`,
+      colors.red
+    );
+    log(
+      'Please check the error messages above and try manual steps.',
+      colors.red
+    );
     process.exit(1);
   }
 }

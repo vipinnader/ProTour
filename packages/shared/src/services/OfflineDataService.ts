@@ -65,7 +65,7 @@ export class OfflineDataService {
   private isInitialized = false;
   private offlineStartTime: number | null = null;
   private listeners: Map<string, (() => void)[]> = new Map();
-  
+
   private readonly OFFLINE_LIMIT_MS = 8 * 60 * 60 * 1000; // 8 hours
   private readonly WARNING_THRESHOLD_MS = 6 * 60 * 60 * 1000; // 6 hours
   private readonly MAX_CACHE_SIZE_MB = 100; // 100MB cache limit
@@ -85,13 +85,13 @@ export class OfflineDataService {
     try {
       // Initialize encryption key
       await this.initializeEncryption();
-      
+
       // Initialize SQLite database
       await this.initializeDatabase();
-      
+
       // Set up connectivity monitoring
       await this.initializeConnectivityMonitoring();
-      
+
       this.isInitialized = true;
       console.log('OfflineDataService initialized successfully');
     } catch (error) {
@@ -103,14 +103,16 @@ export class OfflineDataService {
   private async initializeEncryption(): Promise<void> {
     try {
       // Try to retrieve existing encryption key
-      const credentials = await Keychain.getInternetCredentials(this.KEYCHAIN_SERVICE);
-      
+      const credentials = await Keychain.getInternetCredentials(
+        this.KEYCHAIN_SERVICE
+      );
+
       if (credentials && credentials.password) {
         this.encryptionKey = credentials.password;
       } else {
         // Generate new AES-256 key
-        this.encryptionKey = CryptoJS.lib.WordArray.random(256/8).toString();
-        
+        this.encryptionKey = CryptoJS.lib.WordArray.random(256 / 8).toString();
+
         // Store securely in keychain
         await Keychain.setInternetCredentials(
           this.KEYCHAIN_SERVICE,
@@ -133,10 +135,9 @@ export class OfflineDataService {
 
       // Create tables
       await this.createTables();
-      
+
       // Create indexes for performance
       await this.createIndexes();
-      
     } catch (error) {
       throw new Error(`Database initialization failed: ${error}`);
     }
@@ -160,7 +161,7 @@ export class OfflineDataService {
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       )`,
-      
+
       // Sync queue table
       `CREATE TABLE IF NOT EXISTS sync_queue (
         id TEXT PRIMARY KEY,
@@ -174,14 +175,14 @@ export class OfflineDataService {
         priority TEXT DEFAULT 'normal',
         created_at INTEGER NOT NULL
       )`,
-      
+
       // Metadata table for service state
       `CREATE TABLE IF NOT EXISTS metadata (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL,
         updated_at INTEGER NOT NULL
       )`,
-      
+
       // Conflict resolution table
       `CREATE TABLE IF NOT EXISTS conflicts (
         id TEXT PRIMARY KEY,
@@ -193,7 +194,7 @@ export class OfflineDataService {
         resolved INTEGER DEFAULT 0,
         resolution_strategy TEXT,
         created_at INTEGER NOT NULL
-      )`
+      )`,
     ];
 
     for (const table of tables) {
@@ -240,7 +241,10 @@ export class OfflineDataService {
    */
   private encrypt(data: any): string {
     if (!this.encryptionKey) throw new Error('Encryption key not available');
-    return CryptoJS.AES.encrypt(JSON.stringify(data), this.encryptionKey).toString();
+    return CryptoJS.AES.encrypt(
+      JSON.stringify(data),
+      this.encryptionKey
+    ).toString();
   }
 
   private decrypt(encryptedData: string): any {
@@ -256,7 +260,11 @@ export class OfflineDataService {
   /**
    * AC2B.1.1: Complete offline operations - Create
    */
-  async createOffline<T>(collection: string, data: Omit<T, 'id'>, userId: string): Promise<T> {
+  async createOffline<T>(
+    collection: string,
+    data: Omit<T, 'id'>,
+    userId: string
+  ): Promise<T> {
     if (!this.db) throw new Error('Database not initialized');
 
     const documentId = uuid.v4() as string;
@@ -276,7 +284,17 @@ export class OfflineDataService {
       `INSERT INTO documents 
        (id, collection, encrypted_data, last_modified, device_id, checksum, created_at, updated_at, has_pending_writes)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [documentId, collection, encryptedData, timestamp, this.deviceId, checksum, timestamp, timestamp, 1]
+      [
+        documentId,
+        collection,
+        encryptedData,
+        timestamp,
+        this.deviceId,
+        checksum,
+        timestamp,
+        timestamp,
+        1,
+      ]
     );
 
     // Add to sync queue
@@ -292,14 +310,21 @@ export class OfflineDataService {
       priority: 'normal',
     });
 
-    this.emit('documentCreated', { collection, id: documentId, data: enhancedData });
+    this.emit('documentCreated', {
+      collection,
+      id: documentId,
+      data: enhancedData,
+    });
     return enhancedData;
   }
 
   /**
    * AC2B.1.1: Complete offline operations - Read
    */
-  async readOffline<T>(collection: string, id: string): Promise<CachedDocument<T> | null> {
+  async readOffline<T>(
+    collection: string,
+    id: string
+  ): Promise<CachedDocument<T> | null> {
     if (!this.db) throw new Error('Database not initialized');
 
     const [result] = await this.db.executeSql(
@@ -315,7 +340,9 @@ export class OfflineDataService {
     // Verify checksum for data integrity
     const expectedChecksum = this.generateChecksum(data);
     if (row.checksum !== expectedChecksum) {
-      console.warn(`Checksum mismatch for document ${id}, data may be corrupted`);
+      console.warn(
+        `Checksum mismatch for document ${id}, data may be corrupted`
+      );
       await this.repairDocument(collection, id);
       return null;
     }
@@ -336,12 +363,18 @@ export class OfflineDataService {
   /**
    * AC2B.1.1: Complete offline operations - Update
    */
-  async updateOffline<T>(collection: string, id: string, data: Partial<T>, userId: string): Promise<void> {
+  async updateOffline<T>(
+    collection: string,
+    id: string,
+    data: Partial<T>,
+    userId: string
+  ): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
     // Get existing document
     const existing = await this.readOffline<T>(collection, id);
-    if (!existing) throw new Error(`Document ${id} not found in collection ${collection}`);
+    if (!existing)
+      throw new Error(`Document ${id} not found in collection ${collection}`);
 
     const timestamp = Date.now();
     const updatedData = {
@@ -381,7 +414,11 @@ export class OfflineDataService {
   /**
    * AC2B.1.1: Complete offline operations - Delete
    */
-  async deleteOffline(collection: string, id: string, userId: string): Promise<void> {
+  async deleteOffline(
+    collection: string,
+    id: string,
+    userId: string
+  ): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
     const timestamp = Date.now();
@@ -447,7 +484,7 @@ export class OfflineDataService {
       const row = result.rows.item(i);
       try {
         const data = this.decrypt(row.encrypted_data);
-        
+
         // Verify checksum
         const expectedChecksum = this.generateChecksum(data);
         if (row.checksum === expectedChecksum) {
@@ -525,14 +562,18 @@ export class OfflineDataService {
   private async processSyncOperation(row: any): Promise<void> {
     try {
       const data = row.encrypted_data ? this.decrypt(row.encrypted_data) : null;
-      
+
       // Here you would integrate with your actual cloud sync service
       // For now, we'll simulate the sync process
-      console.log(`Syncing ${row.operation} for ${row.collection}/${row.document_id}`);
-      
+      console.log(
+        `Syncing ${row.operation} for ${row.collection}/${row.document_id}`
+      );
+
       // Remove from queue on success
-      await this.db!.executeSql('DELETE FROM sync_queue WHERE id = ?', [row.id]);
-      
+      await this.db!.executeSql('DELETE FROM sync_queue WHERE id = ?', [
+        row.id,
+      ]);
+
       // Update document to remove pending writes flag
       if (row.operation !== 'delete') {
         await this.db!.executeSql(
@@ -540,10 +581,9 @@ export class OfflineDataService {
           [row.document_id, row.collection]
         );
       }
-      
     } catch (error) {
       console.error(`Sync failed for operation ${row.id}:`, error);
-      
+
       // Increment retry count
       const newRetryCount = row.retry_count + 1;
       if (newRetryCount < 5) {
@@ -552,8 +592,12 @@ export class OfflineDataService {
           [newRetryCount, row.id]
         );
       } else {
-        console.error(`Max retries reached for operation ${row.id}, removing from queue`);
-        await this.db!.executeSql('DELETE FROM sync_queue WHERE id = ?', [row.id]);
+        console.error(
+          `Max retries reached for operation ${row.id}, removing from queue`
+        );
+        await this.db!.executeSql('DELETE FROM sync_queue WHERE id = ?', [
+          row.id,
+        ]);
       }
     }
   }
@@ -564,16 +608,20 @@ export class OfflineDataService {
   async getOfflineStatus(): Promise<OfflineStatus> {
     const netInfo = await NetInfo.fetch();
     const isOnline = netInfo.isConnected && netInfo.isInternetReachable;
-    
-    const [queueResult] = await this.db!.executeSql('SELECT COUNT(*) as count FROM sync_queue');
+
+    const [queueResult] = await this.db!.executeSql(
+      'SELECT COUNT(*) as count FROM sync_queue'
+    );
     const pendingOperations = queueResult.rows.item(0).count;
-    
-    const [docsResult] = await this.db!.executeSql('SELECT COUNT(*) as count FROM documents');
+
+    const [docsResult] = await this.db!.executeSql(
+      'SELECT COUNT(*) as count FROM documents'
+    );
     const totalDocuments = docsResult.rows.item(0).count;
-    
+
     // Estimate cache size (rough calculation)
     const cacheSize = totalDocuments * 1024; // Assume 1KB per document average
-    
+
     let storageHealth: 'good' | 'warning' | 'critical' = 'good';
     if (cacheSize > this.MAX_CACHE_SIZE_MB * 1024 * 1024 * 0.8) {
       storageHealth = 'warning';
@@ -599,7 +647,7 @@ export class OfflineDataService {
         'SELECT value FROM metadata WHERE key = ?',
         ['last_sync_time']
       );
-      
+
       if (result.rows.length > 0) {
         return parseInt(result.rows.item(0).value);
       }
@@ -623,22 +671,21 @@ export class OfflineDataService {
 
     for (let i = 0; i < result.rows.length; i++) {
       const row = result.rows.item(i);
-      
+
       try {
         const data = this.decrypt(row.encrypted_data);
         const expectedChecksum = this.generateChecksum(data);
-        
+
         if (row.checksum !== expectedChecksum) {
           errors.push(`Checksum mismatch for document ${row.id}`);
           repairActions.push(`Repair document ${row.id} checksum`);
           corruptedDocuments++;
         }
-        
+
         // Validate data structure
         if (!data.id || data.id !== row.id) {
           warnings.push(`Document ${row.id} has inconsistent ID`);
         }
-        
       } catch (error) {
         errors.push(`Failed to decrypt document ${row.id}: ${error}`);
         corruptedDocuments++;
@@ -664,7 +711,11 @@ export class OfflineDataService {
     shouldWarn: boolean;
   }> {
     if (!this.offlineStartTime) {
-      return { withinLimit: true, timeRemaining: this.OFFLINE_LIMIT_MS, shouldWarn: false };
+      return {
+        withinLimit: true,
+        timeRemaining: this.OFFLINE_LIMIT_MS,
+        shouldWarn: false,
+      };
     }
 
     const offlineTime = Date.now() - this.offlineStartTime;
@@ -731,11 +782,11 @@ export class OfflineDataService {
    */
   async clearCache(): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
-    
+
     await this.db.executeSql('DELETE FROM documents');
     await this.db.executeSql('DELETE FROM sync_queue');
     await this.db.executeSql('DELETE FROM conflicts');
-    
+
     this.emit('cacheCleared');
   }
 
@@ -747,9 +798,15 @@ export class OfflineDataService {
   }> {
     if (!this.db) throw new Error('Database not initialized');
 
-    const [docsResult] = await this.db.executeSql('SELECT COUNT(*) as count FROM documents');
-    const [queueResult] = await this.db.executeSql('SELECT COUNT(*) as count FROM sync_queue');
-    const [conflictsResult] = await this.db.executeSql('SELECT COUNT(*) as count FROM conflicts');
+    const [docsResult] = await this.db.executeSql(
+      'SELECT COUNT(*) as count FROM documents'
+    );
+    const [queueResult] = await this.db.executeSql(
+      'SELECT COUNT(*) as count FROM sync_queue'
+    );
+    const [conflictsResult] = await this.db.executeSql(
+      'SELECT COUNT(*) as count FROM conflicts'
+    );
 
     const documentCount = docsResult.rows.item(0).count;
     const queueSize = queueResult.rows.item(0).count;

@@ -80,33 +80,33 @@ describe('MatchService', () => {
     it('should validate required fields', async () => {
       const invalidData = { ...validMatchData, tournamentId: '' };
 
-      await expect(
-        matchService.createMatch(invalidData)
-      ).rejects.toThrow('Missing required fields');
+      await expect(matchService.createMatch(invalidData)).rejects.toThrow(
+        'Missing required fields'
+      );
     });
 
     it('should validate round number', async () => {
       const invalidData = { ...validMatchData, round: 0 };
 
-      await expect(
-        matchService.createMatch(invalidData)
-      ).rejects.toThrow('Round must be a positive number');
+      await expect(matchService.createMatch(invalidData)).rejects.toThrow(
+        'Round must be a positive number'
+      );
     });
 
     it('should validate match number', async () => {
       const invalidData = { ...validMatchData, matchNumber: -1 };
 
-      await expect(
-        matchService.createMatch(invalidData)
-      ).rejects.toThrow('Match number must be a positive number');
+      await expect(matchService.createMatch(invalidData)).rejects.toThrow(
+        'Match number must be a positive number'
+      );
     });
 
     it('should validate status enum', async () => {
       const invalidData = { ...validMatchData, status: 'invalid' as any };
 
-      await expect(
-        matchService.createMatch(invalidData)
-      ).rejects.toThrow('Invalid status');
+      await expect(matchService.createMatch(invalidData)).rejects.toThrow(
+        'Invalid status'
+      );
     });
 
     it('should create bye match without player2Id', async () => {
@@ -156,9 +156,9 @@ describe('MatchService', () => {
 
       const updates = { status: 'pending' as any };
 
-      await expect(
-        matchService.updateMatch(matchId, updates)
-      ).rejects.toThrow('Invalid status transition from completed to pending');
+      await expect(matchService.updateMatch(matchId, updates)).rejects.toThrow(
+        'Invalid status transition from completed to pending'
+      );
     });
 
     it('should validate winner is one of the players', async () => {
@@ -177,9 +177,9 @@ describe('MatchService', () => {
 
       const updates = { winnerId: 'invalid-player' };
 
-      await expect(
-        matchService.updateMatch(matchId, updates)
-      ).rejects.toThrow('Winner must be one of the players in the match');
+      await expect(matchService.updateMatch(matchId, updates)).rejects.toThrow(
+        'Winner must be one of the players in the match'
+      );
     });
   });
 
@@ -229,7 +229,9 @@ describe('MatchService', () => {
 
       mockCollection.where.mockReturnValue(mockQuery);
 
-      await matchService.getMatchesByTournament(tournamentId, { status: 'completed' });
+      await matchService.getMatchesByTournament(tournamentId, {
+        status: 'completed',
+      });
 
       expect(mockCollection.where).toHaveBeenCalledTimes(1);
     });
@@ -266,7 +268,10 @@ describe('MatchService', () => {
 
       mockCollection.where.mockReturnValue(mockQuery);
 
-      const result = await matchService.getMatchesByPlayer(playerId, tournamentId);
+      const result = await matchService.getMatchesByPlayer(
+        playerId,
+        tournamentId
+      );
 
       expect(result).toHaveLength(2);
       expect(result[0].player1Id).toBe(playerId);
@@ -274,13 +279,15 @@ describe('MatchService', () => {
     });
 
     it('should deduplicate matches', async () => {
-      const duplicateMatch = { id: 'match-1', player1Id: playerId, player2Id: playerId };
+      const duplicateMatch = {
+        id: 'match-1',
+        player1Id: playerId,
+        player2Id: playerId,
+      };
 
       const mockQuery = {
         get: jest.fn().mockResolvedValue({
-          docs: [
-            { id: duplicateMatch.id, data: () => duplicateMatch },
-          ],
+          docs: [{ id: duplicateMatch.id, data: () => duplicateMatch }],
         }),
       };
 
@@ -362,9 +369,9 @@ describe('MatchService', () => {
           data: () => mockMatch,
         });
 
-        await expect(
-          matchService.startMatch(matchId)
-        ).rejects.toThrow('Can only start pending matches');
+        await expect(matchService.startMatch(matchId)).rejects.toThrow(
+          'Can only start pending matches'
+        );
       });
     });
 
@@ -478,7 +485,8 @@ describe('MatchService', () => {
 
         // Verify both the match completion and next match progression
         expect(mockDoc.update).toHaveBeenCalledTimes(2);
-        expect(mockDoc.update).toHaveBeenNthCalledWith(2, 
+        expect(mockDoc.update).toHaveBeenNthCalledWith(
+          2,
           expect.objectContaining({ player1Id: 'player-1' })
         );
       });
@@ -516,7 +524,8 @@ describe('MatchService', () => {
 
         await matchService.completeBye(matchId, 'player-1');
 
-        expect(mockDoc.update).toHaveBeenNthCalledWith(1, 
+        expect(mockDoc.update).toHaveBeenNthCalledWith(
+          1,
           expect.objectContaining({
             status: 'completed',
             winnerId: 'player-1',

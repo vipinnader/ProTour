@@ -20,9 +20,10 @@ import { Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { isValidEmail } from '@protour/shared';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 interface LoginScreenProps {
-  navigation: any;
+  navigation: NativeStackNavigationProp<any>;
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
@@ -71,7 +72,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         title: 'Welcome Back!',
         description: 'You have successfully logged in',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.show({
         title: 'Login Failed',
         description: error.message || 'An error occurred during login',
@@ -107,7 +108,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         title: 'Reset Email Sent',
         description: 'Check your email for password reset instructions',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.show({
         title: 'Reset Failed',
         description: error.message || 'Failed to send reset email',

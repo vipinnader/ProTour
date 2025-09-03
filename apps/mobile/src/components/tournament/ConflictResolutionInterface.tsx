@@ -29,7 +29,9 @@ interface ConflictResolutionInterfaceProps {
   onClose: () => void;
 }
 
-const ConflictResolutionInterface: React.FC<ConflictResolutionInterfaceProps> = ({
+const ConflictResolutionInterface: React.FC<
+  ConflictResolutionInterfaceProps
+> = ({
   visible,
   conflict,
   analysis,
@@ -38,7 +40,8 @@ const ConflictResolutionInterface: React.FC<ConflictResolutionInterfaceProps> = 
   onClose,
 }) => {
   const { currentSession } = useSync();
-  const [selectedOption, setSelectedOption] = useState<ConflictResolutionOption | null>(null);
+  const [selectedOption, setSelectedOption] =
+    useState<ConflictResolutionOption | null>(null);
   const [isResolving, setIsResolving] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
 
@@ -68,43 +71,61 @@ const ConflictResolutionInterface: React.FC<ConflictResolutionInterfaceProps> = 
               );
               onResolve(conflict.conflictId, selectedOption);
             } catch (error) {
-              Alert.alert('Resolution Failed', 'Unable to resolve conflict. Please try again.');
+              Alert.alert(
+                'Resolution Failed',
+                'Unable to resolve conflict. Please try again.'
+              );
             } finally {
               setIsResolving(false);
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
 
   const getSeverityColor = (severity: string): string => {
     switch (severity) {
-      case 'critical': return '#dc3545';
-      case 'high': return '#fd7e14';
-      case 'medium': return '#ffc107';
-      case 'low': return '#28a745';
-      default: return '#6c757d';
+      case 'critical':
+        return '#dc3545';
+      case 'high':
+        return '#fd7e14';
+      case 'medium':
+        return '#ffc107';
+      case 'low':
+        return '#28a745';
+      default:
+        return '#6c757d';
     }
   };
 
   const getTypeIcon = (type: string): string => {
     switch (type) {
-      case 'simultaneous_edit': return '⚡';
-      case 'permission_override': return '🔒';
-      case 'network_partition': return '🌐';
-      case 'clock_skew': return '⏰';
-      case 'data_corruption': return '🔧';
-      default: return '⚠️';
+      case 'simultaneous_edit':
+        return '⚡';
+      case 'permission_override':
+        return '🔒';
+      case 'network_partition':
+        return '🌐';
+      case 'clock_skew':
+        return '⏰';
+      case 'data_corruption':
+        return '🔧';
+      default:
+        return '⚠️';
     }
   };
 
   const getRiskColor = (risk: string): string => {
     switch (risk) {
-      case 'high': return '#dc3545';
-      case 'medium': return '#ffc107';
-      case 'low': return '#28a745';
-      default: return '#6c757d';
+      case 'high':
+        return '#dc3545';
+      case 'medium':
+        return '#ffc107';
+      case 'low':
+        return '#28a745';
+      default:
+        return '#6c757d';
     }
   };
 
@@ -118,28 +139,28 @@ const ConflictResolutionInterface: React.FC<ConflictResolutionInterfaceProps> = 
     return (
       <View style={styles.detailsContainer}>
         <Text style={styles.detailsTitle}>Conflict Details</Text>
-        
+
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Type:</Text>
           <Text style={styles.detailValue}>
             {getTypeIcon(conflict.type)} {conflict.type.replace('_', ' ')}
           </Text>
         </View>
-        
+
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Detected:</Text>
           <Text style={styles.detailValue}>
             {formatTimestamp(conflict.detectedAt)}
           </Text>
         </View>
-        
+
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Involved Users:</Text>
           <Text style={styles.detailValue}>
             {conflict.involvedUsers.join(', ')}
           </Text>
         </View>
-        
+
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Affected Document:</Text>
           <Text style={styles.detailValue}>
@@ -150,35 +171,55 @@ const ConflictResolutionInterface: React.FC<ConflictResolutionInterfaceProps> = 
         {/* Risk Assessment */}
         <View style={styles.riskAssessment}>
           <Text style={styles.riskTitle}>Risk Assessment</Text>
-          
+
           <View style={styles.riskRow}>
             <Text style={styles.riskLabel}>Data Loss Risk:</Text>
-            <View style={[
-              styles.riskBadge,
-              { backgroundColor: getRiskColor(analysis.riskAssessment.dataLossRisk) }
-            ]}>
+            <View
+              style={[
+                styles.riskBadge,
+                {
+                  backgroundColor: getRiskColor(
+                    analysis.riskAssessment.dataLossRisk
+                  ),
+                },
+              ]}
+            >
               <Text style={styles.riskBadgeText}>
                 {analysis.riskAssessment.dataLossRisk.toUpperCase()}
               </Text>
             </View>
           </View>
-          
+
           <View style={styles.riskRow}>
             <Text style={styles.riskLabel}>Tournament Impact:</Text>
-            <Text style={[
-              styles.riskValue,
-              { color: analysis.riskAssessment.tournamentImpact === 'severe' ? '#dc3545' : '#666' }
-            ]}>
+            <Text
+              style={[
+                styles.riskValue,
+                {
+                  color:
+                    analysis.riskAssessment.tournamentImpact === 'severe'
+                      ? '#dc3545'
+                      : '#666',
+                },
+              ]}
+            >
               {analysis.riskAssessment.tournamentImpact}
             </Text>
           </View>
-          
+
           <View style={styles.riskRow}>
             <Text style={styles.riskLabel}>Urgency:</Text>
-            <Text style={[
-              styles.riskValue,
-              { color: analysis.riskAssessment.urgency === 'critical' ? '#dc3545' : '#666' }
-            ]}>
+            <Text
+              style={[
+                styles.riskValue,
+                {
+                  color:
+                    analysis.riskAssessment.urgency === 'critical'
+                      ? '#dc3545'
+                      : '#666',
+                },
+              ]}
+            >
               {analysis.riskAssessment.urgency}
             </Text>
           </View>
@@ -188,7 +229,8 @@ const ConflictResolutionInterface: React.FC<ConflictResolutionInterfaceProps> = 
         {!analysis.clockSyncStatus.isInSync && (
           <View style={styles.clockSyncWarning}>
             <Text style={styles.warningText}>
-              ⚠️ Device clocks are not synchronized (max deviation: {analysis.clockSyncStatus.maxDeviation}ms)
+              ⚠️ Device clocks are not synchronized (max deviation:{' '}
+              {analysis.clockSyncStatus.maxDeviation}ms)
             </Text>
           </View>
         )}
@@ -196,7 +238,10 @@ const ConflictResolutionInterface: React.FC<ConflictResolutionInterfaceProps> = 
     );
   };
 
-  const renderResolutionOption = (option: ConflictResolutionOption, isRecommended: boolean) => (
+  const renderResolutionOption = (
+    option: ConflictResolutionOption,
+    isRecommended: boolean
+  ) => (
     <TouchableOpacity
       key={option.id}
       style={[
@@ -209,42 +254,51 @@ const ConflictResolutionInterface: React.FC<ConflictResolutionInterfaceProps> = 
     >
       <View style={styles.optionHeader}>
         <View style={styles.optionTitleContainer}>
-          <Text style={[
-            styles.optionTitle,
-            selectedOption?.id === option.id && styles.optionTitleSelected
-          ]}>
+          <Text
+            style={[
+              styles.optionTitle,
+              selectedOption?.id === option.id && styles.optionTitleSelected,
+            ]}
+          >
             {option.label}
             {isRecommended && (
               <Text style={styles.recommendedLabel}> (Recommended)</Text>
             )}
           </Text>
         </View>
-        
+
         <View style={styles.optionMeta}>
-          <View style={[
-            styles.confidenceBadge,
-            { backgroundColor: option.confidence > 80 ? '#28a745' : option.confidence > 60 ? '#ffc107' : '#dc3545' }
-          ]}>
-            <Text style={styles.confidenceBadgeText}>
-              {option.confidence}%
-            </Text>
+          <View
+            style={[
+              styles.confidenceBadge,
+              {
+                backgroundColor:
+                  option.confidence > 80
+                    ? '#28a745'
+                    : option.confidence > 60
+                      ? '#ffc107'
+                      : '#dc3545',
+              },
+            ]}
+          >
+            <Text style={styles.confidenceBadgeText}>{option.confidence}%</Text>
           </View>
-          
-          <View style={[
-            styles.riskBadge,
-            { backgroundColor: getRiskColor(option.riskLevel) }
-          ]}>
+
+          <View
+            style={[
+              styles.riskBadge,
+              { backgroundColor: getRiskColor(option.riskLevel) },
+            ]}
+          >
             <Text style={styles.riskBadgeText}>
               {option.riskLevel.toUpperCase()}
             </Text>
           </View>
         </View>
       </View>
-      
-      <Text style={styles.optionDescription}>
-        {option.description}
-      </Text>
-      
+
+      <Text style={styles.optionDescription}>{option.description}</Text>
+
       {option.consequences.length > 0 && (
         <View style={styles.consequencesContainer}>
           <Text style={styles.consequencesTitle}>Consequences:</Text>
@@ -271,16 +325,18 @@ const ConflictResolutionInterface: React.FC<ConflictResolutionInterfaceProps> = 
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Text style={styles.title}>Resolve Conflict</Text>
-            <View style={[
-              styles.severityBadge,
-              { backgroundColor: getSeverityColor(conflict.severity) }
-            ]}>
+            <View
+              style={[
+                styles.severityBadge,
+                { backgroundColor: getSeverityColor(conflict.severity) },
+              ]}
+            >
               <Text style={styles.severityBadgeText}>
                 {conflict.severity.toUpperCase()}
               </Text>
             </View>
           </View>
-          
+
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Text style={styles.closeButtonText}>✕</Text>
           </TouchableOpacity>
@@ -293,7 +349,7 @@ const ConflictResolutionInterface: React.FC<ConflictResolutionInterfaceProps> = 
               {getTypeIcon(conflict.type)} Conflict Detected
             </Text>
             <Text style={styles.overviewDescription}>
-              Multiple users have made conflicting changes to the same data. 
+              Multiple users have made conflicting changes to the same data.
               Please select how you would like to resolve this conflict.
             </Text>
           </View>
@@ -301,7 +357,7 @@ const ConflictResolutionInterface: React.FC<ConflictResolutionInterfaceProps> = 
           {/* Resolution Options */}
           <View style={styles.optionsContainer}>
             <Text style={styles.sectionTitle}>Resolution Options</Text>
-            {resolutionOptions.map((option, index) => 
+            {resolutionOptions.map((option, index) =>
               renderResolutionOption(option, index === 0)
             )}
           </View>
@@ -312,7 +368,8 @@ const ConflictResolutionInterface: React.FC<ConflictResolutionInterfaceProps> = 
             onPress={() => setShowDetails(!showDetails)}
           >
             <Text style={styles.detailsToggleText}>
-              {showDetails ? 'Hide Details' : 'Show Details'} {showDetails ? '▼' : '▶'}
+              {showDetails ? 'Hide Details' : 'Show Details'}{' '}
+              {showDetails ? '▼' : '▶'}
             </Text>
           </TouchableOpacity>
 
@@ -327,12 +384,12 @@ const ConflictResolutionInterface: React.FC<ConflictResolutionInterfaceProps> = 
           >
             <Text style={styles.cancelButtonText}>Cancel</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[
-              styles.actionButton, 
+              styles.actionButton,
               styles.resolveButton,
-              (!selectedOption || isResolving) && styles.actionButtonDisabled
+              (!selectedOption || isResolving) && styles.actionButtonDisabled,
             ]}
             onPress={handleResolve}
             disabled={!selectedOption || isResolving}
@@ -340,9 +397,7 @@ const ConflictResolutionInterface: React.FC<ConflictResolutionInterfaceProps> = 
             {isResolving ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.resolveButtonText}>
-                Resolve Conflict
-              </Text>
+              <Text style={styles.resolveButtonText}>Resolve Conflict</Text>
             )}
           </TouchableOpacity>
         </View>

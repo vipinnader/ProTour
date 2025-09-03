@@ -39,15 +39,15 @@ const testUsers = [
     password: 'admin123',
     displayName: 'Admin User',
     claims: { admin: true, role: 'admin' },
-    profile: { role: 'admin', isActive: true }
+    profile: { role: 'admin', isActive: true },
   },
   {
     uid: 'test-organizer',
-    email: 'organizer@protour.app', 
+    email: 'organizer@protour.app',
     password: 'organizer123',
     displayName: 'Tournament Organizer',
     claims: { role: 'organizer' },
-    profile: { role: 'organizer', isActive: true }
+    profile: { role: 'organizer', isActive: true },
   },
   {
     uid: 'test-player1',
@@ -55,7 +55,7 @@ const testUsers = [
     password: 'player123',
     displayName: 'Player One',
     claims: { role: 'player' },
-    profile: { role: 'player', isActive: true }
+    profile: { role: 'player', isActive: true },
   },
   {
     uid: 'test-player2',
@@ -63,8 +63,8 @@ const testUsers = [
     password: 'player123',
     displayName: 'Player Two',
     claims: { role: 'player' },
-    profile: { role: 'player', isActive: true }
-  }
+    profile: { role: 'player', isActive: true },
+  },
 ];
 
 // Test tournaments data
@@ -86,8 +86,8 @@ const testTournaments = [
     venue: 'Community Sports Center',
     rules: 'Standard tournament rules apply',
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-  }
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  },
 ];
 
 // Test registrations
@@ -99,19 +99,19 @@ const testRegistrations = [
     registeredAt: admin.firestore.FieldValue.serverTimestamp(),
     playerInfo: {
       displayName: 'Player One',
-      email: 'player1@protour.app'
-    }
+      email: 'player1@protour.app',
+    },
   },
   {
-    tournamentId: 'tournament-1', 
+    tournamentId: 'tournament-1',
     userId: 'test-player2',
     status: 'confirmed',
     registeredAt: admin.firestore.FieldValue.serverTimestamp(),
     playerInfo: {
       displayName: 'Player Two',
-      email: 'player2@protour.app'
-    }
-  }
+      email: 'player2@protour.app',
+    },
+  },
 ];
 
 // Test matches
@@ -124,13 +124,13 @@ const testMatches = [
     round: 1,
     scheduledTime: new Date('2024-07-15T10:00:00Z'),
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-  }
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  },
 ];
 
 async function createTestUsers() {
   log('\n👤 Creating test users...', colors.blue);
-  
+
   for (const userData of testUsers) {
     try {
       // Create auth user
@@ -156,18 +156,21 @@ async function createTestUsers() {
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         preferences: {
           notifications: { email: true, sms: false, push: true },
-          privacy: { showProfile: true, showStats: true }
-        }
+          privacy: { showProfile: true, showStats: true },
+        },
       };
 
       await db.collection('users').doc(userData.uid).set(profile);
-      
+
       log(`✅ Created user: ${userData.email}`, colors.green);
     } catch (error) {
       if (error.code === 'auth/uid-already-exists') {
         log(`⚠️  User already exists: ${userData.email}`, colors.yellow);
       } else {
-        log(`❌ Error creating user ${userData.email}: ${error.message}`, colors.red);
+        log(
+          `❌ Error creating user ${userData.email}: ${error.message}`,
+          colors.red
+        );
       }
     }
   }
@@ -196,8 +199,11 @@ async function createTestRegistrations() {
         .doc(registration.tournamentId)
         .collection('registrations')
         .add(registration);
-      
-      log(`✅ Created registration for ${registration.playerInfo.displayName}`, colors.green);
+
+      log(
+        `✅ Created registration for ${registration.playerInfo.displayName}`,
+        colors.green
+      );
     } catch (error) {
       log(`❌ Error creating registration: ${error.message}`, colors.red);
     }
@@ -214,7 +220,7 @@ async function createTestMatches() {
         .doc(match.tournamentId)
         .collection('matches')
         .add(match);
-      
+
       log(`✅ Created match between players`, colors.green);
     } catch (error) {
       log(`❌ Error creating match: ${error.message}`, colors.red);
@@ -229,19 +235,19 @@ async function createTestSettings() {
     app: {
       name: 'ProTour',
       version: '1.0.0',
-      maintainanceMode: false
+      maintainanceMode: false,
     },
     features: {
       registrationEnabled: true,
       smsNotifications: true,
       emailNotifications: true,
-      pushNotifications: true
+      pushNotifications: true,
     },
     limits: {
       maxTournamentsPerUser: 10,
       maxParticipantsPerTournament: 128,
-      maxMatchesPerDay: 50
-    }
+      maxMatchesPerDay: 50,
+    },
   };
 
   try {
@@ -269,7 +275,6 @@ async function seedEmulator() {
     log('Organizer: organizer@protour.app / organizer123', colors.cyan);
     log('Player 1: player1@protour.app / player123', colors.cyan);
     log('Player 2: player2@protour.app / player123', colors.cyan);
-    
   } catch (error) {
     log(`\n❌ Error seeding emulator: ${error.message}`, colors.red);
     process.exit(1);
@@ -278,12 +283,14 @@ async function seedEmulator() {
 
 // Run the seeder
 if (require.main === module) {
-  seedEmulator().then(() => {
-    process.exit(0);
-  }).catch((error) => {
-    console.error('Seeding failed:', error);
-    process.exit(1);
-  });
+  seedEmulator()
+    .then(() => {
+      process.exit(0);
+    })
+    .catch(error => {
+      console.error('Seeding failed:', error);
+      process.exit(1);
+    });
 }
 
 module.exports = { seedEmulator };

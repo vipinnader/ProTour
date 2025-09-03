@@ -1,5 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthorizationManager, RoleManager, PolicyManager } from './authorization';
+import {
+  AuthorizationManager,
+  RoleManager,
+  PolicyManager,
+} from './authorization';
 
 export interface RBACConfig {
   organizationHierarchy: boolean;
@@ -57,7 +61,10 @@ export interface ContextualRule {
 export class RBACManager {
   private authManager: AuthorizationManager;
   private config: RBACConfig;
-  private accessCache = new Map<string, { result: AccessResult; expiresAt: Date }>();
+  private accessCache = new Map<
+    string,
+    { result: AccessResult; expiresAt: Date }
+  >();
   private resources = new Map<string, ResourceDefinition>();
   private contextualRules: ContextualRule[] = [];
 
@@ -81,7 +88,14 @@ export class RBACManager {
       // Organization resources
       {
         type: 'organization',
-        actions: ['create', 'read', 'update', 'delete', 'manage_users', 'manage_billing'],
+        actions: [
+          'create',
+          'read',
+          'update',
+          'delete',
+          'manage_users',
+          'manage_billing',
+        ],
         ownershipField: 'ownerId',
         hierarchical: false,
         allowedOperations: {
@@ -95,13 +109,28 @@ export class RBACManager {
       // Tournament resources
       {
         type: 'tournament',
-        actions: ['create', 'read', 'update', 'delete', 'publish', 'manage_participants', 'manage_brackets', 'manage_scoring'],
+        actions: [
+          'create',
+          'read',
+          'update',
+          'delete',
+          'publish',
+          'manage_participants',
+          'manage_brackets',
+          'manage_scoring',
+        ],
         ownershipField: 'organizerId',
         hierarchical: true,
         parent: 'organization',
         allowedOperations: {
           create: ['org_admin', 'tournament_admin'],
-          read: ['org_admin', 'tournament_admin', 'tournament_organizer', 'participant', 'viewer'],
+          read: [
+            'org_admin',
+            'tournament_admin',
+            'tournament_organizer',
+            'participant',
+            'viewer',
+          ],
           update: ['org_admin', 'tournament_admin', 'tournament_organizer'],
           delete: ['org_admin', 'tournament_admin'],
         },
@@ -116,7 +145,13 @@ export class RBACManager {
         parent: 'tournament',
         allowedOperations: {
           create: ['org_admin', 'tournament_admin', 'tournament_organizer'],
-          read: ['org_admin', 'tournament_admin', 'tournament_organizer', 'participant', 'viewer'],
+          read: [
+            'org_admin',
+            'tournament_admin',
+            'tournament_organizer',
+            'participant',
+            'viewer',
+          ],
           update: ['org_admin', 'tournament_admin', 'tournament_organizer'],
           delete: ['org_admin', 'tournament_admin', 'tournament_organizer'],
         },
@@ -130,8 +165,20 @@ export class RBACManager {
         parent: 'tournament',
         allowedOperations: {
           create: ['org_admin', 'tournament_admin', 'tournament_organizer'],
-          read: ['org_admin', 'tournament_admin', 'tournament_organizer', 'participant', 'referee', 'viewer'],
-          update: ['org_admin', 'tournament_admin', 'tournament_organizer', 'referee'],
+          read: [
+            'org_admin',
+            'tournament_admin',
+            'tournament_organizer',
+            'participant',
+            'referee',
+            'viewer',
+          ],
+          update: [
+            'org_admin',
+            'tournament_admin',
+            'tournament_organizer',
+            'referee',
+          ],
           delete: ['org_admin', 'tournament_admin'],
         },
       },
@@ -193,9 +240,11 @@ export class RBACManager {
         name: 'Tournament Visibility Check',
         resource: 'tournament',
         action: 'read',
-        condition: (context) => {
+        condition: context => {
           // Allow if tournament is public or user is part of the organization
-          return context?.metadata?.isPublic === true || !!context?.organizationId;
+          return (
+            context?.metadata?.isPublic === true || !!context?.organizationId
+          );
         },
         effect: 'allow',
         priority: 100,
@@ -207,7 +256,7 @@ export class RBACManager {
         name: 'Self Profile Access',
         resource: 'user_profile',
         action: '*',
-        condition: (context) => {
+        condition: context => {
           return context?.ownerId === context?.metadata?.requestingUserId;
         },
         effect: 'allow',
@@ -220,7 +269,7 @@ export class RBACManager {
         name: 'Participant Own Data Access',
         resource: 'participant',
         action: 'read',
-        condition: (context) => {
+        condition: context => {
           return context?.ownerId === context?.metadata?.requestingUserId;
         },
         effect: 'allow',
@@ -233,9 +282,11 @@ export class RBACManager {
         name: 'Tournament Time-based Access',
         resource: 'tournament',
         action: 'update',
-        condition: (context) => {
+        condition: context => {
           const now = new Date();
-          const startDate = context?.metadata?.startDate ? new Date(context.metadata.startDate) : null;
+          const startDate = context?.metadata?.startDate
+            ? new Date(context.metadata.startDate)
+            : null;
           // Don't allow updates to started tournaments unless super admin
           return !startDate || startDate > now;
         },
@@ -249,11 +300,12 @@ export class RBACManager {
         name: 'Payment Processing Rule',
         resource: 'payment',
         action: 'process',
-        condition: (context) => {
+        condition: context => {
           // Only allow payment processing during registration period
           const now = new Date();
-          const regDeadline = context?.metadata?.registrationDeadline ? 
-            new Date(context.metadata.registrationDeadline) : null;
+          const regDeadline = context?.metadata?.registrationDeadline
+            ? new Date(context.metadata.registrationDeadline)
+            : null;
           return !regDeadline || now <= regDeadline;
         },
         effect: 'allow',
@@ -264,7 +316,7 @@ export class RBACManager {
 
   async checkAccess(request: AccessRequest): Promise<AccessResult> {
     const cacheKey = this.generateCacheKey(request);
-    
+
     // Check cache first
     const cached = this.accessCache.get(cacheKey);
     if (cached && cached.expiresAt > new Date()) {
@@ -272,7 +324,7 @@ export class RBACManager {
     }
 
     const result = await this.evaluateAccess(request);
-    
+
     // Cache the result if cacheable
     if (result.cacheable) {
       const expiresAt = new Date(Date.now() + this.config.cacheTTL);
@@ -284,7 +336,7 @@ export class RBACManager {
 
   private async evaluateAccess(request: AccessRequest): Promise<AccessResult> {
     const appliedRules: string[] = [];
-    
+
     try {
       // 1. Check resource existence and definition
       const resourceDef = this.resources.get(request.resource);
@@ -298,7 +350,10 @@ export class RBACManager {
       }
 
       // 2. Check if action is valid for resource
-      if (!resourceDef.actions.includes(request.action) && request.action !== '*') {
+      if (
+        !resourceDef.actions.includes(request.action) &&
+        request.action !== '*'
+      ) {
         return {
           allowed: false,
           reason: `Invalid action ${request.action} for resource ${request.resource}`,
@@ -320,14 +375,22 @@ export class RBACManager {
       }
 
       // 5. Check ownership if applicable
-      const ownershipResult = this.checkOwnership(request, resourceDef, appliedRules);
+      const ownershipResult = this.checkOwnership(
+        request,
+        resourceDef,
+        appliedRules
+      );
       if (ownershipResult !== null) {
         return ownershipResult;
       }
 
       // 6. Check hierarchical permissions
       if (this.config.resourceInheritance && resourceDef.hierarchical) {
-        const hierarchyResult = await this.checkHierarchicalAccess(request, resourceDef, appliedRules);
+        const hierarchyResult = await this.checkHierarchicalAccess(
+          request,
+          resourceDef,
+          appliedRules
+        );
         if (hierarchyResult !== null) {
           return hierarchyResult;
         }
@@ -340,7 +403,6 @@ export class RBACManager {
         appliedRules: [...appliedRules, 'default_deny'],
         cacheable: true,
       };
-
     } catch (error) {
       return {
         allowed: false,
@@ -351,12 +413,16 @@ export class RBACManager {
     }
   }
 
-  private applyContextualRules(request: AccessRequest, appliedRules: string[]): AccessResult | null {
+  private applyContextualRules(
+    request: AccessRequest,
+    appliedRules: string[]
+  ): AccessResult | null {
     // Sort rules by priority (higher first)
     const sortedRules = this.contextualRules
-      .filter(rule => 
-        rule.resource === request.resource && 
-        (rule.action === request.action || rule.action === '*')
+      .filter(
+        rule =>
+          rule.resource === request.resource &&
+          (rule.action === request.action || rule.action === '*')
       )
       .sort((a, b) => b.priority - a.priority);
 
@@ -364,7 +430,7 @@ export class RBACManager {
       try {
         const conditionMet = rule.condition(request.context);
         appliedRules.push(rule.id);
-        
+
         if (conditionMet) {
           return {
             allowed: rule.effect === 'allow',
@@ -381,14 +447,22 @@ export class RBACManager {
     return null;
   }
 
-  private async checkRoleBasedAccess(request: AccessRequest, appliedRules: string[]): Promise<AccessResult | null> {
-    const userRoles = this.authManager.getRoleManager().getUserRoles(request.userId);
+  private async checkRoleBasedAccess(
+    request: AccessRequest,
+    appliedRules: string[]
+  ): Promise<AccessResult | null> {
+    const userRoles = this.authManager
+      .getRoleManager()
+      .getUserRoles(request.userId);
     const resourceDef = this.resources.get(request.resource)!;
-    
+
     appliedRules.push('role_based_check');
 
     // Map action to operation category
-    const operationMap: Record<string, keyof ResourceDefinition['allowedOperations']> = {
+    const operationMap: Record<
+      string,
+      keyof ResourceDefinition['allowedOperations']
+    > = {
       create: 'create',
       read: 'read',
       update: 'update',
@@ -416,8 +490,8 @@ export class RBACManager {
   }
 
   private checkOwnership(
-    request: AccessRequest, 
-    resourceDef: ResourceDefinition, 
+    request: AccessRequest,
+    resourceDef: ResourceDefinition,
     appliedRules: string[]
   ): AccessResult | null {
     if (!resourceDef.ownershipField || !request.context?.ownerId) {
@@ -458,7 +532,7 @@ export class RBACManager {
     };
 
     const parentResult = await this.evaluateAccess(parentRequest);
-    
+
     if (parentResult.allowed) {
       return {
         allowed: true,
@@ -477,24 +551,33 @@ export class RBACManager {
   }
 
   // Middleware factory
-  requirePermission(action: string, resource?: string, options: {
-    getResourceId?: (req: Request) => string;
-    getContext?: (req: Request) => AccessRequest['context'];
-  } = {}) {
+  requirePermission(
+    action: string,
+    resource?: string,
+    options: {
+      getResourceId?: (req: Request) => string;
+      getContext?: (req: Request) => AccessRequest['context'];
+    } = {}
+  ) {
     return async (req: Request, res: Response, next: NextFunction) => {
       const user = (req as any).user;
-      
+
       if (!user) {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      const resourceType = resource || req.route?.path.split('/')[1] || 'unknown';
-      const resourceId = options.getResourceId ? options.getResourceId(req) : req.params.id;
-      const context = options.getContext ? options.getContext(req) : {
-        organizationId: user.organizationId,
-        tournamentId: user.tournamentId,
-        requestingUserId: user.userId,
-      };
+      const resourceType =
+        resource || req.route?.path.split('/')[1] || 'unknown';
+      const resourceId = options.getResourceId
+        ? options.getResourceId(req)
+        : req.params.id;
+      const context = options.getContext
+        ? options.getContext(req)
+        : {
+            organizationId: user.organizationId,
+            tournamentId: user.tournamentId,
+            requestingUserId: user.userId,
+          };
 
       const request: AccessRequest = {
         userId: user.userId,
@@ -506,11 +589,11 @@ export class RBACManager {
 
       try {
         const result = await this.checkAccess(request);
-        
+
         if (!result.allowed) {
-          return res.status(403).json({ 
-            error: 'Access denied', 
-            reason: result.reason 
+          return res.status(403).json({
+            error: 'Access denied',
+            reason: result.reason,
           });
         }
 
@@ -550,7 +633,9 @@ export class RBACManager {
   }
 
   removeContextualRule(ruleId: string): void {
-    this.contextualRules = this.contextualRules.filter(rule => rule.id !== ruleId);
+    this.contextualRules = this.contextualRules.filter(
+      rule => rule.id !== ruleId
+    );
     this.clearAllCache();
   }
 

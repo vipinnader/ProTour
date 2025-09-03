@@ -188,7 +188,7 @@ export class TwilioSMSProvider extends SMSProvider {
 
   async sendBulkSMS(messages: SMSMessage[]): Promise<SMSResult[]> {
     const results: SMSResult[] = [];
-    
+
     for (const message of messages) {
       const result = await this.sendSMS(message);
       results.push(result);
@@ -199,7 +199,7 @@ export class TwilioSMSProvider extends SMSProvider {
 
   async getDeliveryStatus(messageId: string): Promise<NotificationStatus> {
     // const message = await this.client.messages(messageId).fetch();
-    
+
     return {
       id: messageId,
       status: 'delivered',
@@ -399,7 +399,7 @@ export class MSG91SMSProvider extends SMSProvider {
   }
 
   async estimateCost(message: SMSMessage): Promise<number> {
-    const baseCost = 0.20; // ₹0.20 per SMS
+    const baseCost = 0.2; // ₹0.20 per SMS
     const segments = Math.ceil(message.body.length / 160);
     return baseCost * segments;
   }
@@ -446,7 +446,7 @@ export class FirebaseSMSProvider extends SMSProvider {
   }
 
   async estimateCost(message: SMSMessage): Promise<number> {
-    return 0.10; // Estimated cost
+    return 0.1; // Estimated cost
   }
 }
 
@@ -518,9 +518,7 @@ export class FirebasePushProvider extends PushProvider {
     targets: PushTarget[]
   ): Promise<PushResult> {
     try {
-      const tokens = targets
-        .filter(t => t.type === 'token')
-        .map(t => t.value);
+      const tokens = targets.filter(t => t.type === 'token').map(t => t.value);
 
       if (tokens.length === 0) {
         throw new Error('No valid tokens provided');

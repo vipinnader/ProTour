@@ -82,7 +82,13 @@ export interface EmailStats {
 
 export interface EmailEvent {
   messageId: string;
-  event: 'delivered' | 'opened' | 'clicked' | 'bounced' | 'spam' | 'unsubscribed';
+  event:
+    | 'delivered'
+    | 'opened'
+    | 'clicked'
+    | 'bounced'
+    | 'spam'
+    | 'unsubscribed';
   timestamp: Date;
   recipient: string;
   url?: string; // For click events
@@ -99,8 +105,13 @@ export abstract class EmailProvider {
   abstract sendEmail(message: EmailMessage): Promise<EmailResult>;
   abstract sendBulkEmail(request: BulkEmailRequest): Promise<EmailResult>;
   abstract sendTemplatedEmail(data: TemplateData): Promise<EmailResult>;
-  abstract createTemplate(template: Omit<EmailTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<EmailTemplate>;
-  abstract updateTemplate(id: string, updates: Partial<EmailTemplate>): Promise<EmailTemplate>;
+  abstract createTemplate(
+    template: Omit<EmailTemplate, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<EmailTemplate>;
+  abstract updateTemplate(
+    id: string,
+    updates: Partial<EmailTemplate>
+  ): Promise<EmailTemplate>;
   abstract deleteTemplate(id: string): Promise<boolean>;
   abstract getTemplate(id: string): Promise<EmailTemplate>;
   abstract listTemplates(): Promise<EmailTemplate[]>;
@@ -249,19 +260,23 @@ export class SendGridProvider extends EmailProvider {
     }
   }
 
-  async createTemplate(template: Omit<EmailTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<EmailTemplate> {
+  async createTemplate(
+    template: Omit<EmailTemplate, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<EmailTemplate> {
     try {
       const templateData = {
         name: template.name,
         generation: 'dynamic',
-        versions: [{
-          template_id: `sg_${Date.now()}`,
-          active: 1,
-          name: template.name,
-          subject: template.subject,
-          html_content: template.htmlContent,
-          plain_content: template.textContent,
-        }],
+        versions: [
+          {
+            template_id: `sg_${Date.now()}`,
+            active: 1,
+            name: template.name,
+            subject: template.subject,
+            html_content: template.htmlContent,
+            plain_content: template.textContent,
+          },
+        ],
       };
 
       // const response = await this.client.request({
@@ -281,7 +296,10 @@ export class SendGridProvider extends EmailProvider {
     }
   }
 
-  async updateTemplate(id: string, updates: Partial<EmailTemplate>): Promise<EmailTemplate> {
+  async updateTemplate(
+    id: string,
+    updates: Partial<EmailTemplate>
+  ): Promise<EmailTemplate> {
     // Implementation for updating SendGrid template
     return {
       id,
@@ -341,7 +359,7 @@ export class SendGridProvider extends EmailProvider {
     try {
       // Verify webhook signature if provided
       // const isValid = this.verifySignature(payload, signature);
-      
+
       const events = JSON.parse(payload);
       return events.map((event: any) => ({
         messageId: event.sg_message_id,
@@ -378,9 +396,15 @@ export class MailgunProvider extends EmailProvider {
     try {
       const data = {
         from: `${message.from.name} <${message.from.email}>`,
-        to: message.to.map(addr => `${addr.name || ''} <${addr.email}>`).join(','),
-        cc: message.cc?.map(addr => `${addr.name || ''} <${addr.email}>`).join(','),
-        bcc: message.bcc?.map(addr => `${addr.name || ''} <${addr.email}>`).join(','),
+        to: message.to
+          .map(addr => `${addr.name || ''} <${addr.email}>`)
+          .join(','),
+        cc: message.cc
+          ?.map(addr => `${addr.name || ''} <${addr.email}>`)
+          .join(','),
+        bcc: message.bcc
+          ?.map(addr => `${addr.name || ''} <${addr.email}>`)
+          .join(','),
         subject: message.subject,
         text: message.text,
         html: message.html,
@@ -408,24 +432,33 @@ export class MailgunProvider extends EmailProvider {
   async sendBulkEmail(request: BulkEmailRequest): Promise<EmailResult> {
     // Mailgun batch sending implementation
     const results: EmailResult[] = [];
-    
+
     for (const recipient of request.recipients) {
       if (request.template && request.message) {
         const message: EmailMessage = {
           ...request.message,
           to: [recipient.email],
-          html: this.replaceVariables(request.template.htmlContent, recipient.variables || {}),
-          text: this.replaceVariables(request.template.textContent || '', recipient.variables || {}),
-          subject: this.replaceVariables(request.template.subject, recipient.variables || {}),
+          html: this.replaceVariables(
+            request.template.htmlContent,
+            recipient.variables || {}
+          ),
+          text: this.replaceVariables(
+            request.template.textContent || '',
+            recipient.variables || {}
+          ),
+          subject: this.replaceVariables(
+            request.template.subject,
+            recipient.variables || {}
+          ),
         };
-        
+
         const result = await this.sendEmail(message);
         results.push(result);
       }
     }
 
     const allSuccessful = results.every(r => r.success);
-    
+
     return {
       success: allSuccessful,
       messageId: `mg_bulk_${Date.now()}`,
@@ -434,7 +467,10 @@ export class MailgunProvider extends EmailProvider {
     };
   }
 
-  private replaceVariables(template: string, variables: Record<string, string>): string {
+  private replaceVariables(
+    template: string,
+    variables: Record<string, string>
+  ): string {
     let result = template;
     Object.entries(variables).forEach(([key, value]) => {
       result = result.replace(new RegExp(`{{${key}}}`, 'g'), value);
@@ -446,20 +482,24 @@ export class MailgunProvider extends EmailProvider {
     // Mailgun doesn't have built-in templates like SendGrid
     // We'll use stored templates and variable replacement
     const template = await this.getTemplate(data.templateId);
-    
+
     const message: EmailMessage = {
       from: data.from || this.config.defaultFrom,
       to: data.to,
       subject: this.replaceVariables(template.subject, data.variables),
       html: this.replaceVariables(template.htmlContent, data.variables),
-      text: template.textContent ? this.replaceVariables(template.textContent, data.variables) : undefined,
+      text: template.textContent
+        ? this.replaceVariables(template.textContent, data.variables)
+        : undefined,
       tags: data.tags,
     };
 
     return this.sendEmail(message);
   }
 
-  async createTemplate(template: Omit<EmailTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<EmailTemplate> {
+  async createTemplate(
+    template: Omit<EmailTemplate, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<EmailTemplate> {
     // Store template (would typically be in database)
     return {
       id: `mg_template_${Date.now()}`,
@@ -469,7 +509,10 @@ export class MailgunProvider extends EmailProvider {
     };
   }
 
-  async updateTemplate(id: string, updates: Partial<EmailTemplate>): Promise<EmailTemplate> {
+  async updateTemplate(
+    id: string,
+    updates: Partial<EmailTemplate>
+  ): Promise<EmailTemplate> {
     // Update template in storage
     return {
       id,
@@ -493,7 +536,8 @@ export class MailgunProvider extends EmailProvider {
       id,
       name: 'Mailgun Template',
       subject: 'Welcome to {{tournamentName}}',
-      htmlContent: '<h1>Hello {{playerName}}</h1><p>Welcome to {{tournamentName}}!</p>',
+      htmlContent:
+        '<h1>Hello {{playerName}}</h1><p>Welcome to {{tournamentName}}!</p>',
       textContent: 'Hello {{playerName}}\n\nWelcome to {{tournamentName}}!',
       variables: ['playerName', 'tournamentName'],
       createdAt: new Date(),
@@ -509,7 +553,7 @@ export class MailgunProvider extends EmailProvider {
   async getStats(messageId?: string): Promise<EmailStats> {
     try {
       // const stats = await this.client.events().get({ ...filters });
-      
+
       return {
         sent: 50,
         delivered: 48,
@@ -536,16 +580,18 @@ export class MailgunProvider extends EmailProvider {
     try {
       // Verify Mailgun webhook signature
       // const isValid = this.verifySignature(payload, signature);
-      
+
       const data = JSON.parse(payload);
-      return [{
-        messageId: data['message-id'] || `mg_${Date.now()}`,
-        event: data.event as any,
-        timestamp: new Date(data.timestamp * 1000),
-        recipient: data.recipient,
-        url: data.url,
-        reason: data.reason,
-      }];
+      return [
+        {
+          messageId: data['message-id'] || `mg_${Date.now()}`,
+          event: data.event as any,
+          timestamp: new Date(data.timestamp * 1000),
+          recipient: data.recipient,
+          url: data.url,
+          reason: data.reason,
+        },
+      ];
     } catch (error) {
       return [];
     }
@@ -613,17 +659,27 @@ export class FirebaseEmailProvider extends EmailProvider {
 
   async sendBulkEmail(request: BulkEmailRequest): Promise<EmailResult> {
     // Firebase extension handles bulk via multiple documents
-    const promises = request.recipients.map(async (recipient) => {
+    const promises = request.recipients.map(async recipient => {
       let message: EmailMessage;
-      
+
       if (request.template) {
         message = {
           from: this.config.defaultFrom,
           to: [recipient.email],
-          subject: this.replaceVariables(request.template.subject, recipient.variables || {}),
-          html: this.replaceVariables(request.template.htmlContent, recipient.variables || {}),
-          text: request.template.textContent ? 
-            this.replaceVariables(request.template.textContent, recipient.variables || {}) : undefined,
+          subject: this.replaceVariables(
+            request.template.subject,
+            recipient.variables || {}
+          ),
+          html: this.replaceVariables(
+            request.template.htmlContent,
+            recipient.variables || {}
+          ),
+          text: request.template.textContent
+            ? this.replaceVariables(
+                request.template.textContent,
+                recipient.variables || {}
+              )
+            : undefined,
         };
       } else if (request.message) {
         message = {
@@ -648,7 +704,10 @@ export class FirebaseEmailProvider extends EmailProvider {
     };
   }
 
-  private replaceVariables(template: string, variables: Record<string, string>): string {
+  private replaceVariables(
+    template: string,
+    variables: Record<string, string>
+  ): string {
     let result = template;
     Object.entries(variables).forEach(([key, value]) => {
       result = result.replace(new RegExp(`{{${key}}}`, 'g'), value);
@@ -658,20 +717,24 @@ export class FirebaseEmailProvider extends EmailProvider {
 
   async sendTemplatedEmail(data: TemplateData): Promise<EmailResult> {
     const template = await this.getTemplate(data.templateId);
-    
+
     const message: EmailMessage = {
       from: data.from || this.config.defaultFrom,
       to: data.to,
       subject: this.replaceVariables(template.subject, data.variables),
       html: this.replaceVariables(template.htmlContent, data.variables),
-      text: template.textContent ? this.replaceVariables(template.textContent, data.variables) : undefined,
+      text: template.textContent
+        ? this.replaceVariables(template.textContent, data.variables)
+        : undefined,
       tags: data.tags,
     };
 
     return this.sendEmail(message);
   }
 
-  async createTemplate(template: Omit<EmailTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<EmailTemplate> {
+  async createTemplate(
+    template: Omit<EmailTemplate, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<EmailTemplate> {
     const newTemplate: EmailTemplate = {
       id: `fb_template_${Date.now()}`,
       ...template,
@@ -684,7 +747,10 @@ export class FirebaseEmailProvider extends EmailProvider {
     return newTemplate;
   }
 
-  async updateTemplate(id: string, updates: Partial<EmailTemplate>): Promise<EmailTemplate> {
+  async updateTemplate(
+    id: string,
+    updates: Partial<EmailTemplate>
+  ): Promise<EmailTemplate> {
     const updatedTemplate: EmailTemplate = {
       id,
       name: updates.name || 'Updated Template',
@@ -714,13 +780,15 @@ export class FirebaseEmailProvider extends EmailProvider {
 
   async getTemplate(id: string): Promise<EmailTemplate> {
     // const doc = await this.firestore.collection('emailTemplates').doc(id).get();
-    
+
     return {
       id,
       name: 'Firebase Template',
       subject: 'Tournament Update: {{tournamentName}}',
-      htmlContent: '<h1>Hello {{playerName}}!</h1><p>{{tournamentName}} has been updated.</p>',
-      textContent: 'Hello {{playerName}}!\n\n{{tournamentName}} has been updated.',
+      htmlContent:
+        '<h1>Hello {{playerName}}!</h1><p>{{tournamentName}} has been updated.</p>',
+      textContent:
+        'Hello {{playerName}}!\n\n{{tournamentName}} has been updated.',
       variables: ['playerName', 'tournamentName'],
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -774,9 +842,14 @@ export class SESProvider extends EmailProvider {
       const params = {
         Source: `${message.from.name} <${message.from.email}>`,
         Destination: {
-          ToAddresses: message.to.map(addr => `${addr.name || ''} <${addr.email}>`),
-          CcAddresses: message.cc?.map(addr => `${addr.name || ''} <${addr.email}>`) || [],
-          BccAddresses: message.bcc?.map(addr => `${addr.name || ''} <${addr.email}>`) || [],
+          ToAddresses: message.to.map(
+            addr => `${addr.name || ''} <${addr.email}>`
+          ),
+          CcAddresses:
+            message.cc?.map(addr => `${addr.name || ''} <${addr.email}>`) || [],
+          BccAddresses:
+            message.bcc?.map(addr => `${addr.name || ''} <${addr.email}>`) ||
+            [],
         },
         Message: {
           Subject: { Data: message.subject },
@@ -785,8 +858,11 @@ export class SESProvider extends EmailProvider {
             Html: message.html ? { Data: message.html } : undefined,
           },
         },
-        ReplyToAddresses: message.replyTo ? [`${message.replyTo.name || ''} <${message.replyTo.email}>`] : [],
-        Tags: message.tags?.map(tag => ({ Name: 'category', Value: tag })) || [],
+        ReplyToAddresses: message.replyTo
+          ? [`${message.replyTo.name || ''} <${message.replyTo.email}>`]
+          : [],
+        Tags:
+          message.tags?.map(tag => ({ Name: 'category', Value: tag })) || [],
       };
 
       // const result = await this.ses.sendEmail(params).promise();
@@ -808,7 +884,7 @@ export class SESProvider extends EmailProvider {
   async sendBulkEmail(request: BulkEmailRequest): Promise<EmailResult> {
     // SES bulk sending implementation
     const results = await Promise.all(
-      request.recipients.map(async (recipient) => {
+      request.recipients.map(async recipient => {
         if (request.message) {
           const message: EmailMessage = {
             ...request.message,
@@ -836,7 +912,9 @@ export class SESProvider extends EmailProvider {
         Source: `${data.from?.name || this.config.defaultFrom.name} <${data.from?.email || this.config.defaultFrom.email}>`,
         Template: data.templateId,
         Destination: {
-          ToAddresses: data.to.map(addr => `${addr.name || ''} <${addr.email}>`),
+          ToAddresses: data.to.map(
+            addr => `${addr.name || ''} <${addr.email}>`
+          ),
         },
         TemplateData: JSON.stringify(data.variables),
         Tags: data.tags?.map(tag => ({ Name: 'category', Value: tag })) || [],
@@ -858,7 +936,9 @@ export class SESProvider extends EmailProvider {
     }
   }
 
-  async createTemplate(template: Omit<EmailTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<EmailTemplate> {
+  async createTemplate(
+    template: Omit<EmailTemplate, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<EmailTemplate> {
     try {
       const params = {
         Template: {
@@ -882,7 +962,10 @@ export class SESProvider extends EmailProvider {
     }
   }
 
-  async updateTemplate(id: string, updates: Partial<EmailTemplate>): Promise<EmailTemplate> {
+  async updateTemplate(
+    id: string,
+    updates: Partial<EmailTemplate>
+  ): Promise<EmailTemplate> {
     // SES template update implementation
     return {
       id,
@@ -906,12 +989,13 @@ export class SESProvider extends EmailProvider {
 
   async getTemplate(id: string): Promise<EmailTemplate> {
     // const result = await this.ses.getTemplate({ TemplateName: id }).promise();
-    
+
     return {
       id,
       name: 'SES Template',
       subject: 'Tournament {{action}}: {{tournamentName}}',
-      htmlContent: '<h1>{{action}}: {{tournamentName}}</h1><p>Hello {{playerName}}!</p>',
+      htmlContent:
+        '<h1>{{action}}: {{tournamentName}}</h1><p>Hello {{playerName}}!</p>',
       textContent: '{{action}}: {{tournamentName}}\n\nHello {{playerName}}!',
       variables: ['action', 'tournamentName', 'playerName'],
       createdAt: new Date(),
@@ -941,16 +1025,18 @@ export class SESProvider extends EmailProvider {
     try {
       // Process SES SNS webhook
       const message = JSON.parse(payload);
-      
+
       if (message.Type === 'Notification') {
         const eventData = JSON.parse(message.Message);
-        
-        return [{
-          messageId: eventData.mail?.messageId || `ses_${Date.now()}`,
-          event: eventData.eventType as any,
-          timestamp: new Date(eventData.mail?.timestamp || Date.now()),
-          recipient: eventData.mail?.destination?.[0] || '',
-        }];
+
+        return [
+          {
+            messageId: eventData.mail?.messageId || `ses_${Date.now()}`,
+            event: eventData.eventType as any,
+            timestamp: new Date(eventData.mail?.timestamp || Date.now()),
+            recipient: eventData.mail?.destination?.[0] || '',
+          },
+        ];
       }
 
       return [];

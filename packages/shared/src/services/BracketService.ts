@@ -3,7 +3,13 @@
 import { DatabaseService } from './DatabaseService';
 import { MatchService } from './MatchService';
 import { PlayerService } from './PlayerService';
-import { BracketStructure, BracketValidation, Match, Player, Tournament } from '../types';
+import {
+  BracketStructure,
+  BracketValidation,
+  Match,
+  Player,
+  Tournament,
+} from '../types';
 import firestore from '@react-native-firebase/firestore';
 
 export class BracketService extends DatabaseService {
@@ -39,7 +45,8 @@ export class BracketService extends DatabaseService {
 
     // Sort players by seed position
     const seededPlayers = players.sort((a, b) => {
-      if (a.seedPosition === undefined && b.seedPosition === undefined) return 0;
+      if (a.seedPosition === undefined && b.seedPosition === undefined)
+        return 0;
       if (a.seedPosition === undefined) return 1;
       if (b.seedPosition === undefined) return -1;
       return a.seedPosition - b.seedPosition;
@@ -51,7 +58,12 @@ export class BracketService extends DatabaseService {
     const byeCount = nextPowerOf2 - players.length;
 
     // Generate matches for all rounds
-    const matches = this.generateMatches(tournamentId, seededPlayers, totalRounds, byeCount);
+    const matches = this.generateMatches(
+      tournamentId,
+      seededPlayers,
+      totalRounds,
+      byeCount
+    );
 
     // Create matches in database
     const createdMatches = await this.matchService.batchCreateMatches(matches);
@@ -68,16 +80,21 @@ export class BracketService extends DatabaseService {
     };
   }
 
-  async generateDoubleEliminationBracket(tournamentId: string, players: Player[]): Promise<BracketStructure> {
+  async generateDoubleEliminationBracket(
+    tournamentId: string,
+    players: Player[]
+  ): Promise<BracketStructure> {
     // Double elimination implementation (simplified for Epic 1)
     // For now, we'll implement single elimination and expand later
     throw new Error('Double elimination bracket generation coming in Epic 2A');
   }
 
   async validateBracket(tournamentId: string): Promise<BracketValidation> {
-    const matches = await this.matchService.getMatchesByTournament(tournamentId);
-    const players = await this.playerService.getPlayersByTournament(tournamentId);
-    
+    const matches =
+      await this.matchService.getMatchesByTournament(tournamentId);
+    const players =
+      await this.playerService.getPlayersByTournament(tournamentId);
+
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -106,24 +123,30 @@ export class BracketService extends DatabaseService {
     errors.push(...progressionErrors);
 
     // Check for orphaned matches
-    const orphanedMatches = matches.filter(match => 
-      !players.find(p => p.id === match.player1Id) || 
-      (match.player2Id && !players.find(p => p.id === match.player2Id))
+    const orphanedMatches = matches.filter(
+      match =>
+        !players.find(p => p.id === match.player1Id) ||
+        (match.player2Id && !players.find(p => p.id === match.player2Id))
     );
 
     if (orphanedMatches.length > 0) {
-      errors.push(`${orphanedMatches.length} matches reference non-existent players`);
+      errors.push(
+        `${orphanedMatches.length} matches reference non-existent players`
+      );
     }
 
     // Warnings for potential issues
     const completedMatches = matches.filter(m => m.status === 'completed');
     const totalMatches = matches.length;
-    
+
     if (completedMatches.length === 0 && totalMatches > 0) {
       warnings.push('Tournament has not started - no completed matches');
     }
 
-    if (completedMatches.length > 0 && completedMatches.length < totalMatches * 0.5) {
+    if (
+      completedMatches.length > 0 &&
+      completedMatches.length < totalMatches * 0.5
+    ) {
       warnings.push('Tournament appears to be in early stages');
     }
 
@@ -139,12 +162,16 @@ export class BracketService extends DatabaseService {
     preserveCompletedMatches: boolean = true
   ): Promise<BracketStructure> {
     // Get current state
-    const players = await this.playerService.getPlayersByTournament(tournamentId);
-    const existingMatches = await this.matchService.getMatchesByTournament(tournamentId);
+    const players =
+      await this.playerService.getPlayersByTournament(tournamentId);
+    const existingMatches =
+      await this.matchService.getMatchesByTournament(tournamentId);
 
     // Check if there are completed matches
-    const completedMatches = existingMatches.filter(m => m.status === 'completed');
-    
+    const completedMatches = existingMatches.filter(
+      m => m.status === 'completed'
+    );
+
     if (completedMatches.length > 0 && !preserveCompletedMatches) {
       throw new Error(
         'Cannot regenerate bracket with completed matches without preserve option'
@@ -161,12 +188,20 @@ export class BracketService extends DatabaseService {
     await this.matchService.deleteMatchesByTournament(tournamentId);
 
     // Generate new bracket
-    return this.generateSingleEliminationBracket(tournamentId, players, 'manual');
+    return this.generateSingleEliminationBracket(
+      tournamentId,
+      players,
+      'manual'
+    );
   }
 
-  async getBracketStructure(tournamentId: string): Promise<BracketStructure | null> {
-    const matches = await this.matchService.getMatchesByTournament(tournamentId);
-    const players = await this.playerService.getPlayersByTournament(tournamentId);
+  async getBracketStructure(
+    tournamentId: string
+  ): Promise<BracketStructure | null> {
+    const matches =
+      await this.matchService.getMatchesByTournament(tournamentId);
+    const players =
+      await this.playerService.getPlayersByTournament(tournamentId);
 
     if (matches.length === 0) {
       return null;
@@ -197,11 +232,11 @@ export class BracketService extends DatabaseService {
   ): Omit<Match, 'id' | 'createdAt' | 'updatedAt'>[] {
     const matches: Omit<Match, 'id' | 'createdAt' | 'updatedAt'>[] = [];
     const nextPowerOf2 = Math.pow(2, totalRounds);
-    
+
     // Create all rounds of matches
     for (let round = 1; round <= totalRounds; round++) {
       const matchesInRound = nextPowerOf2 / Math.pow(2, round);
-      
+
       for (let matchNum = 1; matchNum <= matchesInRound; matchNum++) {
         const match: Omit<Match, 'id' | 'createdAt' | 'updatedAt'> = {
           tournamentId,
@@ -234,7 +269,11 @@ export class BracketService extends DatabaseService {
         // Set up progression to next round
         if (round < totalRounds) {
           const nextRoundMatch = Math.ceil(matchNum / 2);
-          match.nextMatchId = this.generateMatchId(tournamentId, round + 1, nextRoundMatch);
+          match.nextMatchId = this.generateMatchId(
+            tournamentId,
+            round + 1,
+            nextRoundMatch
+          );
         }
 
         matches.push(match);
@@ -244,14 +283,18 @@ export class BracketService extends DatabaseService {
     return matches;
   }
 
-  private generateMatchId(tournamentId: string, round: number, matchNumber: number): string {
+  private generateMatchId(
+    tournamentId: string,
+    round: number,
+    matchNumber: number
+  ): string {
     // Generate a predictable match ID for linking
     return `${tournamentId}_r${round}_m${matchNumber}`;
   }
 
   private validateRoundStructure(matches: Match[]): { errors: string[] } {
     const errors: string[] = [];
-    
+
     if (matches.length === 0) {
       return { errors };
     }
@@ -262,7 +305,7 @@ export class BracketService extends DatabaseService {
     });
 
     const rounds = Array.from(roundCounts.keys()).sort();
-    
+
     // Validate rounds are sequential
     for (let i = 0; i < rounds.length - 1; i++) {
       if (rounds[i + 1] - rounds[i] !== 1) {
@@ -274,7 +317,7 @@ export class BracketService extends DatabaseService {
     for (let i = 0; i < rounds.length - 1; i++) {
       const currentRoundMatches = roundCounts.get(rounds[i]) || 0;
       const nextRoundMatches = roundCounts.get(rounds[i + 1]) || 0;
-      
+
       if (nextRoundMatches !== Math.ceil(currentRoundMatches / 2)) {
         errors.push(`Round ${rounds[i + 1]} has incorrect number of matches`);
       }
@@ -285,18 +328,20 @@ export class BracketService extends DatabaseService {
 
   private validateMatchProgression(matches: Match[]): string[] {
     const errors: string[] = [];
-    
+
     // Check that completed matches have winners progressed correctly
-    const completedMatches = matches.filter(m => m.status === 'completed' && m.winnerId);
-    
+    const completedMatches = matches.filter(
+      m => m.status === 'completed' && m.winnerId
+    );
+
     completedMatches.forEach(match => {
       if (match.nextMatchId) {
         const nextMatch = matches.find(m => m.id === match.nextMatchId);
         if (nextMatch) {
-          const winnerInNextMatch = 
-            nextMatch.player1Id === match.winnerId || 
+          const winnerInNextMatch =
+            nextMatch.player1Id === match.winnerId ||
             nextMatch.player2Id === match.winnerId;
-            
+
           if (!winnerInNextMatch) {
             errors.push(
               `Winner of round ${match.round} match ${match.matchNumber} not found in next match`

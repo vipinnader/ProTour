@@ -15,18 +15,32 @@ export interface ConflictMetadata {
   detectedAt: number;
   resolvedAt?: number;
   severity: 'low' | 'medium' | 'high' | 'critical';
-  type: 'simultaneous_edit' | 'permission_override' | 'network_partition' | 'clock_skew' | 'data_corruption';
+  type:
+    | 'simultaneous_edit'
+    | 'permission_override'
+    | 'network_partition'
+    | 'clock_skew'
+    | 'data_corruption';
   involvedDevices: string[];
   involvedUsers: string[];
   automaticResolution: boolean;
-  resolutionMethod?: 'last_write_wins' | 'organizer_precedence' | 'merge_strategy' | 'manual_selection';
+  resolutionMethod?:
+    | 'last_write_wins'
+    | 'organizer_precedence'
+    | 'merge_strategy'
+    | 'manual_selection';
   resolutionData?: any;
   auditTrail: ConflictAuditEntry[];
 }
 
 export interface ConflictAuditEntry {
   timestamp: number;
-  action: 'detected' | 'analyzed' | 'auto_resolved' | 'escalated' | 'manual_resolved';
+  action:
+    | 'detected'
+    | 'analyzed'
+    | 'auto_resolved'
+    | 'escalated'
+    | 'manual_resolved';
   userId?: string;
   deviceId?: string;
   details: string;
@@ -121,7 +135,7 @@ export class AdvancedConflictResolutionService {
   private conflicts: Map<string, ConflictMetadata> = new Map();
   private patterns: Map<string, ConflictPattern> = new Map();
   private recoveryPlans: Map<string, EmergencyRecoveryPlan> = new Map();
-  
+
   private readonly CONFLICT_STORAGE_KEY = '@protour/conflicts';
   private readonly PATTERNS_STORAGE_KEY = '@protour/conflict_patterns';
   private readonly CLOCK_SYNC_THRESHOLD = 5000; // 5 seconds
@@ -136,7 +150,9 @@ export class AdvancedConflictResolutionService {
 
   private async loadStoredData(): Promise<void> {
     try {
-      const conflictsData = await AsyncStorage.getItem(this.CONFLICT_STORAGE_KEY);
+      const conflictsData = await AsyncStorage.getItem(
+        this.CONFLICT_STORAGE_KEY
+      );
       if (conflictsData) {
         const conflicts = JSON.parse(conflictsData);
         conflicts.forEach((conflict: ConflictMetadata) => {
@@ -144,7 +160,9 @@ export class AdvancedConflictResolutionService {
         });
       }
 
-      const patternsData = await AsyncStorage.getItem(this.PATTERNS_STORAGE_KEY);
+      const patternsData = await AsyncStorage.getItem(
+        this.PATTERNS_STORAGE_KEY
+      );
       if (patternsData) {
         const patterns = JSON.parse(patternsData);
         patterns.forEach((pattern: ConflictPattern) => {
@@ -162,7 +180,7 @@ export class AdvancedConflictResolutionService {
         this.CONFLICT_STORAGE_KEY,
         JSON.stringify(Array.from(this.conflicts.values()))
       );
-      
+
       await AsyncStorage.setItem(
         this.PATTERNS_STORAGE_KEY,
         JSON.stringify(Array.from(this.patterns.values()))
@@ -180,11 +198,11 @@ export class AdvancedConflictResolutionService {
       this.detectAndAnalyzeConflict(conflict);
     });
 
-    realTimeSyncService.subscribe('update_score_update', (update) => {
+    realTimeSyncService.subscribe('update_score_update', update => {
       this.checkForSimultaneousScoreEntries(update);
     });
 
-    realTimeSyncService.subscribe('connection_restored', (data) => {
+    realTimeSyncService.subscribe('connection_restored', data => {
       this.checkNetworkPartitionConflicts(data.deviceId);
     });
   }
@@ -197,15 +215,19 @@ export class AdvancedConflictResolutionService {
       if (!update.matchId) return;
 
       // Get recent updates for this match (within last 10 seconds)
-      const recentUpdates = await this.getRecentMatchUpdates(update.matchId, 10000);
-      const simultaneousUpdates = recentUpdates.filter(u => 
-        Math.abs(u.timestamp - update.timestamp) < this.CLOCK_SYNC_THRESHOLD &&
-        u.deviceId !== update.deviceId
+      const recentUpdates = await this.getRecentMatchUpdates(
+        update.matchId,
+        10000
+      );
+      const simultaneousUpdates = recentUpdates.filter(
+        u =>
+          Math.abs(u.timestamp - update.timestamp) <
+            this.CLOCK_SYNC_THRESHOLD && u.deviceId !== update.deviceId
       );
 
       if (simultaneousUpdates.length > 0) {
         const conflictId = `simultaneous_${update.matchId}_${Date.now()}`;
-        
+
         const conflict: ConflictMetadata = {
           conflictId,
           tournamentId: update.tournamentId,
@@ -214,20 +236,27 @@ export class AdvancedConflictResolutionService {
           detectedAt: Date.now(),
           severity: 'high',
           type: 'simultaneous_edit',
-          involvedDevices: [update.deviceId, ...simultaneousUpdates.map(u => u.deviceId)],
-          involvedUsers: [update.userId, ...simultaneousUpdates.map(u => u.userId)],
+          involvedDevices: [
+            update.deviceId,
+            ...simultaneousUpdates.map(u => u.deviceId),
+          ],
+          involvedUsers: [
+            update.userId,
+            ...simultaneousUpdates.map(u => u.userId),
+          ],
           automaticResolution: false,
-          auditTrail: [{
-            timestamp: Date.now(),
-            action: 'detected',
-            details: `Simultaneous score entries detected for match ${update.matchId}`,
-            data: { update, simultaneousUpdates },
-          }],
+          auditTrail: [
+            {
+              timestamp: Date.now(),
+              action: 'detected',
+              details: `Simultaneous score entries detected for match ${update.matchId}`,
+              data: { update, simultaneousUpdates },
+            },
+          ],
         };
 
         await this.processConflict(conflict);
       }
-
     } catch (error) {
       console.error('Failed to check for simultaneous score entries:', error);
     }
@@ -236,7 +265,9 @@ export class AdvancedConflictResolutionService {
   /**
    * AC2B.4.2: Handle network partition conflicts on reconnection
    */
-  private async checkNetworkPartitionConflicts(deviceId: string): Promise<void> {
+  private async checkNetworkPartitionConflicts(
+    deviceId: string
+  ): Promise<void> {
     try {
       // Check for changes made while device was offline
       const offlineChanges = await enhancedOfflineService.queryOffline({
@@ -246,14 +277,17 @@ export class AdvancedConflictResolutionService {
 
       for (const change of offlineChanges) {
         const serverVersion = await enhancedOfflineService.readOffline(
-          change.data.collection, 
+          change.data.collection,
           change.data.documentId
         );
 
-        if (serverVersion && serverVersion.lastModified > change.data.timestamp) {
+        if (
+          serverVersion &&
+          serverVersion.lastModified > change.data.timestamp
+        ) {
           // Potential conflict - server has newer version
           const conflictId = `partition_${change.data.documentId}_${Date.now()}`;
-          
+
           const conflict: ConflictMetadata = {
             conflictId,
             tournamentId: change.data.tournamentId || 'unknown',
@@ -265,18 +299,22 @@ export class AdvancedConflictResolutionService {
             involvedDevices: [deviceId],
             involvedUsers: [change.data.userId],
             automaticResolution: true,
-            auditTrail: [{
-              timestamp: Date.now(),
-              action: 'detected',
-              details: `Network partition conflict detected for ${change.data.collection}/${change.data.documentId}`,
-              data: { offlineChange: change.data, serverVersion: serverVersion.data },
-            }],
+            auditTrail: [
+              {
+                timestamp: Date.now(),
+                action: 'detected',
+                details: `Network partition conflict detected for ${change.data.collection}/${change.data.documentId}`,
+                data: {
+                  offlineChange: change.data,
+                  serverVersion: serverVersion.data,
+                },
+              },
+            ],
           };
 
           await this.processConflict(conflict);
         }
       }
-
     } catch (error) {
       console.error('Failed to check network partition conflicts:', error);
     }
@@ -285,9 +323,13 @@ export class AdvancedConflictResolutionService {
   /**
    * AC2B.4.1 & AC2B.4.2: Comprehensive conflict analysis and classification
    */
-  private async analyzeConflict(conflict: ConflictMetadata): Promise<ConflictAnalysis> {
-    const clockSyncStatus = await this.checkClockSyncStatus(conflict.involvedDevices);
-    
+  private async analyzeConflict(
+    conflict: ConflictMetadata
+  ): Promise<ConflictAnalysis> {
+    const clockSyncStatus = await this.checkClockSyncStatus(
+      conflict.involvedDevices
+    );
+
     let canAutoResolve = false;
     let recommendedResolution: ConflictResolutionOption;
     let alternativeOptions: ConflictResolutionOption[] = [];
@@ -351,7 +393,7 @@ export class AdvancedConflictResolutionService {
     alternativeOptions: ConflictResolutionOption[];
   }> {
     // Check if one of the users is an organizer
-    const organizerUpdate = conflict.involvedUsers.find(userId => 
+    const organizerUpdate = conflict.involvedUsers.find(userId =>
       this.isOrganizer(userId, conflict.tournamentId)
     );
 
@@ -361,7 +403,7 @@ export class AdvancedConflictResolutionService {
         recommendedResolution: {
           id: 'organizer_precedence',
           label: 'Organizer Precedence',
-          description: 'Accept organizer\'s changes (hierarchical resolution)',
+          description: "Accept organizer's changes (hierarchical resolution)",
           confidence: 95,
           data: { preferredUser: organizerUpdate },
           riskLevel: 'low',
@@ -387,7 +429,8 @@ export class AdvancedConflictResolutionService {
       recommendedResolution: {
         id: 'last_write_wins',
         label: 'Last Write Wins',
-        description: 'Accept the most recent change based on synchronized timestamps',
+        description:
+          'Accept the most recent change based on synchronized timestamps',
         confidence: 80,
         data: { strategy: 'timestamp' },
         riskLevel: 'medium',
@@ -440,7 +483,8 @@ export class AdvancedConflictResolutionService {
       recommendedResolution: {
         id: 'server_wins',
         label: 'Server Version Wins',
-        description: 'Keep server version, merge offline changes where possible',
+        description:
+          'Keep server version, merge offline changes where possible',
         confidence: 85,
         data: { strategy: 'server_precedence' },
         riskLevel: 'low',
@@ -465,7 +509,7 @@ export class AdvancedConflictResolutionService {
    */
   async processConflict(conflict: ConflictMetadata): Promise<void> {
     this.conflicts.set(conflict.conflictId, conflict);
-    
+
     // Add analysis audit entry
     conflict.auditTrail.push({
       timestamp: Date.now(),
@@ -474,11 +518,14 @@ export class AdvancedConflictResolutionService {
     });
 
     const analysis = await this.analyzeConflict(conflict);
-    
+
     // Update conflict pattern tracking
     this.updateConflictPatterns(conflict);
 
-    if (analysis.canAutoResolve && analysis.recommendedResolution.confidence > 80) {
+    if (
+      analysis.canAutoResolve &&
+      analysis.recommendedResolution.confidence > 80
+    ) {
       // Attempt automatic resolution
       setTimeout(async () => {
         try {
@@ -498,11 +545,11 @@ export class AdvancedConflictResolutionService {
    * AC2B.4.3: 90%+ automatic conflict resolution
    */
   private async attemptAutoResolution(
-    conflict: ConflictMetadata, 
+    conflict: ConflictMetadata,
     analysis: ConflictAnalysis
   ): Promise<void> {
     const resolution = analysis.recommendedResolution;
-    
+
     conflict.auditTrail.push({
       timestamp: Date.now(),
       action: 'auto_resolved',
@@ -536,15 +583,16 @@ export class AdvancedConflictResolutionService {
 
       await this.persistData();
 
-      console.log(`Conflict ${conflict.conflictId} automatically resolved using ${resolution.label}`);
-
+      console.log(
+        `Conflict ${conflict.conflictId} automatically resolved using ${resolution.label}`
+      );
     } catch (error) {
       conflict.auditTrail.push({
         timestamp: Date.now(),
         action: 'escalated',
         details: `Auto-resolution failed: ${error.message}`,
       });
-      
+
       throw error;
     }
   }
@@ -553,7 +601,7 @@ export class AdvancedConflictResolutionService {
    * AC2B.4.4: Manual conflict resolution interface
    */
   private async escalateConflict(
-    conflict: ConflictMetadata, 
+    conflict: ConflictMetadata,
     analysis: ConflictAnalysis
   ): Promise<void> {
     conflict.auditTrail.push({
@@ -566,7 +614,10 @@ export class AdvancedConflictResolutionService {
     realTimeSyncService.emit('conflict_requires_resolution', {
       conflict,
       analysis,
-      resolutionOptions: [analysis.recommendedResolution, ...analysis.alternativeOptions],
+      resolutionOptions: [
+        analysis.recommendedResolution,
+        ...analysis.alternativeOptions,
+      ],
     });
 
     // Set timeout for critical conflicts
@@ -611,8 +662,9 @@ export class AdvancedConflictResolutionService {
 
       await this.persistData();
 
-      console.log(`Conflict ${conflictId} manually resolved by ${userId} using ${selectedOption.label}`);
-
+      console.log(
+        `Conflict ${conflictId} manually resolved by ${userId} using ${selectedOption.label}`
+      );
     } catch (error) {
       conflict.auditTrail.push({
         timestamp: Date.now(),
@@ -620,7 +672,7 @@ export class AdvancedConflictResolutionService {
         userId,
         details: `Manual resolution failed: ${error.message}`,
       });
-      
+
       throw error;
     }
   }
@@ -628,8 +680,13 @@ export class AdvancedConflictResolutionService {
   /**
    * AC2B.4.6: Emergency recovery procedures
    */
-  async createEmergencyRecoveryPlan(tournamentId: string): Promise<EmergencyRecoveryPlan> {
-    const snapshot = await this.createTournamentSnapshot(tournamentId, 'Emergency backup');
+  async createEmergencyRecoveryPlan(
+    tournamentId: string
+  ): Promise<EmergencyRecoveryPlan> {
+    const snapshot = await this.createTournamentSnapshot(
+      tournamentId,
+      'Emergency backup'
+    );
     const rollbackPoints = await this.identifyRollbackPoints(tournamentId);
     const integrityCheck = await this.performIntegrityCheck(tournamentId);
 
@@ -642,12 +699,12 @@ export class AdvancedConflictResolutionService {
     };
 
     this.recoveryPlans.set(tournamentId, recoveryPlan);
-    
+
     return recoveryPlan;
   }
 
   private async createTournamentSnapshot(
-    tournamentId: string, 
+    tournamentId: string,
     description: string
   ): Promise<TournamentSnapshot> {
     try {
@@ -660,7 +717,10 @@ export class AdvancedConflictResolutionService {
           collection: 'score_entries',
           where: [['tournamentId', '==', tournamentId]],
         }),
-        enhancedOfflineService.readOffline('brackets', `bracket_${tournamentId}`),
+        enhancedOfflineService.readOffline(
+          'brackets',
+          `bracket_${tournamentId}`
+        ),
         enhancedOfflineService.queryOffline({
           collection: 'tournament_registrations',
           where: [['tournamentId', '==', tournamentId]],
@@ -687,7 +747,6 @@ export class AdvancedConflictResolutionService {
       };
 
       return snapshot;
-
     } catch (error) {
       console.error('Failed to create tournament snapshot:', error);
       throw error;
@@ -698,7 +757,7 @@ export class AdvancedConflictResolutionService {
    * AC2B.4.6: Tournament state rollback capability
    */
   async rollbackTournamentState(
-    tournamentId: string, 
+    tournamentId: string,
     rollbackPointId: string,
     reason: string
   ): Promise<void> {
@@ -707,7 +766,9 @@ export class AdvancedConflictResolutionService {
       throw new Error('No recovery plan found for tournament');
     }
 
-    const rollbackPoint = recoveryPlan.rollbackPoints.find(rp => rp.id === rollbackPointId);
+    const rollbackPoint = recoveryPlan.rollbackPoints.find(
+      rp => rp.id === rollbackPointId
+    );
     if (!rollbackPoint || !rollbackPoint.canRollback) {
       throw new Error('Invalid or unavailable rollback point');
     }
@@ -715,14 +776,14 @@ export class AdvancedConflictResolutionService {
     try {
       // Create snapshot before rollback
       const preRollbackSnapshot = await this.createTournamentSnapshot(
-        tournamentId, 
+        tournamentId,
         `Pre-rollback backup: ${reason}`
       );
       recoveryPlan.snapshots.push(preRollbackSnapshot);
 
       // Find appropriate snapshot to restore
-      const targetSnapshot = recoveryPlan.snapshots.find(s => 
-        s.timestamp <= rollbackPoint.timestamp
+      const targetSnapshot = recoveryPlan.snapshots.find(
+        s => s.timestamp <= rollbackPoint.timestamp
       );
 
       if (!targetSnapshot) {
@@ -733,8 +794,9 @@ export class AdvancedConflictResolutionService {
       await this.restoreFromSnapshot(tournamentId, targetSnapshot);
 
       // Log rollback in audit trail
-      console.log(`Tournament ${tournamentId} rolled back to ${new Date(rollbackPoint.timestamp).toISOString()} - ${reason}`);
-
+      console.log(
+        `Tournament ${tournamentId} rolled back to ${new Date(rollbackPoint.timestamp).toISOString()} - ${reason}`
+      );
     } catch (error) {
       console.error('Rollback failed:', error);
       throw error;
@@ -742,52 +804,87 @@ export class AdvancedConflictResolutionService {
   }
 
   private async restoreFromSnapshot(
-    tournamentId: string, 
+    tournamentId: string,
     snapshot: TournamentSnapshot
   ): Promise<void> {
     // Verify snapshot integrity
-    const currentChecksum = await this.calculateChecksum(JSON.stringify(snapshot.data));
+    const currentChecksum = await this.calculateChecksum(
+      JSON.stringify(snapshot.data)
+    );
     if (currentChecksum !== snapshot.checksum) {
       throw new Error('Snapshot integrity check failed');
     }
 
     // Restore each collection
     for (const match of snapshot.data.matches) {
-      await enhancedOfflineService.updateOffline('matches', match.id, match, 'system');
+      await enhancedOfflineService.updateOffline(
+        'matches',
+        match.id,
+        match,
+        'system'
+      );
     }
 
     for (const score of snapshot.data.scores) {
-      await enhancedOfflineService.updateOffline('score_entries', score.id, score, 'system');
+      await enhancedOfflineService.updateOffline(
+        'score_entries',
+        score.id,
+        score,
+        'system'
+      );
     }
 
     if (snapshot.data.bracket) {
-      await enhancedOfflineService.updateOffline('brackets', `bracket_${tournamentId}`, snapshot.data.bracket, 'system');
+      await enhancedOfflineService.updateOffline(
+        'brackets',
+        `bracket_${tournamentId}`,
+        snapshot.data.bracket,
+        'system'
+      );
     }
   }
 
   // Resolution strategy implementations
-  private async applyOrganizerPrecedence(conflict: ConflictMetadata, data: any): Promise<void> {
+  private async applyOrganizerPrecedence(
+    conflict: ConflictMetadata,
+    data: any
+  ): Promise<void> {
     // Implementation would apply organizer's changes
-    console.log(`Applying organizer precedence for conflict ${conflict.conflictId}`);
+    console.log(
+      `Applying organizer precedence for conflict ${conflict.conflictId}`
+    );
   }
 
-  private async applyLastWriteWins(conflict: ConflictMetadata, data: any): Promise<void> {
+  private async applyLastWriteWins(
+    conflict: ConflictMetadata,
+    data: any
+  ): Promise<void> {
     // Implementation would apply most recent timestamp
     console.log(`Applying last write wins for conflict ${conflict.conflictId}`);
   }
 
-  private async applyPermissionHierarchy(conflict: ConflictMetadata, data: any): Promise<void> {
+  private async applyPermissionHierarchy(
+    conflict: ConflictMetadata,
+    data: any
+  ): Promise<void> {
     // Implementation would apply permission-based hierarchy
-    console.log(`Applying permission hierarchy for conflict ${conflict.conflictId}`);
+    console.log(
+      `Applying permission hierarchy for conflict ${conflict.conflictId}`
+    );
   }
 
-  private async applyServerPrecedence(conflict: ConflictMetadata, data: any): Promise<void> {
+  private async applyServerPrecedence(
+    conflict: ConflictMetadata,
+    data: any
+  ): Promise<void> {
     // Implementation would keep server version
-    console.log(`Applying server precedence for conflict ${conflict.conflictId}`);
+    console.log(
+      `Applying server precedence for conflict ${conflict.conflictId}`
+    );
   }
 
   private async applyResolutionOption(
-    conflict: ConflictMetadata, 
+    conflict: ConflictMetadata,
     option: ConflictResolutionOption
   ): Promise<void> {
     switch (option.id) {
@@ -810,7 +907,9 @@ export class AdvancedConflictResolutionService {
     return !session; // Non-referees are assumed to be organizers for now
   }
 
-  private async checkClockSyncStatus(deviceIds: string[]): Promise<ConflictAnalysis['clockSyncStatus']> {
+  private async checkClockSyncStatus(
+    deviceIds: string[]
+  ): Promise<ConflictAnalysis['clockSyncStatus']> {
     // Mock implementation - would check actual device clock sync
     return {
       isInSync: true,
@@ -819,19 +918,26 @@ export class AdvancedConflictResolutionService {
     };
   }
 
-  private assessDataLossRisk(conflict: ConflictMetadata): 'low' | 'medium' | 'high' {
+  private assessDataLossRisk(
+    conflict: ConflictMetadata
+  ): 'low' | 'medium' | 'high' {
     if (conflict.type === 'simultaneous_edit') return 'high';
     if (conflict.type === 'network_partition') return 'medium';
     return 'low';
   }
 
-  private assessTournamentImpact(conflict: ConflictMetadata): 'minimal' | 'moderate' | 'significant' | 'severe' {
-    if (conflict.collection === 'matches' && conflict.severity === 'critical') return 'severe';
+  private assessTournamentImpact(
+    conflict: ConflictMetadata
+  ): 'minimal' | 'moderate' | 'significant' | 'severe' {
+    if (conflict.collection === 'matches' && conflict.severity === 'critical')
+      return 'severe';
     if (conflict.collection === 'matches') return 'significant';
     return 'moderate';
   }
 
-  private assessUrgency(conflict: ConflictMetadata): 'low' | 'medium' | 'high' | 'critical' {
+  private assessUrgency(
+    conflict: ConflictMetadata
+  ): 'low' | 'medium' | 'high' | 'critical' {
     if (conflict.severity === 'critical') return 'critical';
     if (conflict.collection === 'matches') return 'high';
     return 'medium';
@@ -852,17 +958,22 @@ export class AdvancedConflictResolutionService {
     this.patterns.set(conflict.type, pattern);
   }
 
-  private async getRecentMatchUpdates(matchId: string, timeWindow: number): Promise<any[]> {
+  private async getRecentMatchUpdates(
+    matchId: string,
+    timeWindow: number
+  ): Promise<any[]> {
     // Mock implementation - would query recent updates
     return [];
   }
 
-  private async identifyRollbackPoints(tournamentId: string): Promise<RollbackPoint[]> {
+  private async identifyRollbackPoints(
+    tournamentId: string
+  ): Promise<RollbackPoint[]> {
     // Mock implementation - would identify safe rollback points
     return [
       {
         id: `rollback_${tournamentId}_tournament_start`,
-        timestamp: Date.now() - (2 * 60 * 60 * 1000), // 2 hours ago
+        timestamp: Date.now() - 2 * 60 * 60 * 1000, // 2 hours ago
         reason: 'Tournament started',
         affectedCollections: ['matches', 'scores', 'brackets'],
         changesSince: 0,
@@ -871,7 +982,9 @@ export class AdvancedConflictResolutionService {
     ];
   }
 
-  private async performIntegrityCheck(tournamentId: string): Promise<IntegrityCheck> {
+  private async performIntegrityCheck(
+    tournamentId: string
+  ): Promise<IntegrityCheck> {
     // Mock implementation - would perform comprehensive integrity checks
     return {
       id: `integrity_${tournamentId}_${Date.now()}`,
@@ -894,43 +1007,53 @@ export class AdvancedConflictResolutionService {
     let hash = 0;
     for (let i = 0; i < data.length; i++) {
       const char = data.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return hash.toString(16);
   }
 
   private handleCriticalConflictTimeout(conflict: ConflictMetadata): void {
-    console.warn(`Critical conflict ${conflict.conflictId} not resolved within timeout`);
+    console.warn(
+      `Critical conflict ${conflict.conflictId} not resolved within timeout`
+    );
     // Could implement emergency measures here
   }
 
   private scheduleIntegrityChecks(): void {
     // Run integrity checks every 30 minutes
-    setInterval(async () => {
-      for (const [tournamentId] of this.recoveryPlans) {
-        try {
-          const integrityCheck = await this.performIntegrityCheck(tournamentId);
-          const recoveryPlan = this.recoveryPlans.get(tournamentId);
-          if (recoveryPlan) {
-            recoveryPlan.integrityChecks.push(integrityCheck);
-            
-            // Keep only last 24 checks
-            if (recoveryPlan.integrityChecks.length > 24) {
-              recoveryPlan.integrityChecks = recoveryPlan.integrityChecks.slice(-24);
+    setInterval(
+      async () => {
+        for (const [tournamentId] of this.recoveryPlans) {
+          try {
+            const integrityCheck =
+              await this.performIntegrityCheck(tournamentId);
+            const recoveryPlan = this.recoveryPlans.get(tournamentId);
+            if (recoveryPlan) {
+              recoveryPlan.integrityChecks.push(integrityCheck);
+
+              // Keep only last 24 checks
+              if (recoveryPlan.integrityChecks.length > 24) {
+                recoveryPlan.integrityChecks =
+                  recoveryPlan.integrityChecks.slice(-24);
+              }
             }
+          } catch (error) {
+            console.error(
+              `Integrity check failed for tournament ${tournamentId}:`,
+              error
+            );
           }
-        } catch (error) {
-          console.error(`Integrity check failed for tournament ${tournamentId}:`, error);
         }
-      }
-    }, 30 * 60 * 1000);
+      },
+      30 * 60 * 1000
+    );
   }
 
   // Public API methods
   getConflictHistory(tournamentId?: string): ConflictMetadata[] {
     const conflicts = Array.from(this.conflicts.values());
-    return tournamentId 
+    return tournamentId
       ? conflicts.filter(c => c.tournamentId === tournamentId)
       : conflicts;
   }
@@ -950,4 +1073,5 @@ export class AdvancedConflictResolutionService {
   }
 }
 
-export const advancedConflictResolutionService = new AdvancedConflictResolutionService();
+export const advancedConflictResolutionService =
+  new AdvancedConflictResolutionService();

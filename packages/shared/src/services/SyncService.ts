@@ -2,7 +2,10 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
-import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import firestore, {
+  FirebaseFirestoreTypes,
+} from '@react-native-firebase/firestore';
+import { ConflictResolution } from '../types';
 
 export interface SyncQueueItem {
   id: string;
@@ -20,16 +23,6 @@ export interface SyncStatus {
   lastSyncTime: number;
   pendingOperations: number;
   syncInProgress: boolean;
-}
-
-export interface ConflictResolution {
-  conflictId: string;
-  collection: string;
-  documentId: string;
-  localVersion: any;
-  remoteVersion: any;
-  timestamp: number;
-  resolved: boolean;
 }
 
 export class SyncService {
@@ -75,19 +68,21 @@ export class SyncService {
     NetInfo.addEventListener((state: NetInfoState) => {
       const wasOnline = this.isOnline;
       this.isOnline = state.isConnected && state.isInternetReachable;
-      
+
       if (!wasOnline && this.isOnline) {
         // Just came online, start sync
         this.processSyncQueue();
       }
-      
+
       this.notifyListeners('connectivity');
     });
   }
 
   private async loadSyncQueue(): Promise<void> {
     try {
-      const queueData = await AsyncStorage.getItem(this.STORAGE_KEYS.SYNC_QUEUE);
+      const queueData = await AsyncStorage.getItem(
+        this.STORAGE_KEYS.SYNC_QUEUE
+      );
       if (queueData) {
         this.syncQueue = JSON.parse(queueData);
       }
@@ -110,7 +105,9 @@ export class SyncService {
 
   private async loadConflicts(): Promise<void> {
     try {
-      const conflictsData = await AsyncStorage.getItem(this.STORAGE_KEYS.CONFLICTS);
+      const conflictsData = await AsyncStorage.getItem(
+        this.STORAGE_KEYS.CONFLICTS
+      );
       if (conflictsData) {
         this.conflicts = JSON.parse(conflictsData);
       }
@@ -218,7 +215,9 @@ export class SyncService {
         }
 
         try {
-          const docRef = this.db.collection(item.collection).doc(item.documentId);
+          const docRef = this.db
+            .collection(item.collection)
+            .doc(item.documentId);
 
           // Check for conflicts before applying
           const remoteDoc = await docRef.get();
@@ -256,7 +255,7 @@ export class SyncService {
         } catch (error) {
           console.error(`Error processing sync item ${item.id}:`, error);
           item.retryCount++;
-          
+
           // Remove items with too many retries
           if (item.retryCount >= 3) {
             processedItems.push(item.id);
@@ -270,12 +269,16 @@ export class SyncService {
       }
 
       // Remove processed items from queue
-      this.syncQueue = this.syncQueue.filter(item => !processedItems.includes(item.id));
+      this.syncQueue = this.syncQueue.filter(
+        item => !processedItems.includes(item.id)
+      );
       await this.saveSyncQueue();
-      
-      // Update last sync time
-      await AsyncStorage.setItem(this.STORAGE_KEYS.LAST_SYNC, Date.now().toString());
 
+      // Update last sync time
+      await AsyncStorage.setItem(
+        this.STORAGE_KEYS.LAST_SYNC,
+        Date.now().toString()
+      );
     } catch (error) {
       console.error('Error processing sync queue:', error);
     } finally {
@@ -298,12 +301,14 @@ export class SyncService {
     }
 
     // Check if remote was modified after local operation
-    const remoteLastModified = remoteData._syncMetadata.lastModified?.toMillis() || 0;
+    const remoteLastModified =
+      remoteData._syncMetadata.lastModified?.toMillis() || 0;
     const localTimestamp = localItem.timestamp;
 
-    if (remoteLastModified > localTimestamp && 
-        remoteData._syncMetadata.deviceId !== this.deviceId) {
-      
+    if (
+      remoteLastModified > localTimestamp &&
+      remoteData._syncMetadata.deviceId !== this.deviceId
+    ) {
       // Create conflict resolution record
       const conflict: ConflictResolution = {
         conflictId: `conflict_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -318,7 +323,7 @@ export class SyncService {
       this.conflicts.push(conflict);
       await this.saveConflicts();
       this.notifyListeners('conflict');
-      
+
       return true;
     }
 
@@ -338,7 +343,10 @@ export class SyncService {
   }
 
   // Get offline document
-  async getOfflineDocument<T>(collection: string, documentId: string): Promise<T | null> {
+  async getOfflineDocument<T>(
+    collection: string,
+    documentId: string
+  ): Promise<T | null> {
     try {
       const collectionData = await this.getOfflineData<T>(collection);
       return collectionData[documentId] || null;
@@ -353,9 +361,9 @@ export class SyncService {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
     }
-    
+
     this.listeners.get(event)!.push(callback);
-    
+
     // Return unsubscribe function
     return () => {
       const callbacks = this.listeners.get(event);
@@ -425,29 +433,34 @@ export class SyncService {
     // Mark conflict as resolved
     conflict.resolved = true;
     await this.saveConflicts();
-    
+
     this.notifyListeners('conflictResolved');
   }
 
   // Clear old offline data
-  async clearOfflineData(maxAge: number = 7 * 24 * 60 * 60 * 1000): Promise<void> {
+  async clearOfflineData(
+    maxAge: number = 7 * 24 * 60 * 60 * 1000
+  ): Promise<void> {
     try {
       const keys = await AsyncStorage.getAllKeys();
-      const offlineKeys = keys.filter(key => key.startsWith(this.STORAGE_KEYS.OFFLINE_DATA));
-      
+      const offlineKeys = keys.filter(key =>
+        key.startsWith(this.STORAGE_KEYS.OFFLINE_DATA)
+      );
+
       for (const key of offlineKeys) {
         const data = await AsyncStorage.getItem(key);
         if (data) {
           const parsed = JSON.parse(data);
           const filtered: Record<string, any> = {};
-          
+
           for (const [docId, docData] of Object.entries(parsed)) {
-            const lastModified = (docData as any)?._syncMetadata?.lastModified || 0;
+            const lastModified =
+              (docData as any)?._syncMetadata?.lastModified || 0;
             if (Date.now() - lastModified < maxAge) {
               filtered[docId] = docData;
             }
           }
-          
+
           if (Object.keys(filtered).length > 0) {
             await AsyncStorage.setItem(key, JSON.stringify(filtered));
           } else {

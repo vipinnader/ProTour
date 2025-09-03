@@ -21,21 +21,21 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { MyScheduleScreenProps } from '../../navigation/types';
 import { useAuth } from '../../contexts/AuthContext';
-import { 
-  Tournament, 
-  Match, 
+import {
+  Tournament,
+  Match,
   PlayerSchedule,
   BracketPosition,
-  TournamentService 
+  TournamentService,
 } from '@protour/shared';
 import { RefreshControl } from 'react-native';
 
-const MyScheduleScreen: React.FC<MyScheduleScreenProps> = ({ 
+const MyScheduleScreen: React.FC<MyScheduleScreenProps> = ({
   navigation,
-  route 
+  route,
 }) => {
   const { tournamentId } = route.params;
-  
+
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [selectedTournamentId, setSelectedTournamentId] = useState<string>(
     tournamentId || ''
@@ -62,19 +62,21 @@ const MyScheduleScreen: React.FC<MyScheduleScreenProps> = ({
     if (!user) return;
 
     try {
-      const registrations = await tournamentService.getPlayerRegistrations(user.id);
-      const playerRegistrations = registrations.filter(reg => 
-        reg.role === 'player' && reg.status === 'active'
+      const registrations = await tournamentService.getPlayerRegistrations(
+        user.id
+      );
+      const playerRegistrations = registrations.filter(
+        reg => reg.role === 'player' && reg.status === 'active'
       );
 
-      const tournamentPromises = playerRegistrations.map(reg => 
+      const tournamentPromises = playerRegistrations.map(reg =>
         tournamentService.getTournamentById(reg.tournamentId)
       );
       const tournamentsData = await Promise.all(tournamentPromises);
       const validTournaments = tournamentsData.filter(Boolean) as Tournament[];
-      
+
       setTournaments(validTournaments);
-      
+
       // Set first tournament as selected if none specified
       if (!selectedTournamentId && validTournaments.length > 0) {
         setSelectedTournamentId(validTournaments[0].id);
@@ -172,11 +174,14 @@ const MyScheduleScreen: React.FC<MyScheduleScreenProps> = ({
 
   const getBracketProgressPercentage = (position: BracketPosition) => {
     if (position.eliminated) return 100;
-    const progress = ((position.currentRound || 1) / (position.canAdvanceToRound || 1)) * 100;
+    const progress =
+      ((position.currentRound || 1) / (position.canAdvanceToRound || 1)) * 100;
     return Math.min(progress, 100);
   };
 
-  const selectedTournament = tournaments.find(t => t.id === selectedTournamentId);
+  const selectedTournament = tournaments.find(
+    t => t.id === selectedTournamentId
+  );
 
   if (tournaments.length === 0 && !loading) {
     return (
@@ -265,7 +270,7 @@ const MyScheduleScreen: React.FC<MyScheduleScreenProps> = ({
                 endIcon: <CheckIcon size="5" />,
               }}
             >
-              {tournaments.map((tournament) => (
+              {tournaments.map(tournament => (
                 <Select.Item
                   key={tournament.id}
                   label={tournament.name}
@@ -286,7 +291,11 @@ const MyScheduleScreen: React.FC<MyScheduleScreenProps> = ({
                 {selectedTournament.name}
               </Text>
               <Badge
-                bg={selectedTournament.status === 'active' ? 'green.500' : 'orange.500'}
+                bg={
+                  selectedTournament.status === 'active'
+                    ? 'green.500'
+                    : 'orange.500'
+                }
                 _text={{ color: 'white', fontSize: 'xs' }}
               >
                 {selectedTournament.status}
@@ -320,10 +329,14 @@ const MyScheduleScreen: React.FC<MyScheduleScreenProps> = ({
                       Tournament Progress
                     </Text>
                     <Badge
-                      colorScheme={schedule.tournamentProgress.eliminated ? 'red' : 'blue'}
+                      colorScheme={
+                        schedule.tournamentProgress.eliminated ? 'red' : 'blue'
+                      }
                       rounded="full"
                     >
-                      {schedule.tournamentProgress.eliminated ? 'Eliminated' : 'Active'}
+                      {schedule.tournamentProgress.eliminated
+                        ? 'Eliminated'
+                        : 'Active'}
                     </Badge>
                   </HStack>
 
@@ -345,11 +358,16 @@ const MyScheduleScreen: React.FC<MyScheduleScreenProps> = ({
                               Progress to Finals
                             </Text>
                             <Text fontSize="sm" color="gray.600">
-                              {getBracketProgressPercentage(schedule.tournamentProgress).toFixed(0)}%
+                              {getBracketProgressPercentage(
+                                schedule.tournamentProgress
+                              ).toFixed(0)}
+                              %
                             </Text>
                           </HStack>
                           <Progress
-                            value={getBracketProgressPercentage(schedule.tournamentProgress)}
+                            value={getBracketProgressPercentage(
+                              schedule.tournamentProgress
+                            )}
                             colorScheme="primary"
                             size="md"
                           />
@@ -364,11 +382,17 @@ const MyScheduleScreen: React.FC<MyScheduleScreenProps> = ({
                                 color="blue.500"
                               />
                               <VStack flex={1}>
-                                <Text fontSize="sm" fontWeight="medium" color="blue.700">
+                                <Text
+                                  fontSize="sm"
+                                  fontWeight="medium"
+                                  color="blue.700"
+                                >
                                   Next Match Estimated
                                 </Text>
                                 <Text fontSize="sm" color="blue.600">
-                                  {formatEstimatedTime(schedule.estimatedNextMatchTime)}
+                                  {formatEstimatedTime(
+                                    schedule.estimatedNextMatchTime
+                                  )}
                                 </Text>
                               </VStack>
                             </HStack>
@@ -402,11 +426,24 @@ const MyScheduleScreen: React.FC<MyScheduleScreenProps> = ({
                       })
                     }
                   >
-                    <Box bg="green.50" p={4} rounded="lg" borderWidth={2} borderColor="green.200">
+                    <Box
+                      bg="green.50"
+                      p={4}
+                      rounded="lg"
+                      borderWidth={2}
+                      borderColor="green.200"
+                    >
                       <VStack space={3}>
-                        <HStack justifyContent="space-between" alignItems="center">
+                        <HStack
+                          justifyContent="space-between"
+                          alignItems="center"
+                        >
                           <VStack space={1}>
-                            <Text fontSize="md" fontWeight="bold" color="green.800">
+                            <Text
+                              fontSize="md"
+                              fontWeight="bold"
+                              color="green.800"
+                            >
                               Round {schedule.currentMatch.round}
                             </Text>
                             <Text fontSize="sm" color="green.700">
@@ -426,7 +463,11 @@ const MyScheduleScreen: React.FC<MyScheduleScreenProps> = ({
                             size={5}
                             color="green.600"
                           />
-                          <Text fontSize="sm" fontWeight="medium" color="green.700">
+                          <Text
+                            fontSize="sm"
+                            fontWeight="medium"
+                            color="green.700"
+                          >
                             Match in progress - Tap to view live score
                           </Text>
                         </HStack>
@@ -438,154 +479,168 @@ const MyScheduleScreen: React.FC<MyScheduleScreenProps> = ({
             )}
 
             {/* Upcoming Matches */}
-            {schedule?.upcomingMatches && schedule.upcomingMatches.length > 0 && (
-              <VStack space={4}>
-                <Text fontSize="lg" fontWeight="bold" color="gray.800">
-                  Upcoming Matches
-                </Text>
+            {schedule?.upcomingMatches &&
+              schedule.upcomingMatches.length > 0 && (
+                <VStack space={4}>
+                  <Text fontSize="lg" fontWeight="bold" color="gray.800">
+                    Upcoming Matches
+                  </Text>
 
-                <VStack space={3}>
-                  {schedule.upcomingMatches.map((match, index) => (
-                    <Pressable
-                      key={match.id}
-                      onPress={() =>
-                        navigation.navigate('MatchDetail', {
-                          matchId: match.id,
-                          tournamentId: match.tournamentId,
-                        })
-                      }
-                    >
-                      <Card>
-                        <HStack justifyContent="space-between" alignItems="center">
-                          <VStack flex={1} space={2}>
-                            <HStack space={3} alignItems="center">
-                              <Badge colorScheme="blue" rounded="full">
-                                Round {match.round}
-                              </Badge>
-                              {match.court && (
-                                <Badge colorScheme="gray" rounded="full">
-                                  Court {match.court}
+                  <VStack space={3}>
+                    {schedule.upcomingMatches.map((match, index) => (
+                      <Pressable
+                        key={match.id}
+                        onPress={() =>
+                          navigation.navigate('MatchDetail', {
+                            matchId: match.id,
+                            tournamentId: match.tournamentId,
+                          })
+                        }
+                      >
+                        <Card>
+                          <HStack
+                            justifyContent="space-between"
+                            alignItems="center"
+                          >
+                            <VStack flex={1} space={2}>
+                              <HStack space={3} alignItems="center">
+                                <Badge colorScheme="blue" rounded="full">
+                                  Round {match.round}
                                 </Badge>
-                              )}
-                              {index === 0 && (
-                                <Badge colorScheme="orange" rounded="full">
-                                  Next
-                                </Badge>
-                              )}
-                            </HStack>
-                            
-                            <Text fontSize="md" fontWeight="medium" color="gray.800">
-                              vs Opponent Name
-                            </Text>
-                            
-                            <HStack space={2} alignItems="center">
-                              <Icon
-                                as={<MaterialIcons name="schedule" />}
-                                size={4}
-                                color="gray.500"
-                              />
-                              <Text fontSize="sm" color="gray.600">
-                                {formatMatchTime(match.startTime)}
+                                {match.court && (
+                                  <Badge colorScheme="gray" rounded="full">
+                                    Court {match.court}
+                                  </Badge>
+                                )}
+                                {index === 0 && (
+                                  <Badge colorScheme="orange" rounded="full">
+                                    Next
+                                  </Badge>
+                                )}
+                              </HStack>
+
+                              <Text
+                                fontSize="md"
+                                fontWeight="medium"
+                                color="gray.800"
+                              >
+                                vs Opponent Name
                               </Text>
-                            </HStack>
-                          </VStack>
 
-                          <VStack alignItems="flex-end" space={2}>
-                            <Badge
-                              colorScheme={getMatchStatusColor(match.status)}
-                              variant="solid"
-                            >
-                              {getMatchStatusText(match.status)}
-                            </Badge>
+                              <HStack space={2} alignItems="center">
+                                <Icon
+                                  as={<MaterialIcons name="schedule" />}
+                                  size={4}
+                                  color="gray.500"
+                                />
+                                <Text fontSize="sm" color="gray.600">
+                                  {formatMatchTime(match.startTime)}
+                                </Text>
+                              </HStack>
+                            </VStack>
+
+                            <VStack alignItems="flex-end" space={2}>
+                              <Badge
+                                colorScheme={getMatchStatusColor(match.status)}
+                                variant="solid"
+                              >
+                                {getMatchStatusText(match.status)}
+                              </Badge>
+                              <Icon
+                                as={<MaterialIcons name="chevron-right" />}
+                                size={6}
+                                color="gray.400"
+                              />
+                            </VStack>
+                          </HStack>
+                        </Card>
+                      </Pressable>
+                    ))}
+                  </VStack>
+                </VStack>
+              )}
+
+            {/* Completed Matches */}
+            {schedule?.completedMatches &&
+              schedule.completedMatches.length > 0 && (
+                <VStack space={4}>
+                  <Text fontSize="lg" fontWeight="bold" color="gray.800">
+                    Completed Matches
+                  </Text>
+
+                  <VStack space={3}>
+                    {schedule.completedMatches.slice(0, 5).map(match => (
+                      <Pressable
+                        key={match.id}
+                        onPress={() =>
+                          navigation.navigate('MatchDetail', {
+                            matchId: match.id,
+                            tournamentId: match.tournamentId,
+                          })
+                        }
+                      >
+                        <Card opacity={0.8}>
+                          <HStack
+                            justifyContent="space-between"
+                            alignItems="center"
+                          >
+                            <VStack flex={1} space={2}>
+                              <HStack space={3} alignItems="center">
+                                <Badge colorScheme="gray" rounded="full">
+                                  Round {match.round}
+                                </Badge>
+                                {match.winnerId === user?.id ? (
+                                  <Badge colorScheme="green" rounded="full">
+                                    Won
+                                  </Badge>
+                                ) : (
+                                  <Badge colorScheme="red" rounded="full">
+                                    Lost
+                                  </Badge>
+                                )}
+                              </HStack>
+
+                              <Text fontSize="md" color="gray.700">
+                                vs Opponent Name
+                              </Text>
+
+                              {match.score && (
+                                <Text fontSize="sm" color="gray.600">
+                                  {match.score.player1Sets.join('-')} vs{' '}
+                                  {match.score.player2Sets.join('-')}
+                                </Text>
+                              )}
+                            </VStack>
+
                             <Icon
                               as={<MaterialIcons name="chevron-right" />}
                               size={6}
                               color="gray.400"
                             />
-                          </VStack>
-                        </HStack>
-                      </Card>
-                    </Pressable>
-                  ))}
-                </VStack>
-              </VStack>
-            )}
+                          </HStack>
+                        </Card>
+                      </Pressable>
+                    ))}
+                  </VStack>
 
-            {/* Completed Matches */}
-            {schedule?.completedMatches && schedule.completedMatches.length > 0 && (
-              <VStack space={4}>
-                <Text fontSize="lg" fontWeight="bold" color="gray.800">
-                  Completed Matches
-                </Text>
-
-                <VStack space={3}>
-                  {schedule.completedMatches.slice(0, 5).map((match) => (
-                    <Pressable
-                      key={match.id}
-                      onPress={() =>
-                        navigation.navigate('MatchDetail', {
-                          matchId: match.id,
-                          tournamentId: match.tournamentId,
-                        })
-                      }
+                  {schedule.completedMatches.length > 5 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onPress={() => {
+                        // Navigate to full match history
+                        toast.show({
+                          title: 'Coming Soon',
+                          description:
+                            'Full match history will be available soon',
+                        });
+                      }}
                     >
-                      <Card opacity={0.8}>
-                        <HStack justifyContent="space-between" alignItems="center">
-                          <VStack flex={1} space={2}>
-                            <HStack space={3} alignItems="center">
-                              <Badge colorScheme="gray" rounded="full">
-                                Round {match.round}
-                              </Badge>
-                              {match.winnerId === user?.id ? (
-                                <Badge colorScheme="green" rounded="full">
-                                  Won
-                                </Badge>
-                              ) : (
-                                <Badge colorScheme="red" rounded="full">
-                                  Lost
-                                </Badge>
-                              )}
-                            </HStack>
-                            
-                            <Text fontSize="md" color="gray.700">
-                              vs Opponent Name
-                            </Text>
-                            
-                            {match.score && (
-                              <Text fontSize="sm" color="gray.600">
-                                {match.score.player1Sets.join('-')} vs {match.score.player2Sets.join('-')}
-                              </Text>
-                            )}
-                          </VStack>
-
-                          <Icon
-                            as={<MaterialIcons name="chevron-right" />}
-                            size={6}
-                            color="gray.400"
-                          />
-                        </HStack>
-                      </Card>
-                    </Pressable>
-                  ))}
+                      View All Matches ({schedule.completedMatches.length})
+                    </Button>
+                  )}
                 </VStack>
-
-                {schedule.completedMatches.length > 5 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onPress={() => {
-                      // Navigate to full match history
-                      toast.show({
-                        title: 'Coming Soon',
-                        description: 'Full match history will be available soon',
-                      });
-                    }}
-                  >
-                    View All Matches ({schedule.completedMatches.length})
-                  </Button>
-                )}
-              </VStack>
-            )}
+              )}
 
             {/* Empty State */}
             {!schedule && !loading && (
@@ -601,7 +656,8 @@ const MyScheduleScreen: React.FC<MyScheduleScreenProps> = ({
                       No Schedule Available
                     </Text>
                     <Text fontSize="sm" color="gray.500" textAlign="center">
-                      Your match schedule will appear once the tournament bracket is generated
+                      Your match schedule will appear once the tournament
+                      bracket is generated
                     </Text>
                   </VStack>
                 </VStack>

@@ -22,22 +22,22 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { PlayerProfileScreenProps } from '../../navigation/types';
 import { useAuth } from '../../contexts/AuthContext';
-import { 
+import {
   PlayerProfile,
   PlayerStatistics,
   PlayerTournamentHistory,
   PlayerFollow,
   TournamentService,
-  PlayerService
+  PlayerService,
 } from '@protour/shared';
 import { RefreshControl } from 'react-native';
 
-const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({ 
+const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
   navigation,
-  route 
+  route,
 }) => {
   const { playerId } = route.params;
-  
+
   const [profile, setProfile] = useState<PlayerProfile | null>(null);
   const [following, setFollowing] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
@@ -89,14 +89,16 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
 
       // Check if current user is following this player
       if (user && !isOwnProfile) {
-        const isFollowing = await playerService.isFollowingPlayer(user.id, playerId);
+        const isFollowing = await playerService.isFollowingPlayer(
+          user.id,
+          playerId
+        );
         setFollowing(isFollowing);
       }
 
       // Get followers count
       const followers = await playerService.getPlayerFollowers(playerId);
       setFollowersCount(followers.length);
-
     } catch (error: any) {
       console.error('Error loading player profile:', error);
       toast.show({
@@ -110,14 +112,21 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
     }
   };
 
-  const checkProfileVisibility = async (playerProfile: PlayerProfile): Promise<boolean> => {
+  const checkProfileVisibility = async (
+    playerProfile: PlayerProfile
+  ): Promise<boolean> => {
     if (isOwnProfile) return true;
     if (playerProfile.privacySettings.showProfile === 'everyone') return true;
     if (playerProfile.privacySettings.showProfile === 'private') return false;
-    
+
     // For 'tournament-participants', check if they share any tournaments
-    if (playerProfile.privacySettings.showProfile === 'tournament-participants') {
-      return await playerService.sharesTournamentWithUser(playerId, user?.id || '');
+    if (
+      playerProfile.privacySettings.showProfile === 'tournament-participants'
+    ) {
+      return await playerService.sharesTournamentWithUser(
+        playerId,
+        user?.id || ''
+      );
     }
 
     return false;
@@ -218,7 +227,7 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
             </HStack>
           </HStack>
         </Box>
-        
+
         <Center flex={1}>
           <VStack space={3} alignItems="center">
             <Spinner size="lg" color="primary.600" />
@@ -248,7 +257,7 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
             </HStack>
           </HStack>
         </Box>
-        
+
         <Center flex={1}>
           <VStack space={4} alignItems="center">
             <Icon
@@ -259,9 +268,7 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
             <Text fontSize="lg" color="gray.600">
               Player profile not found
             </Text>
-            <Button onPress={() => navigation.goBack()}>
-              Go Back
-            </Button>
+            <Button onPress={() => navigation.goBack()}>Go Back</Button>
           </VStack>
         </Center>
       </Box>
@@ -285,19 +292,17 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
               Player Profile
             </Text>
           </HStack>
-          
+
           {isOwnProfile && (
-            <Pressable onPress={() => {
-              toast.show({
-                title: 'Coming Soon',
-                description: 'Profile editing will be available soon',
-              });
-            }}>
-              <Icon
-                as={<MaterialIcons name="edit" />}
-                size={6}
-                color="white"
-              />
+            <Pressable
+              onPress={() => {
+                toast.show({
+                  title: 'Coming Soon',
+                  description: 'Profile editing will be available soon',
+                });
+              }}
+            >
+              <Icon as={<MaterialIcons name="edit" />} size={6} color="white" />
             </Pressable>
           )}
         </HStack>
@@ -317,21 +322,25 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                 <Avatar
                   size="xl"
                   bg="primary.600"
-                  source={profile.profileImage ? { uri: profile.profileImage } : undefined}
+                  source={
+                    profile.profileImage
+                      ? { uri: profile.profileImage }
+                      : undefined
+                  }
                   _text={{
                     fontSize: 'xl',
                     fontWeight: 'bold',
-                    color: 'white'
+                    color: 'white',
                   }}
                 >
                   {profile.name.charAt(0).toUpperCase()}
                 </Avatar>
-                
+
                 <VStack flex={1} space={2}>
                   <Text fontSize="2xl" fontWeight="bold" color="gray.800">
                     {profile.name}
                   </Text>
-                  
+
                   <HStack space={4} alignItems="center">
                     <HStack space={1} alignItems="center">
                       <Icon
@@ -343,7 +352,7 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                         {profile.statistics.tournamentsEntered} tournaments
                       </Text>
                     </HStack>
-                    
+
                     <HStack space={1} alignItems="center">
                       <Icon
                         as={<MaterialIcons name="people" />}
@@ -355,7 +364,7 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                       </Text>
                     </HStack>
                   </HStack>
-                  
+
                   {profile.phone && (
                     <HStack space={1} alignItems="center">
                       <Icon
@@ -382,7 +391,11 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                   variant={following ? 'outline' : 'solid'}
                   leftIcon={
                     <Icon
-                      as={<MaterialIcons name={following ? 'person-remove' : 'person-add'} />}
+                      as={
+                        <MaterialIcons
+                          name={following ? 'person-remove' : 'person-add'}
+                        />
+                      }
                       size={5}
                     />
                   }
@@ -400,7 +413,7 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                 <Text fontSize="lg" fontWeight="bold" color="gray.800">
                   Performance Statistics
                 </Text>
-                
+
                 <VStack space={4}>
                   {/* Win Rate */}
                   <VStack space={2}>
@@ -424,21 +437,37 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                     <HStack space={3}>
                       <Box bg="blue.50" p={4} rounded="lg" flex={1}>
                         <VStack alignItems="center" space={1}>
-                          <Text fontSize="2xl" fontWeight="bold" color="blue.600">
+                          <Text
+                            fontSize="2xl"
+                            fontWeight="bold"
+                            color="blue.600"
+                          >
                             {profile.statistics.matchesPlayed}
                           </Text>
-                          <Text fontSize="xs" color="blue.700" textAlign="center">
+                          <Text
+                            fontSize="xs"
+                            color="blue.700"
+                            textAlign="center"
+                          >
                             Matches Played
                           </Text>
                         </VStack>
                       </Box>
-                      
+
                       <Box bg="green.50" p={4} rounded="lg" flex={1}>
                         <VStack alignItems="center" space={1}>
-                          <Text fontSize="2xl" fontWeight="bold" color="green.600">
+                          <Text
+                            fontSize="2xl"
+                            fontWeight="bold"
+                            color="green.600"
+                          >
                             {profile.statistics.matchesWon}
                           </Text>
-                          <Text fontSize="xs" color="green.700" textAlign="center">
+                          <Text
+                            fontSize="xs"
+                            color="green.700"
+                            textAlign="center"
+                          >
                             Matches Won
                           </Text>
                         </VStack>
@@ -448,21 +477,37 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                     <HStack space={3}>
                       <Box bg="orange.50" p={4} rounded="lg" flex={1}>
                         <VStack alignItems="center" space={1}>
-                          <Text fontSize="2xl" fontWeight="bold" color="orange.600">
+                          <Text
+                            fontSize="2xl"
+                            fontWeight="bold"
+                            color="orange.600"
+                          >
                             {profile.statistics.tournamentsWon}
                           </Text>
-                          <Text fontSize="xs" color="orange.700" textAlign="center">
+                          <Text
+                            fontSize="xs"
+                            color="orange.700"
+                            textAlign="center"
+                          >
                             Tournaments Won
                           </Text>
                         </VStack>
                       </Box>
-                      
+
                       <Box bg="purple.50" p={4} rounded="lg" flex={1}>
                         <VStack alignItems="center" space={1}>
-                          <Text fontSize="2xl" fontWeight="bold" color="purple.600">
+                          <Text
+                            fontSize="2xl"
+                            fontWeight="bold"
+                            color="purple.600"
+                          >
                             {profile.statistics.currentStreak}
                           </Text>
-                          <Text fontSize="xs" color="purple.700" textAlign="center">
+                          <Text
+                            fontSize="xs"
+                            color="purple.700"
+                            textAlign="center"
+                          >
                             Current Streak
                           </Text>
                         </VStack>
@@ -488,18 +533,26 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                     </Button>
                   )}
                 </HStack>
-                
+
                 <VStack space={3}>
                   {profile.tournaments.slice(0, 5).map((tournament, index) => (
                     <HStack key={index} space={3} alignItems="center">
                       <Icon
-                        as={<MaterialIcons name={getSportIcon(tournament.sport)} />}
+                        as={
+                          <MaterialIcons
+                            name={getSportIcon(tournament.sport)}
+                          />
+                        }
                         size={6}
                         color="primary.500"
                       />
-                      
+
                       <VStack flex={1} space={1}>
-                        <Text fontSize="md" fontWeight="medium" color="gray.800">
+                        <Text
+                          fontSize="md"
+                          fontWeight="medium"
+                          color="gray.800"
+                        >
                           {tournament.tournamentName}
                         </Text>
                         <HStack space={4} alignItems="center">
@@ -511,10 +564,12 @@ const PlayerProfileScreen: React.FC<PlayerProfileScreenProps> = ({
                           </Text>
                         </HStack>
                       </VStack>
-                      
+
                       <VStack alignItems="flex-end" space={1}>
                         <Badge
-                          colorScheme={tournament.finalPosition <= 3 ? 'green' : 'gray'}
+                          colorScheme={
+                            tournament.finalPosition <= 3 ? 'green' : 'gray'
+                          }
                           rounded="full"
                         >
                           #{tournament.finalPosition}

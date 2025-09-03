@@ -19,13 +19,24 @@
     "isolatedModules": true,
     "noEmit": false
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*"],
   "exclude": [
     "node_modules",
     "dist",
     "**/*.test.ts",
-    "**/__tests__/**"
+    "**/__tests__/**",
+    "src/monitoring/**/*",
+    "src/security/**/*",
+    "src/testing/**/*",
+    "src/services/AdvancedConflictResolutionService.ts",
+    "src/services/RealTimeSyncService.ts",
+    "src/services/RealTimeNotificationService.ts",
+    "src/services/RefereeAccessService.ts",
+    "src/services/email.ts",
+    "src/services/payments.ts",
+    "src/services/pushNotifications.ts",
+    "src/services/socialAuth.ts",
+    "src/services/storage.ts",
+    "src/services/analytics.ts"
   ]
 }

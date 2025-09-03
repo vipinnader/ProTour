@@ -4,7 +4,7 @@
  */
 
 // TODO: Re-enable when these services are implemented
-// import type { 
+// import type {
 //   PaymentGateway, PaymentIntent, PaymentResult, RefundResult, PaymentCustomer, PaymentAmount,
 //   SMSProvider, SMSResult, SMSMessage,
 //   EmailProvider, EmailResult, EmailMessage,
@@ -35,12 +35,16 @@ export class MockService {
   }
 
   protected async simulateNetworkDelay(): Promise<void> {
-    const delay = this.config.delayMs! + Math.random() * (this.config.networkLatency! * 2);
+    const delay =
+      this.config.delayMs! + Math.random() * (this.config.networkLatency! * 2);
     await new Promise(resolve => setTimeout(resolve, delay));
   }
 
   protected shouldSimulateFailure(): boolean {
-    if (this.config.enableRandomFailures && Math.random() < this.config.failureRate!) {
+    if (
+      this.config.enableRandomFailures &&
+      Math.random() < this.config.failureRate!
+    ) {
       return true;
     }
     return false;
@@ -121,11 +125,15 @@ export class MockPaymentGateway extends MockService implements PaymentGateway {
 
   async getPaymentIntent(id: string): Promise<PaymentIntent> {
     await this.simulateNetworkDelay();
-    
+
     return {
       id,
       amount: { value: 1000, currency: 'INR' },
-      customer: { id: 'cust_123', name: 'Mock User', email: 'user@example.com' },
+      customer: {
+        id: 'cust_123',
+        name: 'Mock User',
+        email: 'user@example.com',
+      },
       description: 'Mock payment',
       metadata: {},
       status: 'succeeded',
@@ -136,9 +144,7 @@ export class MockPaymentGateway extends MockService implements PaymentGateway {
 
   async listPaymentMethods(customerId: string): Promise<any[]> {
     await this.simulateNetworkDelay();
-    return [
-      { id: 'pm_123', type: 'card', last4: '4242', brand: 'visa' },
-    ];
+    return [{ id: 'pm_123', type: 'card', last4: '4242', brand: 'visa' }];
   }
 
   async createCustomer(customer: any): Promise<PaymentCustomer> {
@@ -146,9 +152,17 @@ export class MockPaymentGateway extends MockService implements PaymentGateway {
     return { id: this.generateId('cust'), ...customer };
   }
 
-  async updateCustomer(customerId: string, updates: any): Promise<PaymentCustomer> {
+  async updateCustomer(
+    customerId: string,
+    updates: any
+  ): Promise<PaymentCustomer> {
     await this.simulateNetworkDelay();
-    return { id: customerId, name: 'Updated User', email: 'user@example.com', ...updates };
+    return {
+      id: customerId,
+      name: 'Updated User',
+      email: 'user@example.com',
+      ...updates,
+    };
   }
 
   verifyWebhook(payload: string, signature: string, secret: string): any {
@@ -179,18 +193,18 @@ export class MockSMSProvider extends MockService implements SMSProvider {
       success: true,
       messageId: this.generateId('sms'),
       status: 'sent',
-      cost: 0.10,
+      cost: 0.1,
     };
   }
 
   async sendBulkSMS(messages: SMSMessage[]): Promise<SMSResult[]> {
     await this.simulateNetworkDelay();
-    
+
     return messages.map(() => ({
       success: !this.shouldSimulateFailure(),
       messageId: this.generateId('sms'),
       status: 'sent' as const,
-      cost: 0.10,
+      cost: 0.1,
     }));
   }
 
@@ -211,7 +225,7 @@ export class MockSMSProvider extends MockService implements SMSProvider {
 
   async estimateCost(message: SMSMessage): Promise<number> {
     const segments = Math.ceil(message.body.length / 160);
-    return segments * 0.10;
+    return segments * 0.1;
   }
 }
 
@@ -239,9 +253,9 @@ export class MockEmailProvider extends MockService implements EmailProvider {
 
   async sendBulkEmail(request: any): Promise<EmailResult> {
     await this.simulateNetworkDelay();
-    
+
     const accepted = request.recipients.map((r: any) => r.email.email);
-    
+
     return {
       success: !this.shouldSimulateFailure(),
       messageId: this.generateId('bulk_email'),
@@ -251,7 +265,7 @@ export class MockEmailProvider extends MockService implements EmailProvider {
 
   async sendTemplatedEmail(data: any): Promise<EmailResult> {
     await this.simulateNetworkDelay();
-    
+
     return {
       success: !this.shouldSimulateFailure(),
       messageId: this.generateId('template_email'),
@@ -261,7 +275,12 @@ export class MockEmailProvider extends MockService implements EmailProvider {
 
   async createTemplate(template: any): Promise<any> {
     await this.simulateNetworkDelay();
-    return { id: this.generateId('template'), ...template, createdAt: new Date(), updatedAt: new Date() };
+    return {
+      id: this.generateId('template'),
+      ...template,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
   }
 
   async updateTemplate(id: string, updates: any): Promise<any> {
@@ -276,22 +295,48 @@ export class MockEmailProvider extends MockService implements EmailProvider {
 
   async getTemplate(id: string): Promise<any> {
     await this.simulateNetworkDelay();
-    return { id, name: 'Mock Template', subject: 'Mock Subject', htmlContent: '<p>Mock content</p>', variables: [] };
+    return {
+      id,
+      name: 'Mock Template',
+      subject: 'Mock Subject',
+      htmlContent: '<p>Mock content</p>',
+      variables: [],
+    };
   }
 
   async listTemplates(): Promise<any[]> {
     await this.simulateNetworkDelay();
     return [
-      { id: 'template_1', name: 'Welcome Email', subject: 'Welcome!', htmlContent: '<p>Welcome!</p>' },
+      {
+        id: 'template_1',
+        name: 'Welcome Email',
+        subject: 'Welcome!',
+        htmlContent: '<p>Welcome!</p>',
+      },
     ];
   }
 
   async getStats(): Promise<any> {
-    return { sent: 100, delivered: 95, opened: 60, clicked: 20, bounced: 3, spam: 2, unsubscribed: 1 };
+    return {
+      sent: 100,
+      delivered: 95,
+      opened: 60,
+      clicked: 20,
+      bounced: 3,
+      spam: 2,
+      unsubscribed: 1,
+    };
   }
 
   processWebhook(payload: string, signature?: string): any[] {
-    return [{ messageId: 'mock_msg', event: 'delivered', timestamp: new Date(), recipient: 'user@example.com' }];
+    return [
+      {
+        messageId: 'mock_msg',
+        event: 'delivered',
+        timestamp: new Date(),
+        recipient: 'user@example.com',
+      },
+    ];
   }
 
   validateEmail(email: string): boolean {
@@ -303,7 +348,10 @@ export class MockEmailProvider extends MockService implements EmailProvider {
 /**
  * Mock Push Notification Service
  */
-export class MockPushNotificationService extends MockService implements PushNotificationService {
+export class MockPushNotificationService
+  extends MockService
+  implements PushNotificationService
+{
   async initialize(): Promise<void> {
     await this.simulateNetworkDelay();
     console.log('[MockPush] Initialized');
@@ -332,11 +380,14 @@ export class MockPushNotificationService extends MockService implements PushNoti
     };
   }
 
-  async sendBulkNotifications(notifications: any[]): Promise<NotificationResult> {
+  async sendBulkNotifications(
+    notifications: any[]
+  ): Promise<NotificationResult> {
     await this.simulateNetworkDelay();
-    
-    const successCount = this.shouldSimulateFailure() ? 
-      Math.floor(notifications.length * 0.8) : notifications.length;
+
+    const successCount = this.shouldSimulateFailure()
+      ? Math.floor(notifications.length * 0.8)
+      : notifications.length;
     const failureCount = notifications.length - successCount;
 
     return {
@@ -349,7 +400,12 @@ export class MockPushNotificationService extends MockService implements PushNoti
 
   async sendTemplatedNotification(): Promise<NotificationResult> {
     await this.simulateNetworkDelay();
-    return { success: true, messageId: this.generateId('template_push'), successCount: 1, failureCount: 0 };
+    return {
+      success: true,
+      messageId: this.generateId('template_push'),
+      successCount: 1,
+      failureCount: 0,
+    };
   }
 
   async scheduleNotification(): Promise<any> {
@@ -383,12 +439,23 @@ export class MockPushNotificationService extends MockService implements PushNoti
   }
 
   async getNotificationStats(): Promise<any> {
-    return { sent: 150, delivered: 145, opened: 75, failed: 5, clickThroughRate: 0.52, deliveryRate: 0.97 };
+    return {
+      sent: 150,
+      delivered: 145,
+      opened: 75,
+      failed: 5,
+      clickThroughRate: 0.52,
+      deliveryRate: 0.97,
+    };
   }
 
   async createNotificationTemplate(): Promise<any> {
     await this.simulateNetworkDelay();
-    return { id: this.generateId('template'), createdAt: new Date(), updatedAt: new Date() };
+    return {
+      id: this.generateId('template'),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
   }
 
   async updateNotificationTemplate(): Promise<any> {
@@ -404,7 +471,11 @@ export class MockPushNotificationService extends MockService implements PushNoti
   async listNotificationTemplates(): Promise<any[]> {
     await this.simulateNetworkDelay();
     return [
-      { id: 'template_1', name: 'Match Reminder', title: 'Match starting soon!' },
+      {
+        id: 'template_1',
+        name: 'Match Reminder',
+        title: 'Match starting soon!',
+      },
     ];
   }
 }
@@ -412,7 +483,10 @@ export class MockPushNotificationService extends MockService implements PushNoti
 /**
  * Mock Storage Provider
  */
-export class MockStorageProvider extends MockService implements StorageProvider {
+export class MockStorageProvider
+  extends MockService
+  implements StorageProvider
+{
   async initialize(): Promise<void> {
     await this.simulateNetworkDelay();
     console.log('[MockStorage] Initialized');
@@ -447,7 +521,7 @@ export class MockStorageProvider extends MockService implements StorageProvider 
 
   async uploadMultipleFiles(files: any[], options: any = {}): Promise<any> {
     await this.simulateNetworkDelay();
-    
+
     const results = files.map(() => ({
       success: !this.shouldSimulateFailure(),
       file: {
@@ -485,7 +559,7 @@ export class MockStorageProvider extends MockService implements StorageProvider 
 
   async getFile(fileId: string): Promise<StorageFile | null> {
     await this.simulateNetworkDelay();
-    
+
     if (this.shouldSimulateFailure()) return null;
 
     return {
@@ -501,7 +575,7 @@ export class MockStorageProvider extends MockService implements StorageProvider 
 
   async listFiles(): Promise<any> {
     await this.simulateNetworkDelay();
-    
+
     return {
       files: [
         {
@@ -555,7 +629,10 @@ export class MockStorageProvider extends MockService implements StorageProvider 
 /**
  * Mock Analytics Provider
  */
-export class MockAnalyticsProvider extends MockService implements AnalyticsProvider {
+export class MockAnalyticsProvider
+  extends MockService
+  implements AnalyticsProvider
+{
   async initialize(): Promise<void> {
     await this.simulateNetworkDelay();
     console.log('[MockAnalytics] Initialized');
@@ -605,7 +682,10 @@ export class MockAnalyticsProvider extends MockService implements AnalyticsProvi
 /**
  * Mock Social Auth Provider
  */
-export class MockSocialAuthProvider extends MockService implements SocialAuthProvider {
+export class MockSocialAuthProvider
+  extends MockService
+  implements SocialAuthProvider
+{
   getAuthorizationUrl(state: string): string {
     return `https://mock-auth.com/oauth/authorize?state=${state}`;
   }
@@ -685,7 +765,9 @@ export class MockServiceFactory {
     };
   }
 
-  static createReliableMocks(): ReturnType<typeof MockServiceFactory.createMockServices> {
+  static createReliableMocks(): ReturnType<
+    typeof MockServiceFactory.createMockServices
+  > {
     return MockServiceFactory.createMockServices({
       delayMs: 50,
       failureRate: 0,
@@ -694,7 +776,9 @@ export class MockServiceFactory {
     });
   }
 
-  static createUnreliableMocks(): ReturnType<typeof MockServiceFactory.createMockServices> {
+  static createUnreliableMocks(): ReturnType<
+    typeof MockServiceFactory.createMockServices
+  > {
     return MockServiceFactory.createMockServices({
       delayMs: 200,
       failureRate: 0.1, // 10% failure rate
@@ -703,7 +787,9 @@ export class MockServiceFactory {
     });
   }
 
-  static createSlowMocks(): ReturnType<typeof MockServiceFactory.createMockServices> {
+  static createSlowMocks(): ReturnType<
+    typeof MockServiceFactory.createMockServices
+  > {
     return MockServiceFactory.createMockServices({
       delayMs: 1000,
       failureRate: 0.05,

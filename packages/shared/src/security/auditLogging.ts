@@ -23,9 +23,9 @@ export interface AuditEvent {
   riskScore?: number;
 }
 
-export type AuditEventType = 
+export type AuditEventType =
   | 'authentication'
-  | 'authorization' 
+  | 'authorization'
   | 'data_access'
   | 'data_modification'
   | 'data_deletion'
@@ -49,7 +49,14 @@ export interface AuditActor {
 }
 
 export interface AuditResource {
-  type: 'user' | 'tournament' | 'match' | 'payment' | 'system' | 'file' | 'setting';
+  type:
+    | 'user'
+    | 'tournament'
+    | 'match'
+    | 'payment'
+    | 'system'
+    | 'file'
+    | 'setting';
   id: string;
   name?: string;
   collection?: string;
@@ -129,7 +136,10 @@ export abstract class AuditStorage {
   abstract query(query: AuditQuery): Promise<AuditEvent[]>;
   abstract count(query: AuditQuery): Promise<number>;
   abstract deleteOldEvents(olderThan: Date): Promise<number>;
-  abstract export(query: AuditQuery, format: 'json' | 'csv' | 'xml'): Promise<string>;
+  abstract export(
+    query: AuditQuery,
+    format: 'json' | 'csv' | 'xml'
+  ): Promise<string>;
 }
 
 export class FirestoreAuditStorage extends AuditStorage {
@@ -144,10 +154,13 @@ export class FirestoreAuditStorage extends AuditStorage {
 
   async save(event: AuditEvent): Promise<void> {
     try {
-      await this.firestore.collection(this.collection).doc(event.id).set({
-        ...event,
-        timestamp: event.timestamp,
-      });
+      await this.firestore
+        .collection(this.collection)
+        .doc(event.id)
+        .set({
+          ...event,
+          timestamp: event.timestamp,
+        });
     } catch (error) {
       console.error('[AuditLog] Failed to save audit event:', error);
       throw error;
@@ -157,7 +170,7 @@ export class FirestoreAuditStorage extends AuditStorage {
   async saveBatch(events: AuditEvent[]): Promise<void> {
     try {
       const batch = this.firestore.batch();
-      
+
       events.forEach(event => {
         const ref = this.firestore.collection(this.collection).doc(event.id);
         batch.set(ref, {
@@ -179,7 +192,11 @@ export class FirestoreAuditStorage extends AuditStorage {
 
       // Apply filters
       if (query.eventTypes && query.eventTypes.length > 0) {
-        firestoreQuery = firestoreQuery.where('eventType', 'in', query.eventTypes);
+        firestoreQuery = firestoreQuery.where(
+          'eventType',
+          'in',
+          query.eventTypes
+        );
       }
 
       if (query.outcomes && query.outcomes.length > 0) {
@@ -187,7 +204,11 @@ export class FirestoreAuditStorage extends AuditStorage {
       }
 
       if (query.severities && query.severities.length > 0) {
-        firestoreQuery = firestoreQuery.where('severity', 'in', query.severities);
+        firestoreQuery = firestoreQuery.where(
+          'severity',
+          'in',
+          query.severities
+        );
       }
 
       if (query.dateRange) {
@@ -250,19 +271,22 @@ export class FirestoreAuditStorage extends AuditStorage {
     }
   }
 
-  async export(query: AuditQuery, format: 'json' | 'csv' | 'xml'): Promise<string> {
+  async export(
+    query: AuditQuery,
+    format: 'json' | 'csv' | 'xml'
+  ): Promise<string> {
     const events = await this.query(query);
-    
+
     switch (format) {
       case 'json':
         return JSON.stringify(events, null, 2);
-      
+
       case 'csv':
         return this.convertToCSV(events);
-      
+
       case 'xml':
         return this.convertToXML(events);
-      
+
       default:
         throw new Error(`Unsupported export format: ${format}`);
     }
@@ -272,9 +296,18 @@ export class FirestoreAuditStorage extends AuditStorage {
     if (events.length === 0) return '';
 
     const headers = [
-      'id', 'timestamp', 'eventType', 'actor.id', 'actor.type', 
-      'resource.id', 'resource.type', 'action', 'outcome', 'severity',
-      'ipAddress', 'userAgent'
+      'id',
+      'timestamp',
+      'eventType',
+      'actor.id',
+      'actor.type',
+      'resource.id',
+      'resource.type',
+      'action',
+      'outcome',
+      'severity',
+      'ipAddress',
+      'userAgent',
     ];
 
     const rows = events.map(event => [
@@ -297,7 +330,7 @@ export class FirestoreAuditStorage extends AuditStorage {
 
   private convertToXML(events: AuditEvent[]): string {
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<audit_events>\n';
-    
+
     events.forEach(event => {
       xml += '  <event>\n';
       xml += `    <id>${this.escapeXML(event.id)}</id>\n`;
@@ -309,7 +342,7 @@ export class FirestoreAuditStorage extends AuditStorage {
       xml += `    <ipAddress>${this.escapeXML(event.ipAddress)}</ipAddress>\n`;
       xml += '  </event>\n';
     });
-    
+
     xml += '</audit_events>';
     return xml;
   }
@@ -381,7 +414,8 @@ export class AuditLogger {
       sessionId: options.sessionId,
       ipAddress: options.ipAddress || 'unknown',
       userAgent: options.userAgent || 'unknown',
-      riskScore: options.riskScore || this.calculateRiskScore(eventType, outcome, actor),
+      riskScore:
+        options.riskScore || this.calculateRiskScore(eventType, outcome, actor),
     };
 
     // Add to buffer for batch processing
@@ -399,7 +433,12 @@ export class AuditLogger {
    * Log authentication events
    */
   async logAuthentication(
-    action: 'login' | 'logout' | 'password_change' | 'mfa_setup' | 'account_locked',
+    action:
+      | 'login'
+      | 'logout'
+      | 'password_change'
+      | 'mfa_setup'
+      | 'account_locked',
     actor: AuditActor,
     outcome: 'success' | 'failure',
     details: Record<string, any> = {},
@@ -431,19 +470,11 @@ export class AuditLogger {
     details: Record<string, any> = {},
     options: any = {}
   ): Promise<void> {
-    await this.log(
-      'data_access',
-      action,
-      actor,
-      resource,
-      outcome,
-      details,
-      {
-        ...options,
-        severity: this.calculateDataAccessSeverity(resource, action),
-        tags: ['data', 'access', resource.type],
-      }
-    );
+    await this.log('data_access', action, actor, resource, outcome, details, {
+      ...options,
+      severity: this.calculateDataAccessSeverity(resource, action),
+      tags: ['data', 'access', resource.type],
+    });
   }
 
   /**
@@ -483,19 +514,11 @@ export class AuditLogger {
     details: Record<string, any> = {},
     options: any = {}
   ): Promise<void> {
-    await this.log(
-      'admin_action',
-      action,
-      actor,
-      resource,
-      outcome,
-      details,
-      {
-        ...options,
-        severity: 'high',
-        tags: ['admin', action, resource.type],
-      }
-    );
+    await this.log('admin_action', action, actor, resource, outcome, details, {
+      ...options,
+      severity: 'high',
+      tags: ['admin', action, resource.type],
+    });
   }
 
   /**
@@ -528,7 +551,11 @@ export class AuditLogger {
    * Log payment events
    */
   async logPaymentEvent(
-    action: 'payment_created' | 'payment_processed' | 'payment_failed' | 'refund_issued',
+    action:
+      | 'payment_created'
+      | 'payment_processed'
+      | 'payment_failed'
+      | 'refund_issued',
     actor: AuditActor,
     resource: AuditResource,
     outcome: 'success' | 'failure',
@@ -559,7 +586,7 @@ export class AuditLogger {
     try {
       const events = [...this.eventBuffer];
       this.eventBuffer = [];
-      
+
       await this.storage.saveBatch(events);
       console.log(`[AuditLog] Flushed ${events.length} audit events`);
     } catch (error) {
@@ -618,7 +645,9 @@ export class AuditLogger {
    * Cleanup old audit logs
    */
   async cleanup(retentionDays: number): Promise<number> {
-    const cutoffDate = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+    const cutoffDate = new Date(
+      Date.now() - retentionDays * 24 * 60 * 60 * 1000
+    );
     return this.storage.deleteOldEvents(cutoffDate);
   }
 
@@ -715,16 +744,23 @@ export class AuditLogger {
 
   private sanitizeDetails(details: Record<string, any>): Record<string, any> {
     const sanitized = { ...details };
-    
+
     // Remove sensitive fields
     const sensitiveFields = [
-      'password', 'token', 'secret', 'key', 'credential',
-      'ssn', 'creditCard', 'bankAccount', 'privateKey'
+      'password',
+      'token',
+      'secret',
+      'key',
+      'credential',
+      'ssn',
+      'creditCard',
+      'bankAccount',
+      'privateKey',
     ];
 
     const sanitizeObject = (obj: any): any => {
       if (typeof obj !== 'object' || obj === null) return obj;
-      
+
       if (Array.isArray(obj)) {
         return obj.map(sanitizeObject);
       }
@@ -744,18 +780,23 @@ export class AuditLogger {
     return sanitizeObject(sanitized);
   }
 
-  private sanitizePaymentDetails(details: Record<string, any>): Record<string, any> {
+  private sanitizePaymentDetails(
+    details: Record<string, any>
+  ): Record<string, any> {
     const sanitized = { ...details };
-    
+
     // Specific payment field sanitization
     if (sanitized.cardNumber) {
-      sanitized.cardNumber = sanitized.cardNumber.replace(/\d{12}/, '************');
+      sanitized.cardNumber = sanitized.cardNumber.replace(
+        /\d{12}/,
+        '************'
+      );
     }
-    
+
     if (sanitized.cvv) {
       sanitized.cvv = '[REDACTED]';
     }
-    
+
     if (sanitized.bankAccount) {
       sanitized.bankAccount = '[REDACTED]';
     }
@@ -763,23 +804,31 @@ export class AuditLogger {
     return this.sanitizeDetails(sanitized);
   }
 
-  private calculateReportSummary(events: AuditEvent[]): ComplianceReportSummary {
+  private calculateReportSummary(
+    events: AuditEvent[]
+  ): ComplianceReportSummary {
     const totalEvents = events.length;
     const eventsByType: Record<AuditEventType, number> = {} as any;
     const eventsBySeverity: Record<string, number> = {};
     let failures = 0;
-    const riskDistribution: Record<string, number> = { low: 0, medium: 0, high: 0, critical: 0 };
+    const riskDistribution: Record<string, number> = {
+      low: 0,
+      medium: 0,
+      high: 0,
+      critical: 0,
+    };
 
     events.forEach(event => {
       // Count by type
       eventsByType[event.eventType] = (eventsByType[event.eventType] || 0) + 1;
-      
+
       // Count by severity
-      eventsBySeverity[event.severity] = (eventsBySeverity[event.severity] || 0) + 1;
-      
+      eventsBySeverity[event.severity] =
+        (eventsBySeverity[event.severity] || 0) + 1;
+
       // Count failures
       if (event.outcome === 'failure') failures++;
-      
+
       // Risk distribution
       const riskLevel = event.riskScore || 0;
       if (riskLevel >= 80) riskDistribution.critical++;
@@ -789,7 +838,10 @@ export class AuditLogger {
     });
 
     const failureRate = totalEvents > 0 ? failures / totalEvents : 0;
-    const complianceScore = Math.max(0, 100 - (failureRate * 100) - (riskDistribution.critical * 5));
+    const complianceScore = Math.max(
+      0,
+      100 - failureRate * 100 - riskDistribution.critical * 5
+    );
 
     return {
       totalEvents,
@@ -808,9 +860,8 @@ export class AuditLogger {
     const violations: ComplianceViolation[] = [];
 
     // Check for multiple failed authentication attempts
-    const failedAuth = events.filter(e => 
-      e.eventType === 'authentication' && 
-      e.outcome === 'failure'
+    const failedAuth = events.filter(
+      e => e.eventType === 'authentication' && e.outcome === 'failure'
     );
 
     if (failedAuth.length > 5) {
@@ -821,15 +872,15 @@ export class AuditLogger {
         description: `${failedAuth.length} failed authentication attempts detected`,
         events: failedAuth.slice(0, 10).map(e => e.id),
         riskLevel: 75,
-        recommendation: 'Implement account lockout policies and monitor for brute force attacks',
+        recommendation:
+          'Implement account lockout policies and monitor for brute force attacks',
         status: 'open',
       });
     }
 
     // Check for admin actions without proper authorization trails
-    const adminActions = events.filter(e => 
-      e.eventType === 'admin_action' && 
-      !e.correlationId
+    const adminActions = events.filter(
+      e => e.eventType === 'admin_action' && !e.correlationId
     );
 
     if (adminActions.length > 0) {
@@ -840,7 +891,8 @@ export class AuditLogger {
         description: `${adminActions.length} admin actions without correlation IDs`,
         events: adminActions.map(e => e.id),
         riskLevel: 60,
-        recommendation: 'Ensure all admin actions have proper correlation tracking',
+        recommendation:
+          'Ensure all admin actions have proper correlation tracking',
         status: 'open',
       });
     }
@@ -850,7 +902,7 @@ export class AuditLogger {
 
   private generateRecommendations(violations: ComplianceViolation[]): string[] {
     const recommendations = violations.map(v => v.recommendation);
-    
+
     // Add general recommendations
     recommendations.push(
       'Implement regular security training for all users',
@@ -877,7 +929,7 @@ export class AuditLogger {
       clearInterval(this.flushTimer);
       this.flushTimer = null;
     }
-    
+
     // Final flush
     if (this.eventBuffer.length > 0) {
       this.flush().catch(error => {
@@ -901,7 +953,9 @@ export const initializeAuditLogger = (
 
 export const getAuditLogger = (): AuditLogger => {
   if (!auditLogger) {
-    throw new Error('Audit logger not initialized. Call initializeAuditLogger first.');
+    throw new Error(
+      'Audit logger not initialized. Call initializeAuditLogger first.'
+    );
   }
   return auditLogger;
 };

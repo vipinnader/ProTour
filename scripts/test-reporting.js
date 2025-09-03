@@ -32,7 +32,7 @@ function parseJestResults(resultsPath) {
 
   try {
     const results = JSON.parse(fs.readFileSync(resultsPath, 'utf8'));
-    
+
     return {
       success: results.success,
       numTotalTests: results.numTotalTests,
@@ -53,14 +53,14 @@ function parseJestResults(resultsPath) {
  */
 function parseCoverageResults(coveragePath) {
   const coverageSummaryPath = path.join(coveragePath, 'coverage-summary.json');
-  
+
   if (!fs.existsSync(coverageSummaryPath)) {
     return null;
   }
 
   try {
     const coverage = JSON.parse(fs.readFileSync(coverageSummaryPath, 'utf8'));
-    
+
     return {
       lines: coverage.total.lines.pct,
       functions: coverage.total.functions.pct,
@@ -106,15 +106,20 @@ function generateTestReport() {
 
   packages.forEach(pkg => {
     // Parse test results
-    const resultsPath = path.join(process.cwd(), pkg.path, 'test-results', 'jest-results.json');
+    const resultsPath = path.join(
+      process.cwd(),
+      pkg.path,
+      'test-results',
+      'jest-results.json'
+    );
     const results = parseJestResults(resultsPath);
-    
+
     if (results) {
       report.results[pkg.name] = results;
       report.overall.totalTests += results.numTotalTests;
       report.overall.passedTests += results.numPassedTests;
       report.overall.failedTests += results.numFailedTests;
-      
+
       if (!results.success) {
         report.overall.success = false;
       }
@@ -123,7 +128,7 @@ function generateTestReport() {
     // Parse coverage results
     const coveragePath = path.join(process.cwd(), pkg.path, 'coverage');
     const coverage = parseCoverageResults(coveragePath);
-    
+
     if (coverage) {
       report.coverage[pkg.name] = coverage;
     }
@@ -138,12 +143,15 @@ function generateTestReport() {
 function displayTestReport(report) {
   log('\n📊 ProTour Test Report', colors.blue);
   log('====================', colors.blue);
-  
+
   // Overall summary
   const statusColor = report.overall.success ? colors.green : colors.red;
   const statusIcon = report.overall.success ? '✅' : '❌';
-  
-  log(`\n${statusIcon} Overall Status: ${report.overall.success ? 'PASSED' : 'FAILED'}`, statusColor);
+
+  log(
+    `\n${statusIcon} Overall Status: ${report.overall.success ? 'PASSED' : 'FAILED'}`,
+    statusColor
+  );
   log(`📈 Total Tests: ${report.overall.totalTests}`, colors.cyan);
   log(`✅ Passed: ${report.overall.passedTests}`, colors.green);
   log(`❌ Failed: ${report.overall.failedTests}`, colors.red);
@@ -152,9 +160,11 @@ function displayTestReport(report) {
   Object.entries(report.results).forEach(([pkg, results]) => {
     if (results) {
       log(`\n📦 ${pkg.toUpperCase()}`, colors.blue);
-      log(`  Tests: ${results.numPassedTests}/${results.numTotalTests} passed`, 
-          results.success ? colors.green : colors.red);
-      
+      log(
+        `  Tests: ${results.numPassedTests}/${results.numTotalTests} passed`,
+        results.success ? colors.green : colors.red
+      );
+
       if (results.numFailedTests > 0) {
         log(`  Failed: ${results.numFailedTests}`, colors.red);
       }
@@ -166,14 +176,29 @@ function displayTestReport(report) {
   Object.entries(report.coverage).forEach(([pkg, coverage]) => {
     if (coverage) {
       log(`\n📦 ${pkg.toUpperCase()}`, colors.blue);
-      log(`  Lines: ${coverage.lines}%`, coverage.lines >= 80 ? colors.green : colors.yellow);
-      log(`  Functions: ${coverage.functions}%`, coverage.functions >= 80 ? colors.green : colors.yellow);
-      log(`  Branches: ${coverage.branches}%`, coverage.branches >= 80 ? colors.green : colors.yellow);
-      log(`  Statements: ${coverage.statements}%`, coverage.statements >= 80 ? colors.green : colors.yellow);
+      log(
+        `  Lines: ${coverage.lines}%`,
+        coverage.lines >= 80 ? colors.green : colors.yellow
+      );
+      log(
+        `  Functions: ${coverage.functions}%`,
+        coverage.functions >= 80 ? colors.green : colors.yellow
+      );
+      log(
+        `  Branches: ${coverage.branches}%`,
+        coverage.branches >= 80 ? colors.green : colors.yellow
+      );
+      log(
+        `  Statements: ${coverage.statements}%`,
+        coverage.statements >= 80 ? colors.green : colors.yellow
+      );
     }
   });
 
-  log(`\n🕐 Generated at: ${new Date(report.timestamp).toLocaleString()}`, colors.cyan);
+  log(
+    `\n🕐 Generated at: ${new Date(report.timestamp).toLocaleString()}`,
+    colors.cyan
+  );
 }
 
 /**
@@ -181,14 +206,14 @@ function displayTestReport(report) {
  */
 function saveTestReport(report) {
   const reportPath = path.join(process.cwd(), 'test-results');
-  
+
   if (!fs.existsSync(reportPath)) {
     fs.mkdirSync(reportPath, { recursive: true });
   }
 
   const reportFile = path.join(reportPath, 'test-report.json');
   fs.writeFileSync(reportFile, JSON.stringify(report, null, 2));
-  
+
   log(`📁 Report saved to: ${reportFile}`, colors.cyan);
 }
 
@@ -198,12 +223,15 @@ function saveTestReport(report) {
 function sendNotifications(report) {
   // Placeholder for future notification integrations:
   // - Slack notifications
-  // - Email notifications  
+  // - Email notifications
   // - GitHub status checks
   // - Teams notifications
 
   if (!report.overall.success) {
-    log('🔔 Test failures detected - notifications would be sent in production', colors.yellow);
+    log(
+      '🔔 Test failures detected - notifications would be sent in production',
+      colors.yellow
+    );
   }
 }
 
@@ -239,16 +267,19 @@ function generateHTMLReport(report) {
         <p class="failure">Failed: ${report.overall.failedTests}</p>
     </div>
 
-    ${Object.entries(report.results).map(([pkg, results]) => {
-      if (!results) return '';
-      
-      return `
+    ${Object.entries(report.results)
+      .map(([pkg, results]) => {
+        if (!results) return '';
+
+        return `
         <div class="package">
             <h3>${pkg.toUpperCase()} Package</h3>
             <p>Tests: ${results.numPassedTests}/${results.numTotalTests} passed</p>
             ${results.numFailedTests > 0 ? `<p class="failure">Failed: ${results.numFailedTests}</p>` : ''}
             
-            ${report.coverage[pkg] ? `
+            ${
+              report.coverage[pkg]
+                ? `
                 <h4>Coverage</h4>
                 <div class="coverage">
                     <div class="metric">
@@ -268,10 +299,13 @@ function generateHTMLReport(report) {
                         <div class="${report.coverage[pkg].statements >= 80 ? 'success' : 'warning'}">${report.coverage[pkg].statements}%</div>
                     </div>
                 </div>
-            ` : ''}
+            `
+                : ''
+            }
         </div>
       `;
-    }).join('')}
+      })
+      .join('')}
 </body>
 </html>
   `;
@@ -279,7 +313,7 @@ function generateHTMLReport(report) {
   const reportPath = path.join(process.cwd(), 'test-results');
   const htmlFile = path.join(reportPath, 'test-report.html');
   fs.writeFileSync(htmlFile, html);
-  
+
   log(`🌐 HTML report saved to: ${htmlFile}`, colors.cyan);
 }
 
@@ -288,19 +322,19 @@ function generateHTMLReport(report) {
  */
 function main() {
   log('🧪 Generating ProTour test report...', colors.blue);
-  
+
   try {
     const report = generateTestReport();
-    
+
     displayTestReport(report);
     saveTestReport(report);
     generateHTMLReport(report);
     sendNotifications(report);
-    
+
     if (!report.overall.success) {
       process.exit(1);
     }
-    
+
     log('\n✅ Test reporting completed successfully!', colors.green);
   } catch (error) {
     log(`\n❌ Test reporting failed: ${error.message}`, colors.red);

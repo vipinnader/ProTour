@@ -241,21 +241,35 @@ export class SecurityMiddleware {
 
   private initializeRateLimiters(): void {
     if (this.config.rateLimiting?.global) {
-      this.rateLimiters.set('global', new RateLimiter(this.store, this.config.rateLimiting.global));
+      this.rateLimiters.set(
+        'global',
+        new RateLimiter(this.store, this.config.rateLimiting.global)
+      );
     }
 
     if (this.config.rateLimiting?.perUser) {
-      this.rateLimiters.set('user', new RateLimiter(this.store, this.config.rateLimiting.perUser));
+      this.rateLimiters.set(
+        'user',
+        new RateLimiter(this.store, this.config.rateLimiting.perUser)
+      );
     }
 
     if (this.config.rateLimiting?.perIP) {
-      this.rateLimiters.set('ip', new RateLimiter(this.store, this.config.rateLimiting.perIP));
+      this.rateLimiters.set(
+        'ip',
+        new RateLimiter(this.store, this.config.rateLimiting.perIP)
+      );
     }
 
     if (this.config.rateLimiting?.perRoute) {
-      Object.entries(this.config.rateLimiting.perRoute).forEach(([route, config]) => {
-        this.rateLimiters.set(`route:${route}`, new RateLimiter(this.store, config));
-      });
+      Object.entries(this.config.rateLimiting.perRoute).forEach(
+        ([route, config]) => {
+          this.rateLimiters.set(
+            `route:${route}`,
+            new RateLimiter(this.store, config)
+          );
+        }
+      );
     }
   }
 
@@ -314,7 +328,7 @@ export class SecurityMiddleware {
   cloudFunctionMiddleware() {
     return async (req: any, res: any) => {
       const context = await this.createSecurityContext(req);
-      
+
       // Apply CORS
       if (this.config.cors) {
         this.applyCORS(req, res);
@@ -385,7 +399,10 @@ export class SecurityMiddleware {
     // Origin
     if (corsConfig.origin) {
       if (typeof corsConfig.origin === 'boolean') {
-        res.setHeader('Access-Control-Allow-Origin', corsConfig.origin ? '*' : 'null');
+        res.setHeader(
+          'Access-Control-Allow-Origin',
+          corsConfig.origin ? '*' : 'null'
+        );
       } else if (Array.isArray(corsConfig.origin)) {
         const origin = req.headers.origin;
         if (corsConfig.origin.includes(origin)) {
@@ -398,12 +415,18 @@ export class SecurityMiddleware {
 
     // Methods
     if (corsConfig.methods) {
-      res.setHeader('Access-Control-Allow-Methods', corsConfig.methods.join(', '));
+      res.setHeader(
+        'Access-Control-Allow-Methods',
+        corsConfig.methods.join(', ')
+      );
     }
 
     // Headers
     if (corsConfig.allowedHeaders) {
-      res.setHeader('Access-Control-Allow-Headers', corsConfig.allowedHeaders.join(', '));
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        corsConfig.allowedHeaders.join(', ')
+      );
     }
 
     // Credentials
@@ -427,7 +450,7 @@ export class SecurityMiddleware {
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.setHeader('X-Download-Options', 'noopen');
-    
+
     if (helmetConfig.hidePoweredBy !== false) {
       res.removeHeader('X-Powered-By');
     }
@@ -461,7 +484,10 @@ export class SecurityMiddleware {
 
     if (validation.allowedContentTypes) {
       const contentType = req.headers['content-type']?.split(';')[0];
-      if (contentType && !validation.allowedContentTypes.includes(contentType)) {
+      if (
+        contentType &&
+        !validation.allowedContentTypes.includes(contentType)
+      ) {
         return {
           valid: false,
           message: `Content-Type ${contentType} is not allowed`,
@@ -472,7 +498,9 @@ export class SecurityMiddleware {
     return { valid: true };
   }
 
-  private async validateApiKey(req: any): Promise<{ valid: boolean; message?: string }> {
+  private async validateApiKey(
+    req: any
+  ): Promise<{ valid: boolean; message?: string }> {
     const apiKeyConfig = this.config.apiKeys;
     if (!apiKeyConfig) return { valid: true };
 
@@ -530,7 +558,9 @@ export class SecurityMiddleware {
     // Global rate limit
     if (this.rateLimiters.has('global')) {
       const limiter = this.rateLimiters.get('global')!;
-      const result = await limiter.checkLimit(limiter.generateKey(req, 'global'));
+      const result = await limiter.checkLimit(
+        limiter.generateKey(req, 'global')
+      );
       results.push(result);
     }
 
@@ -552,7 +582,9 @@ export class SecurityMiddleware {
     const routeKey = `route:${req.path || req.url}`;
     if (this.rateLimiters.has(routeKey)) {
       const limiter = this.rateLimiters.get(routeKey)!;
-      const result = await limiter.checkLimit(limiter.generateKey(req, 'route'));
+      const result = await limiter.checkLimit(
+        limiter.generateKey(req, 'route')
+      );
       results.push(result);
     }
 
@@ -584,7 +616,10 @@ export class SecurityMiddleware {
       res.setHeader('X-RateLimit-Remaining', result.remaining.toString());
     }
     if (result.resetTime !== undefined) {
-      res.setHeader('X-RateLimit-Reset', Math.ceil(result.resetTime / 1000).toString());
+      res.setHeader(
+        'X-RateLimit-Reset',
+        Math.ceil(result.resetTime / 1000).toString()
+      );
     }
     if (result.totalHits !== undefined) {
       res.setHeader('X-RateLimit-Used', result.totalHits.toString());

@@ -9,11 +9,7 @@ export class AuthService {
   private readonly USERS_COLLECTION = 'users';
 
   // Registration
-  async register(
-    email: string, 
-    password: string, 
-    name: string
-  ): Promise<User> {
+  async register(email: string, password: string, name: string): Promise<User> {
     // Validate input
     if (!isValidEmail(email)) {
       throw new Error('Invalid email format');
@@ -29,7 +25,10 @@ export class AuthService {
 
     try {
       // Create Firebase Auth user
-      const userCredential = await auth().createUserWithEmailAndPassword(email, password);
+      const userCredential = await auth().createUserWithEmailAndPassword(
+        email,
+        password
+      );
       const firebaseUser = userCredential.user;
 
       // Update Firebase Auth profile
@@ -85,7 +84,10 @@ export class AuthService {
     }
 
     try {
-      const userCredential = await auth().signInWithEmailAndPassword(email, password);
+      const userCredential = await auth().signInWithEmailAndPassword(
+        email,
+        password
+      );
       const firebaseUser = userCredential.user;
 
       // Get user document from Firestore
@@ -198,7 +200,10 @@ export class AuthService {
   }
 
   // Change password
-  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  async changePassword(
+    currentPassword: string,
+    newPassword: string
+  ): Promise<void> {
     const currentUser = auth().currentUser;
     if (!currentUser || !currentUser.email) {
       throw new Error('No user is currently logged in');
@@ -280,7 +285,7 @@ export class AuthService {
 
   // Auth state change listener
   onAuthStateChanged(callback: (user: User | null) => void): () => void {
-    return auth().onAuthStateChanged(async (firebaseUser) => {
+    return auth().onAuthStateChanged(async firebaseUser => {
       if (!firebaseUser) {
         callback(null);
         return;
@@ -363,7 +368,7 @@ export class AuthService {
 
   // Private helper methods
   private async updateUserProfile(
-    userId: string, 
+    userId: string,
     updates: Partial<UserProfile & { emailVerified?: boolean }>
   ): Promise<void> {
     const updateData = {
@@ -378,9 +383,9 @@ export class AuthService {
   }
 
   // Password strength validation
-  static validatePassword(password: string): { 
-    isValid: boolean; 
-    errors: string[] 
+  static validatePassword(password: string): {
+    isValid: boolean;
+    errors: string[];
   } {
     const errors: string[] = [];
 

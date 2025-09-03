@@ -1,7 +1,13 @@
 // Real-Time Sync Service Tests for Epic 2B.3 - Story 2B.3 Task 3 Validation
 // Tests AC2B.3.5 & AC2B.3.6: Sync Queue & Conflict Management with Network Resilience
 
-import { RealTimeSyncService, TournamentUpdate, SyncOperation, NetworkQuality, SyncConflict } from '../src/services/RealTimeSyncService';
+import {
+  RealTimeSyncService,
+  TournamentUpdate,
+  SyncOperation,
+  NetworkQuality,
+  SyncConflict,
+} from '../src/services/RealTimeSyncService';
 
 // Mock dependencies
 jest.mock('@react-native-community/netinfo', () => ({
@@ -18,7 +24,10 @@ jest.mock('../src/services/OfflineDataService', () => ({
 
 jest.mock('../src/services/MultiDeviceService', () => ({
   multiDeviceService: {
-    getCurrentDevice: jest.fn(() => ({ deviceId: 'test-device', userId: 'test-user' })),
+    getCurrentDevice: jest.fn(() => ({
+      deviceId: 'test-device',
+      userId: 'test-user',
+    })),
     getCurrentSession: jest.fn(() => ({ tournamentId: 'test-tournament' })),
   },
 }));
@@ -47,7 +56,6 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
   });
 
   describe('AC2B.3.5: Intelligent Sync Ordering', () => {
-    
     test('should prioritize operations by priority level', async () => {
       // Create operations with different priorities
       const criticalOp: SyncOperation = {
@@ -101,14 +109,22 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
       const sendCalls = (service as any).connection.send.mock.calls;
       expect(sendCalls.length).toBeGreaterThan(0);
 
-      const processedOperations = sendCalls.map((call: any) => 
-        JSON.parse(call[0]).operations || [JSON.parse(call[0])]
-      ).flat();
+      const processedOperations = sendCalls
+        .map(
+          (call: any) => JSON.parse(call[0]).operations || [JSON.parse(call[0])]
+        )
+        .flat();
 
       // Critical should be first, then normal, then low
-      const criticalIndex = processedOperations.findIndex((op: any) => op.id === 'critical-1');
-      const normalIndex = processedOperations.findIndex((op: any) => op.id === 'normal-1');
-      const lowIndex = processedOperations.findIndex((op: any) => op.id === 'low-1');
+      const criticalIndex = processedOperations.findIndex(
+        (op: any) => op.id === 'critical-1'
+      );
+      const normalIndex = processedOperations.findIndex(
+        (op: any) => op.id === 'normal-1'
+      );
+      const lowIndex = processedOperations.findIndex(
+        (op: any) => op.id === 'low-1'
+      );
 
       expect(criticalIndex).toBeLessThan(normalIndex);
       expect(normalIndex).toBeLessThan(lowIndex);
@@ -148,12 +164,18 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
       await service.processSyncQueue();
 
       const sendCalls = (service as any).connection.send.mock.calls;
-      const processedOperations = sendCalls.map((call: any) => 
-        JSON.parse(call[0]).operations || [JSON.parse(call[0])]
-      ).flat();
+      const processedOperations = sendCalls
+        .map(
+          (call: any) => JSON.parse(call[0]).operations || [JSON.parse(call[0])]
+        )
+        .flat();
 
-      const earlyIndex = processedOperations.findIndex((op: any) => op.id === 'early-1');
-      const lateIndex = processedOperations.findIndex((op: any) => op.id === 'late-1');
+      const earlyIndex = processedOperations.findIndex(
+        (op: any) => op.id === 'early-1'
+      );
+      const lateIndex = processedOperations.findIndex(
+        (op: any) => op.id === 'late-1'
+      );
 
       // Earlier timestamp should be processed first
       expect(earlyIndex).toBeLessThan(lateIndex);
@@ -187,14 +209,13 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
       // Should batch operations (4G batch size is 20, so all should fit in one batch)
       const sendCalls = (service as any).connection.send.mock.calls;
       expect(sendCalls.length).toBeGreaterThan(0);
-      
+
       // Verify all operations were processed
       expect((service as any).syncQueue.size).toBe(0);
     });
   });
 
   describe('AC2B.3.6: Network Resilience with Exponential Backoff', () => {
-
     test('should adapt batch size based on network quality', async () => {
       const operations = [];
       for (let i = 0; i < 25; i++) {
@@ -241,16 +262,16 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
       expect((service as any).networkQuality).toEqual(networkQuality);
     });
 
-    test('should implement exponential backoff for reconnection', (done) => {
+    test('should implement exponential backoff for reconnection', done => {
       const userId = 'test-user';
       const role = 'organizer';
-      
+
       // Mock failed connection attempts
       let attemptCount = 0;
       const originalSetTimeout = global.setTimeout;
       global.setTimeout = jest.fn((callback, delay) => {
         attemptCount++;
-        
+
         // Verify exponential backoff delays
         if (attemptCount === 1) {
           expect(delay).toBe(1000); // First retry: 1s
@@ -269,7 +290,7 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
           global.setTimeout = originalSetTimeout;
           done();
         }
-        
+
         return 123; // Mock timer ID
       }) as any;
 
@@ -280,14 +301,16 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
 
     test('should stop reconnection after max attempts', () => {
       const emitSpy = jest.spyOn(service as any, 'emit');
-      
+
       // Set max attempts reached
       (service as any).reconnectAttempts = 10;
       (service as any).maxReconnectAttempts = 10;
 
       (service as any).scheduleReconnection('test-user', 'organizer');
 
-      expect(emitSpy).toHaveBeenCalledWith('reconnectionFailed', { attempts: 10 });
+      expect(emitSpy).toHaveBeenCalledWith('reconnectionFailed', {
+        attempts: 10,
+      });
     });
 
     test('should handle degraded functionality during poor connectivity', () => {
@@ -332,7 +355,6 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
   });
 
   describe('Conflict Detection and Resolution', () => {
-
     test('should detect simultaneous score entries', async () => {
       const mockConflict: SyncConflict = {
         conflictId: 'conflict-1',
@@ -344,8 +366,11 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
         severity: 'critical',
       };
 
-      const handleSyncConflictSpy = jest.spyOn(service as any, 'handleSyncConflict');
-      
+      const handleSyncConflictSpy = jest.spyOn(
+        service as any,
+        'handleSyncConflict'
+      );
+
       // Simulate receiving a conflict message
       const messageData = JSON.stringify({
         type: 'sync_conflict',
@@ -390,8 +415,8 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
       };
 
       // Mock successful connection
-      (service as any).connection = { 
-        readyState: 1, 
+      (service as any).connection = {
+        readyState: 1,
         send: jest.fn(),
       };
 
@@ -405,7 +430,6 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
   });
 
   describe('Real-time Performance and Latency', () => {
-
     test('should track connection statistics', () => {
       const stats = service.getConnectionStats();
 
@@ -429,12 +453,14 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
       // Second measurement should use exponential moving average
       updateLatency(200);
       const expectedAverage = 100 * 0.9 + 200 * 0.1; // alpha = 0.1
-      expect((service as any).connectionStats.averageLatency).toBe(expectedAverage);
+      expect((service as any).connectionStats.averageLatency).toBe(
+        expectedAverage
+      );
     });
 
     test('should handle message parsing errors gracefully', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       // Send invalid JSON
       (service as any).handleIncomingMessage('invalid json {');
 
@@ -448,10 +474,9 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
   });
 
   describe('Event System and Subscriptions', () => {
-
     test('should allow subscription and unsubscription to events', () => {
       const mockListener = jest.fn();
-      
+
       // Subscribe to event
       const unsubscribe = service.subscribe('tournament_update', mockListener);
 
@@ -488,7 +513,6 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
   });
 
   describe('Data Compression and Optimization', () => {
-
     test('should compress data for network transmission', () => {
       const testData = {
         matchId: 'match-123',
@@ -505,7 +529,7 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
 
     test('should handle compression errors gracefully', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       // Try to compress circular reference
       const circularData: any = { test: 'data' };
       circularData.self = circularData;
@@ -520,7 +544,6 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
   });
 
   describe('Connection Management', () => {
-
     test('should establish WebSocket connection with proper configuration', async () => {
       const mockWS = {
         readyState: 0, // CONNECTING
@@ -534,7 +557,10 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
 
       (global.WebSocket as jest.Mock).mockImplementation(() => mockWS);
 
-      const connectionPromise = service.establishConnection('test-user', 'organizer');
+      const connectionPromise = service.establishConnection(
+        'test-user',
+        'organizer'
+      );
 
       // Simulate successful connection
       setTimeout(() => {
@@ -561,8 +587,9 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
       (global.WebSocket as jest.Mock).mockImplementation(() => mockWS);
 
       // Should timeout after 10 seconds
-      await expect(service.establishConnection('test-user', 'organizer'))
-        .rejects.toThrow('WebSocket connection timeout');
+      await expect(
+        service.establishConnection('test-user', 'organizer')
+      ).rejects.toThrow('WebSocket connection timeout');
     }, 11000);
 
     test('should clean up resources properly', () => {
@@ -576,7 +603,10 @@ describe('RealTimeSyncService - Task 3: Sync Queue & Conflict Management', () =>
 
       service.cleanup();
 
-      expect(mockConnection.close).toHaveBeenCalledWith(1000, 'Manual disconnect');
+      expect(mockConnection.close).toHaveBeenCalledWith(
+        1000,
+        'Manual disconnect'
+      );
       expect((service as any).syncQueue.size).toBe(0);
     });
   });
@@ -622,7 +652,7 @@ describe('RealTimeSyncService Integration Tests', () => {
 
     expect(result.success).toBe(true);
     expect(mockConnection.send).toHaveBeenCalled();
-    
+
     const sentData = JSON.parse(mockConnection.send.mock.calls[0][0]);
     expect(sentData.type).toBe('broadcast_update');
     expect(sentData.update.id).toBe('update-complete-flow');
@@ -672,7 +702,7 @@ describe('RealTimeSyncService Integration Tests', () => {
 
     // Verify queue is now empty
     expect((service as any).syncQueue.size).toBe(0);
-    
+
     // Verify sends were made
     expect(mockConnection.send).toHaveBeenCalled();
   });

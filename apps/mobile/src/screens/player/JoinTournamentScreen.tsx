@@ -19,10 +19,14 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { JoinTournamentScreenProps } from '../../navigation/types';
 import { useAuth } from '../../contexts/AuthContext';
-import { Tournament, TournamentAccess, TournamentService } from '@protour/shared';
+import {
+  Tournament,
+  TournamentAccess,
+  TournamentService,
+} from '@protour/shared';
 
-const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({ 
-  navigation 
+const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
+  navigation,
 }) => {
   const [accessCode, setAccessCode] = useState('');
   const [role, setRole] = useState<'player' | 'spectator'>('player');
@@ -49,7 +53,7 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
       const foundTournament = await tournamentService.getTournamentByCode(
         accessCode.trim().toUpperCase()
       );
-      
+
       if (!foundTournament) {
         toast.show({
           title: 'Tournament Not Found',
@@ -169,16 +173,15 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
               <Text fontSize="lg" fontWeight="bold" color="gray.800">
                 How would you like to join?
               </Text>
-              
+
               <HStack space={4} justifyContent="center">
-                <Pressable
-                  flex={1}
-                  onPress={() => setSearchMode('code')}
-                >
+                <Pressable flex={1} onPress={() => setSearchMode('code')}>
                   <Box
                     bg={searchMode === 'code' ? 'primary.50' : 'gray.50'}
                     borderWidth={2}
-                    borderColor={searchMode === 'code' ? 'primary.500' : 'gray.200'}
+                    borderColor={
+                      searchMode === 'code' ? 'primary.500' : 'gray.200'
+                    }
                     p={4}
                     rounded="lg"
                     alignItems="center"
@@ -208,14 +211,13 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                   </Box>
                 </Pressable>
 
-                <Pressable
-                  flex={1}
-                  onPress={() => setSearchMode('search')}
-                >
+                <Pressable flex={1} onPress={() => setSearchMode('search')}>
                   <Box
                     bg={searchMode === 'search' ? 'primary.50' : 'gray.50'}
                     borderWidth={2}
-                    borderColor={searchMode === 'search' ? 'primary.500' : 'gray.200'}
+                    borderColor={
+                      searchMode === 'search' ? 'primary.500' : 'gray.200'
+                    }
                     p={4}
                     rounded="lg"
                     alignItems="center"
@@ -223,13 +225,17 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                     <Icon
                       as={<MaterialIcons name="search" />}
                       size={8}
-                      color={searchMode === 'search' ? 'primary.500' : 'gray.400'}
+                      color={
+                        searchMode === 'search' ? 'primary.500' : 'gray.400'
+                      }
                       mb={2}
                     />
                     <Text
                       fontSize="sm"
                       fontWeight="medium"
-                      color={searchMode === 'search' ? 'primary.700' : 'gray.600'}
+                      color={
+                        searchMode === 'search' ? 'primary.700' : 'gray.600'
+                      }
                       textAlign="center"
                     >
                       Browse Public
@@ -254,7 +260,7 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                 <Text fontSize="lg" fontWeight="bold" color="gray.800">
                   Tournament Access Code
                 </Text>
-                
+
                 <FormControl>
                   <FormControl.Label>
                     <Text fontSize="sm" fontWeight="medium" color="gray.700">
@@ -264,7 +270,7 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                   <Input
                     placeholder="ABC123"
                     value={accessCode}
-                    onChangeText={(text) => setAccessCode(text.toUpperCase())}
+                    onChangeText={text => setAccessCode(text.toUpperCase())}
                     autoCapitalize="characters"
                     maxLength={6}
                     fontSize="lg"
@@ -280,7 +286,9 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                   onPress={handleLookupTournament}
                   isLoading={loading}
                   isDisabled={accessCode.length !== 6}
-                  leftIcon={<Icon as={<MaterialIcons name="search" />} size={5} />}
+                  leftIcon={
+                    <Icon as={<MaterialIcons name="search" />} size={5} />
+                  }
                 >
                   Find Tournament
                 </Button>
@@ -292,7 +300,7 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                 <Text fontSize="lg" fontWeight="bold" color="gray.800">
                   Public Tournaments
                 </Text>
-                
+
                 <Box bg="blue.50" p={4} rounded="lg">
                   <HStack space={2} alignItems="center">
                     <Icon
@@ -301,7 +309,8 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                       color="blue.500"
                     />
                     <Text fontSize="sm" color="blue.700" flex={1}>
-                      Public tournament browsing will be available soon. For now, use access codes from organizers.
+                      Public tournament browsing will be available soon. For
+                      now, use access codes from organizers.
                     </Text>
                   </HStack>
                 </Box>
@@ -309,7 +318,9 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                 <Button
                   variant="outline"
                   onPress={() => setSearchMode('code')}
-                  leftIcon={<Icon as={<MaterialIcons name="qr-code" />} size={5} />}
+                  leftIcon={
+                    <Icon as={<MaterialIcons name="qr-code" />} size={5} />
+                  }
                 >
                   Use Access Code Instead
                 </Button>
@@ -324,7 +335,11 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                   <VStack flex={1} space={2}>
                     <HStack space={2} alignItems="center">
                       <Icon
-                        as={<MaterialIcons name={getSportIcon(tournament.sport)} />}
+                        as={
+                          <MaterialIcons
+                            name={getSportIcon(tournament.sport)}
+                          />
+                        }
                         size={6}
                         color="primary.500"
                       />
@@ -332,7 +347,7 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                         {tournament.name}
                       </Text>
                     </HStack>
-                    
+
                     <VStack space={1}>
                       <HStack space={2} alignItems="center">
                         <Icon
@@ -344,7 +359,7 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                           {formatDate(tournament.date)}
                         </Text>
                       </HStack>
-                      
+
                       {tournament.location && (
                         <HStack space={2} alignItems="center">
                           <Icon
@@ -357,7 +372,7 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                           </Text>
                         </HStack>
                       )}
-                      
+
                       <HStack space={2} alignItems="center">
                         <Icon
                           as={<MaterialIcons name="people" />}
@@ -365,10 +380,11 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                           color="gray.500"
                         />
                         <Text fontSize="sm" color="gray.600">
-                          {tournament.currentPlayerCount} / {tournament.maxPlayers} players
+                          {tournament.currentPlayerCount} /{' '}
+                          {tournament.maxPlayers} players
                         </Text>
                       </HStack>
-                      
+
                       <HStack space={2} alignItems="center">
                         <Icon
                           as={<MaterialIcons name="category" />}
@@ -392,7 +408,13 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                   </VStack>
 
                   <Box
-                    bg={tournament.status === 'active' ? 'green.100' : tournament.status === 'setup' ? 'orange.100' : 'blue.100'}
+                    bg={
+                      tournament.status === 'active'
+                        ? 'green.100'
+                        : tournament.status === 'setup'
+                          ? 'orange.100'
+                          : 'blue.100'
+                    }
                     px={3}
                     py={1}
                     rounded="full"
@@ -400,7 +422,13 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                     <Text
                       fontSize="xs"
                       fontWeight="bold"
-                      color={tournament.status === 'active' ? 'green.700' : tournament.status === 'setup' ? 'orange.700' : 'blue.700'}
+                      color={
+                        tournament.status === 'active'
+                          ? 'green.700'
+                          : tournament.status === 'setup'
+                            ? 'orange.700'
+                            : 'blue.700'
+                      }
                       textTransform="capitalize"
                     >
                       {tournament.status}
@@ -414,11 +442,13 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                   <Text fontSize="md" fontWeight="bold" color="gray.800">
                     Join as:
                   </Text>
-                  
+
                   <FormControl>
                     <Select
                       selectedValue={role}
-                      onValueChange={(value) => setRole(value as 'player' | 'spectator')}
+                      onValueChange={value =>
+                        setRole(value as 'player' | 'spectator')
+                      }
                       _selectedItem={{
                         bg: 'primary.50',
                         endIcon: <CheckIcon size="5" />,
@@ -439,9 +469,12 @@ const JoinTournamentScreen: React.FC<JoinTournamentScreenProps> = ({
                     isLoading={loading}
                     colorScheme="green"
                     size="lg"
-                    leftIcon={<Icon as={<MaterialIcons name="add-circle" />} size={5} />}
+                    leftIcon={
+                      <Icon as={<MaterialIcons name="add-circle" />} size={5} />
+                    }
                   >
-                    Join Tournament as {role === 'player' ? 'Player' : 'Spectator'}
+                    Join Tournament as{' '}
+                    {role === 'player' ? 'Player' : 'Spectator'}
                   </Button>
                 </VStack>
               </VStack>

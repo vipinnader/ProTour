@@ -66,7 +66,14 @@ firestore.FieldValue = {
 };
 
 export default firestore;
-export { mockTimestamp, mockDoc, mockCollection, mockQuery, mockBatch, mockFirestore };
+export {
+  mockTimestamp,
+  mockDoc,
+  mockCollection,
+  mockQuery,
+  mockBatch,
+  mockFirestore,
+};
 
 // Simple test to prevent Jest "no tests found" error
 describe('Firestore Mock', () => {

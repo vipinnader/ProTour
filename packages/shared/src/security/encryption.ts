@@ -3,7 +3,14 @@
  * Provides encryption at rest and in transit with key management
  */
 
-import { createHash, randomBytes, scryptSync, createCipheriv, createDecipheriv, timingSafeEqual } from 'crypto';
+import {
+  createHash,
+  randomBytes,
+  scryptSync,
+  createCipheriv,
+  createDecipheriv,
+  timingSafeEqual,
+} from 'crypto';
 
 export interface EncryptionConfig {
   algorithm: string;
@@ -63,7 +70,10 @@ export class EncryptionManager {
       iterations: 100000,
       keyRotationInterval: 90 * 24 * 60 * 60 * 1000, // 90 days
       ...config,
-      masterKey: config.masterKey || process.env.ENCRYPTION_MASTER_KEY || this.generateSecureKey(),
+      masterKey:
+        config.masterKey ||
+        process.env.ENCRYPTION_MASTER_KEY ||
+        this.generateSecureKey(),
     };
 
     this.initializeKeys();
@@ -120,7 +130,10 @@ export class EncryptionManager {
   /**
    * Decrypt data with specified key version
    */
-  decrypt(encryptionResult: EncryptionResult, keyId: string = 'master'): DecryptionResult {
+  decrypt(
+    encryptionResult: EncryptionResult,
+    keyId: string = 'master'
+  ): DecryptionResult {
     const keyRef = `${keyId}_v${encryptionResult.keyVersion}`;
     const key = this.keys.get(keyRef);
 
@@ -136,7 +149,11 @@ export class EncryptionManager {
       decipher.setAuthTag(tag);
     }
 
-    let decrypted = decipher.update(encryptionResult.encrypted, 'base64', 'utf8');
+    let decrypted = decipher.update(
+      encryptionResult.encrypted,
+      'base64',
+      'utf8'
+    );
     decrypted += decipher.final('utf8');
 
     return {
@@ -149,20 +166,25 @@ export class EncryptionManager {
   /**
    * Encrypt object fields selectively
    */
-  encryptFields(obj: Record<string, any>, config: FieldEncryptionConfig): Record<string, any> {
+  encryptFields(
+    obj: Record<string, any>,
+    config: FieldEncryptionConfig
+  ): Record<string, any> {
     const result = { ...obj };
     const encryptionMetadata: Record<string, EncryptionResult> = {};
 
     config.fields.forEach(field => {
       if (result[field] !== undefined && result[field] !== null) {
-        const value = typeof result[field] === 'string' ? 
-          result[field] : JSON.stringify(result[field]);
-        
+        const value =
+          typeof result[field] === 'string'
+            ? result[field]
+            : JSON.stringify(result[field]);
+
         const encrypted = this.encrypt(value, config.keyId);
-        
+
         // Store encrypted value
         result[field] = encrypted.encrypted;
-        
+
         // Store metadata separately
         encryptionMetadata[field] = encrypted;
 
@@ -180,7 +202,10 @@ export class EncryptionManager {
   /**
    * Decrypt object fields
    */
-  decryptFields(obj: Record<string, any>, config: FieldEncryptionConfig): Record<string, any> {
+  decryptFields(
+    obj: Record<string, any>,
+    config: FieldEncryptionConfig
+  ): Record<string, any> {
     const result = { ...obj };
     const encryptionMetadata = result._encryption;
 
@@ -197,7 +222,7 @@ export class EncryptionManager {
           };
 
           const decrypted = this.decrypt(encryptionResult, config.keyId);
-          
+
           // Try to parse as JSON, fallback to string
           try {
             result[field] = JSON.parse(decrypted.decrypted);
@@ -236,8 +261,10 @@ export class EncryptionManager {
    */
   hash(data: string, salt?: string): { hash: string; salt: string } {
     const hashSalt = salt || randomBytes(this.config.saltSize).toString('hex');
-    const hash = scryptSync(data, hashSalt, this.config.keySize).toString('hex');
-    
+    const hash = scryptSync(data, hashSalt, this.config.keySize).toString(
+      'hex'
+    );
+
     return { hash, salt: hashSalt };
   }
 
@@ -247,7 +274,7 @@ export class EncryptionManager {
   verifyHash(data: string, hash: string, salt: string): boolean {
     const expectedHash = scryptSync(data, salt, this.config.keySize);
     const actualHash = Buffer.from(hash, 'hex');
-    
+
     return timingSafeEqual(expectedHash, actualHash);
   }
 
@@ -290,14 +317,21 @@ export class EncryptionManager {
     this.keys.set(`master_v${this.currentKeyVersion}`, newKey);
 
     // Schedule old key deprecation
-    setTimeout(() => {
-      if (currentKey) {
-        currentKey.status = 'deprecated';
-        currentKey.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
-      }
-    }, 7 * 24 * 60 * 60 * 1000); // 7 days grace period
+    setTimeout(
+      () => {
+        if (currentKey) {
+          currentKey.status = 'deprecated';
+          currentKey.expiresAt = new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+          ); // 30 days
+        }
+      },
+      7 * 24 * 60 * 60 * 1000
+    ); // 7 days grace period
 
-    console.log(`[Security] Encryption keys rotated to version ${this.currentKeyVersion}`);
+    console.log(
+      `[Security] Encryption keys rotated to version ${this.currentKeyVersion}`
+    );
   }
 
   /**
@@ -452,7 +486,10 @@ export class DatabaseEncryption {
   /**
    * Encrypt document before storing
    */
-  encryptDocument(document: Record<string, any>, configKey: string): Record<string, any> {
+  encryptDocument(
+    document: Record<string, any>,
+    configKey: string
+  ): Record<string, any> {
     const config = DatabaseEncryption.getFieldConfigs()[configKey];
     if (!config) {
       throw new Error(`Unknown encryption config: ${configKey}`);
@@ -464,7 +501,10 @@ export class DatabaseEncryption {
   /**
    * Decrypt document after retrieving
    */
-  decryptDocument(document: Record<string, any>, configKey: string): Record<string, any> {
+  decryptDocument(
+    document: Record<string, any>,
+    configKey: string
+  ): Record<string, any> {
     const config = DatabaseEncryption.getFieldConfigs()[configKey];
     if (!config) {
       throw new Error(`Unknown encryption config: ${configKey}`);
@@ -476,10 +516,16 @@ export class DatabaseEncryption {
   /**
    * Create searchable queries for encrypted fields
    */
-  createSearchableQuery(field: string, value: string, configKey: string): Record<string, any> {
+  createSearchableQuery(
+    field: string,
+    value: string,
+    configKey: string
+  ): Record<string, any> {
     const config = DatabaseEncryption.getFieldConfigs()[configKey];
     if (!config || !config.searchable || !config.fields.includes(field)) {
-      throw new Error(`Field ${field} is not searchable with config ${configKey}`);
+      throw new Error(
+        `Field ${field} is not searchable with config ${configKey}`
+      );
     }
 
     const hash = this.encryptionManager.createSearchableHash(value);
@@ -494,17 +540,22 @@ export class SecureCommunication {
   /**
    * Encrypt API payload
    */
-  static encryptPayload(payload: any, publicKey: string): {
+  static encryptPayload(
+    payload: any,
+    publicKey: string
+  ): {
     encryptedPayload: string;
     signature: string;
     timestamp: number;
   } {
     const timestamp = Date.now();
     const dataString = JSON.stringify(payload) + timestamp;
-    
+
     // Mock encryption - in production use actual public key encryption
     const encryptedPayload = Buffer.from(dataString).toString('base64');
-    const signature = createHash('sha256').update(dataString + 'secret').digest('hex');
+    const signature = createHash('sha256')
+      .update(dataString + 'secret')
+      .digest('hex');
 
     return {
       encryptedPayload,
@@ -524,13 +575,16 @@ export class SecureCommunication {
   ): any {
     // Verify timestamp (prevent replay attacks)
     const now = Date.now();
-    if (now - timestamp > 5 * 60 * 1000) { // 5 minutes
+    if (now - timestamp > 5 * 60 * 1000) {
+      // 5 minutes
       throw new Error('Payload timestamp expired');
     }
 
     // Mock decryption
     const dataString = Buffer.from(encryptedPayload, 'base64').toString();
-    const expectedSignature = createHash('sha256').update(dataString + 'secret').digest('hex');
+    const expectedSignature = createHash('sha256')
+      .update(dataString + 'secret')
+      .digest('hex');
 
     if (signature !== expectedSignature) {
       throw new Error('Invalid payload signature');
@@ -546,7 +600,7 @@ export class SecureCommunication {
   static generateSecureHeaders(payload?: any): Record<string, string> {
     const nonce = randomBytes(16).toString('hex');
     const timestamp = Date.now().toString();
-    
+
     const headers: Record<string, string> = {
       'X-Request-ID': randomBytes(16).toString('hex'),
       'X-Timestamp': timestamp,
@@ -554,12 +608,15 @@ export class SecureCommunication {
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
       'X-XSS-Protection': '1; mode=block',
-      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+      'Strict-Transport-Security':
+        'max-age=31536000; includeSubDomains; preload',
       'Content-Security-Policy': "default-src 'self'",
     };
 
     if (payload) {
-      const payloadHash = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+      const payloadHash = createHash('sha256')
+        .update(JSON.stringify(payload))
+        .digest('hex');
       headers['X-Content-Hash'] = payloadHash;
     }
 

@@ -72,7 +72,7 @@ export class SessionManager extends EventEmitter {
 
   constructor(config: Partial<SessionConfig> = {}) {
     super();
-    
+
     this.config = {
       maxSessions: 1000,
       sessionTimeout: 24 * 60 * 60 * 1000, // 24 hours
@@ -108,8 +108,10 @@ export class SessionManager extends EventEmitter {
     const sessionId = this.generateSessionId();
     const deviceId = this.generateDeviceId(req);
     const now = new Date();
-    
-    const timeout = options.rememberMe ? this.config.rememberMeTimeout : this.config.sessionTimeout;
+
+    const timeout = options.rememberMe
+      ? this.config.rememberMeTimeout
+      : this.config.sessionTimeout;
     const expiresAt = new Date(now.getTime() + timeout);
 
     // Check concurrent session limit
@@ -160,7 +162,7 @@ export class SessionManager extends EventEmitter {
 
   getSession(sessionId: string): SessionData | null {
     const session = this.sessions.get(sessionId);
-    
+
     if (!session) {
       return null;
     }
@@ -179,7 +181,7 @@ export class SessionManager extends EventEmitter {
 
   async renewSession(sessionId: string): Promise<SessionData | null> {
     const session = this.getSession(sessionId);
-    
+
     if (!session) {
       return null;
     }
@@ -192,7 +194,7 @@ export class SessionManager extends EventEmitter {
       session.expiresAt = new Date(now.getTime() + this.config.sessionTimeout);
       session.lastAccessedAt = now;
       this.sessions.set(sessionId, session);
-      
+
       this.emit('sessionRenewed', session);
     }
 
@@ -201,7 +203,7 @@ export class SessionManager extends EventEmitter {
 
   destroySession(sessionId: string): boolean {
     const session = this.sessions.get(sessionId);
-    
+
     if (!session) {
       return false;
     }
@@ -217,7 +219,7 @@ export class SessionManager extends EventEmitter {
 
   destroyAllUserSessions(userId: string): number {
     const userSessions = this.userSessions.get(userId);
-    
+
     if (!userSessions) {
       return 0;
     }
@@ -235,26 +237,32 @@ export class SessionManager extends EventEmitter {
 
   getUserSessions(userId: string): SessionData[] {
     const sessionIds = this.userSessions.get(userId);
-    
+
     if (!sessionIds) {
       return [];
     }
 
     return Array.from(sessionIds)
       .map(id => this.sessions.get(id))
-      .filter((session): session is SessionData => !!session && this.isSessionValid(session));
+      .filter(
+        (session): session is SessionData =>
+          !!session && this.isSessionValid(session)
+      );
   }
 
   getDeviceSessions(deviceId: string): SessionData[] {
     const sessionIds = this.deviceSessions.get(deviceId);
-    
+
     if (!sessionIds) {
       return [];
     }
 
     return Array.from(sessionIds)
       .map(id => this.sessions.get(id))
-      .filter((session): session is SessionData => !!session && this.isSessionValid(session));
+      .filter(
+        (session): session is SessionData =>
+          !!session && this.isSessionValid(session)
+      );
   }
 
   async flagSuspiciousSession(
@@ -263,13 +271,14 @@ export class SessionManager extends EventEmitter {
     severity: 'low' | 'medium' | 'high' = 'medium'
   ): Promise<void> {
     const session = this.sessions.get(sessionId);
-    
+
     if (!session) {
       return;
     }
 
     session.metadata.flags.push(`${severity}:${reason}`);
-    session.metadata.riskScore += severity === 'high' ? 30 : severity === 'medium' ? 20 : 10;
+    session.metadata.riskScore +=
+      severity === 'high' ? 30 : severity === 'medium' ? 20 : 10;
 
     // Auto-terminate high-risk sessions
     if (session.metadata.riskScore > 80) {
@@ -282,14 +291,14 @@ export class SessionManager extends EventEmitter {
   private async terminateHighRiskSession(session: SessionData): Promise<void> {
     session.isActive = false;
     session.metadata.flags.push('auto-terminated:high-risk');
-    
+
     this.emit('highRiskSessionTerminated', session);
     this.destroySession(session.sessionId);
   }
 
   private isSessionValid(session: SessionData): boolean {
     const now = new Date();
-    
+
     // Check if session is active
     if (!session.isActive) {
       return false;
@@ -310,12 +319,16 @@ export class SessionManager extends EventEmitter {
   }
 
   private async enforceSessionLimit(userId: string): Promise<void> {
-    const sessions = this.getUserSessions(userId)
-      .sort((a, b) => a.lastAccessedAt.getTime() - b.lastAccessedAt.getTime());
+    const sessions = this.getUserSessions(userId).sort(
+      (a, b) => a.lastAccessedAt.getTime() - b.lastAccessedAt.getTime()
+    );
 
     // Remove oldest sessions
-    const sessionsToRemove = sessions.slice(0, sessions.length - this.config.concurrentSessionLimit + 1);
-    
+    const sessionsToRemove = sessions.slice(
+      0,
+      sessions.length - this.config.concurrentSessionLimit + 1
+    );
+
     for (const session of sessionsToRemove) {
       this.destroySession(session.sessionId);
     }
@@ -334,7 +347,7 @@ export class SessionManager extends EventEmitter {
     const userAgent = req.get('User-Agent') || '';
     const acceptLanguage = req.get('Accept-Language') || '';
     const acceptEncoding = req.get('Accept-Encoding') || '';
-    
+
     const fingerprintData = [
       userAgent,
       acceptLanguage,
@@ -342,7 +355,10 @@ export class SessionManager extends EventEmitter {
       req.ip || '',
     ].join('|');
 
-    const hash = crypto.createHash('sha256').update(fingerprintData).digest('hex');
+    const hash = crypto
+      .createHash('sha256')
+      .update(fingerprintData)
+      .digest('hex');
 
     return {
       id: hash.substring(0, 16),
@@ -364,21 +380,31 @@ export class SessionManager extends EventEmitter {
     if (userAgent.includes('Mac OS')) return 'macOS';
     if (userAgent.includes('Linux')) return 'Linux';
     if (userAgent.includes('Android')) return 'Android';
-    if (userAgent.includes('iPhone') || userAgent.includes('iPad')) return 'iOS';
+    if (userAgent.includes('iPhone') || userAgent.includes('iPad'))
+      return 'iOS';
     return 'Unknown';
   }
 
   private detectBot(userAgent: string): boolean {
     const botPatterns = [
-      /bot/i, /crawler/i, /spider/i, /scraper/i,
-      /curl/i, /wget/i, /python-requests/i,
-      /googlebot/i, /bingbot/i, /slurp/i,
+      /bot/i,
+      /crawler/i,
+      /spider/i,
+      /scraper/i,
+      /curl/i,
+      /wget/i,
+      /python-requests/i,
+      /googlebot/i,
+      /bingbot/i,
+      /slurp/i,
     ];
-    
+
     return botPatterns.some(pattern => pattern.test(userAgent));
   }
 
-  private detectDeviceType(userAgent: string): SessionData['metadata']['deviceType'] {
+  private detectDeviceType(
+    userAgent: string
+  ): SessionData['metadata']['deviceType'] {
     if (/mobile|android|iphone|ipad/i.test(userAgent)) {
       return /ipad|tablet/i.test(userAgent) ? 'tablet' : 'mobile';
     }
@@ -388,7 +414,9 @@ export class SessionManager extends EventEmitter {
     return 'desktop';
   }
 
-  private async getLocationFromIP(ip: string): Promise<SessionData['metadata']['location'] | undefined> {
+  private async getLocationFromIP(
+    ip: string
+  ): Promise<SessionData['metadata']['location'] | undefined> {
     if (!this.config.enableLocationTracking || !ip || ip === '127.0.0.1') {
       return undefined;
     }
@@ -398,12 +426,15 @@ export class SessionManager extends EventEmitter {
     return undefined;
   }
 
-  private async calculateRiskScore(req: Request, userId: string): Promise<number> {
+  private async calculateRiskScore(
+    req: Request,
+    userId: string
+  ): Promise<number> {
     let score = 0;
 
     // Base risk factors
     const userAgent = req.get('User-Agent') || '';
-    
+
     // Missing or suspicious user agent
     if (!userAgent || userAgent.length < 10) {
       score += 20;
@@ -434,9 +465,12 @@ export class SessionManager extends EventEmitter {
 
   private startCleanupProcess(): void {
     // Clean up expired sessions every 5 minutes
-    this.cleanupInterval = setInterval(() => {
-      this.cleanupExpiredSessions();
-    }, 5 * 60 * 1000);
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanupExpiredSessions();
+      },
+      5 * 60 * 1000
+    );
   }
 
   private cleanupExpiredSessions(): void {
@@ -457,11 +491,12 @@ export class SessionManager extends EventEmitter {
 
   middleware() {
     return (req: Request, res: Response, next: NextFunction) => {
-      const sessionId = req.cookies?.[this.config.cookieName] || req.headers['x-session-id'];
-      
+      const sessionId =
+        req.cookies?.[this.config.cookieName] || req.headers['x-session-id'];
+
       if (sessionId) {
         const session = this.getSession(sessionId as string);
-        
+
         if (session) {
           (req as any).session = session;
           (req as any).user = {
@@ -471,7 +506,11 @@ export class SessionManager extends EventEmitter {
           };
 
           // Set/refresh cookie
-          res.cookie(this.config.cookieName, sessionId, this.config.cookieOptions);
+          res.cookie(
+            this.config.cookieName,
+            sessionId,
+            this.config.cookieOptions
+          );
         } else {
           // Clear invalid cookie
           res.clearCookie(this.config.cookieName);
@@ -493,13 +532,14 @@ export class SessionManager extends EventEmitter {
     const sessions = Array.from(this.sessions.values());
     const activeSessions = sessions.filter(s => this.isSessionValid(s));
 
-    const sessionDurations = activeSessions.map(s => 
-      now.getTime() - s.createdAt.getTime()
+    const sessionDurations = activeSessions.map(
+      s => now.getTime() - s.createdAt.getTime()
     );
 
-    const averageSessionDuration = sessionDurations.length > 0
-      ? sessionDurations.reduce((a, b) => a + b, 0) / sessionDurations.length
-      : 0;
+    const averageSessionDuration =
+      sessionDurations.length > 0
+        ? sessionDurations.reduce((a, b) => a + b, 0) / sessionDurations.length
+        : 0;
 
     const sessionsPerDevice: Record<string, number> = {};
     activeSessions.forEach(session => {
@@ -520,7 +560,7 @@ export class SessionManager extends EventEmitter {
     if (this.cleanupInterval) {
       clearInterval(this.cleanupInterval);
     }
-    
+
     this.sessions.clear();
     this.userSessions.clear();
     this.deviceSessions.clear();

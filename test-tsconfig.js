@@ -12,18 +12,21 @@ if (fs.existsSync(rootTsConfig)) {
   try {
     const config = JSON.parse(fs.readFileSync(rootTsConfig, 'utf8'));
     console.log('✅ Root tsconfig.json is valid JSON');
-    
+
     // Check composite settings
-    if (config.compilerOptions?.composite === true && config.compilerOptions?.noEmit === false) {
+    if (
+      config.compilerOptions?.composite === true &&
+      config.compilerOptions?.noEmit === false
+    ) {
       console.log('✅ Composite project settings are correct');
     } else {
       console.log('⚠️  Composite project settings may need adjustment');
     }
-    
+
     // Check references
     if (config.references && Array.isArray(config.references)) {
       console.log(`✅ Found ${config.references.length} project references`);
-      
+
       // Verify referenced projects exist
       for (const ref of config.references) {
         const refPath = path.join(__dirname, ref.path, 'tsconfig.json');
@@ -34,7 +37,6 @@ if (fs.existsSync(rootTsConfig)) {
         }
       }
     }
-    
   } catch (error) {
     console.log('❌ Root tsconfig.json has JSON syntax errors:', error.message);
   }
@@ -48,17 +50,21 @@ if (fs.existsSync(sharedTsConfig)) {
   try {
     const config = JSON.parse(fs.readFileSync(sharedTsConfig, 'utf8'));
     console.log('✅ Shared package tsconfig.json is valid JSON');
-    
+
     if (config.compilerOptions?.composite === true) {
       console.log('✅ Shared package is properly configured as composite');
     }
-    
   } catch (error) {
-    console.log('❌ Shared package tsconfig.json has JSON syntax errors:', error.message);
+    console.log(
+      '❌ Shared package tsconfig.json has JSON syntax errors:',
+      error.message
+    );
   }
 } else {
   console.log('❌ Shared package tsconfig.json not found');
 }
 
 console.log('\n🎉 TypeScript configuration test complete!');
-console.log('💡 To test compilation: npx tsc --build (after installing dependencies)');
+console.log(
+  '💡 To test compilation: npx tsc --build (after installing dependencies)'
+);

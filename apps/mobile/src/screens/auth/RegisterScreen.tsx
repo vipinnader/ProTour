@@ -21,9 +21,10 @@ import { Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { isValidEmail, AuthService } from '@protour/shared';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 interface RegisterScreenProps {
-  navigation: any;
+  navigation: NativeStackNavigationProp<any>;
 }
 
 const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
@@ -162,7 +163,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
       // Navigate to email verification screen
       navigation.navigate('EmailVerification');
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.show({
         title: 'Registration Failed',
         description: error.message || 'An error occurred during registration',

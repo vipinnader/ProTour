@@ -3,7 +3,17 @@
 export interface ValidationRule {
   field: string;
   required?: boolean;
-  type?: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'email' | 'url' | 'uuid' | 'date' | 'phone';
+  type?:
+    | 'string'
+    | 'number'
+    | 'boolean'
+    | 'array'
+    | 'object'
+    | 'email'
+    | 'url'
+    | 'uuid'
+    | 'date'
+    | 'phone';
   minLength?: number;
   maxLength?: number;
   min?: number;
@@ -33,13 +43,16 @@ export class BasicInputValidator {
     escapeHTML: true,
   };
 
-  validate(data: any, rules: ValidationRule[]): { isValid: boolean; errors: ValidationError[] } {
+  validate(
+    data: any,
+    rules: ValidationRule[]
+  ): { isValid: boolean; errors: ValidationError[] } {
     const errors: ValidationError[] = [];
 
     for (const rule of rules) {
       const value = this.getNestedValue(data, rule.field);
       const error = this.validateField(rule.field, value, rule);
-      
+
       if (error) {
         errors.push(error);
       }
@@ -56,14 +69,18 @@ export class BasicInputValidator {
     return this.sanitizeRecursive(data, finalConfig);
   }
 
-  sanitizeAndValidate(data: any, rules: ValidationRule[], sanitizationConfig?: SanitizationConfig): {
+  sanitizeAndValidate(
+    data: any,
+    rules: ValidationRule[],
+    sanitizationConfig?: SanitizationConfig
+  ): {
     data: any;
     isValid: boolean;
     errors: ValidationError[];
   } {
     const sanitizedData = this.sanitize(data, sanitizationConfig);
     const validation = this.validate(sanitizedData, rules);
-    
+
     return {
       data: sanitizedData,
       isValid: validation.isValid,
@@ -71,8 +88,15 @@ export class BasicInputValidator {
     };
   }
 
-  private validateField(fieldName: string, value: any, rule: ValidationRule): ValidationError | null {
-    if (rule.required && (value === undefined || value === null || value === '')) {
+  private validateField(
+    fieldName: string,
+    value: any,
+    rule: ValidationRule
+  ): ValidationError | null {
+    if (
+      rule.required &&
+      (value === undefined || value === null || value === '')
+    ) {
       return {
         field: fieldName,
         message: `${fieldName} is required`,
@@ -80,7 +104,10 @@ export class BasicInputValidator {
       };
     }
 
-    if (!rule.required && (value === undefined || value === null || value === '')) {
+    if (
+      !rule.required &&
+      (value === undefined || value === null || value === '')
+    ) {
       return null;
     }
 
@@ -146,7 +173,10 @@ export class BasicInputValidator {
       if (customResult !== true) {
         return {
           field: fieldName,
-          message: typeof customResult === 'string' ? customResult : `${fieldName} is invalid`,
+          message:
+            typeof customResult === 'string'
+              ? customResult
+              : `${fieldName} is invalid`,
           value,
         };
       }
@@ -155,59 +185,103 @@ export class BasicInputValidator {
     return null;
   }
 
-  private validateType(fieldName: string, value: any, type: ValidationRule['type']): ValidationError | null {
+  private validateType(
+    fieldName: string,
+    value: any,
+    type: ValidationRule['type']
+  ): ValidationError | null {
     switch (type) {
       case 'string':
         if (typeof value !== 'string') {
-          return { field: fieldName, message: `${fieldName} must be a string`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be a string`,
+            value,
+          };
         }
         break;
-      
+
       case 'number':
         if (typeof value !== 'number' || isNaN(value)) {
-          return { field: fieldName, message: `${fieldName} must be a number`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be a number`,
+            value,
+          };
         }
         break;
-      
+
       case 'boolean':
         if (typeof value !== 'boolean') {
-          return { field: fieldName, message: `${fieldName} must be a boolean`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be a boolean`,
+            value,
+          };
         }
         break;
-      
+
       case 'array':
         if (!Array.isArray(value)) {
-          return { field: fieldName, message: `${fieldName} must be an array`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be an array`,
+            value,
+          };
         }
         break;
-      
+
       case 'object':
-        if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-          return { field: fieldName, message: `${fieldName} must be an object`, value };
+        if (
+          typeof value !== 'object' ||
+          value === null ||
+          Array.isArray(value)
+        ) {
+          return {
+            field: fieldName,
+            message: `${fieldName} must be an object`,
+            value,
+          };
         }
         break;
-      
+
       case 'email':
         if (typeof value !== 'string' || !this.isValidEmail(value)) {
-          return { field: fieldName, message: `${fieldName} must be a valid email`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be a valid email`,
+            value,
+          };
         }
         break;
-      
+
       case 'url':
         if (typeof value !== 'string' || !this.isValidURL(value)) {
-          return { field: fieldName, message: `${fieldName} must be a valid URL`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be a valid URL`,
+            value,
+          };
         }
         break;
-      
+
       case 'uuid':
         if (typeof value !== 'string' || !this.isValidUUID(value)) {
-          return { field: fieldName, message: `${fieldName} must be a valid UUID`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be a valid UUID`,
+            value,
+          };
         }
         break;
-      
+
       case 'date':
         if (!this.isValidDate(value)) {
-          return { field: fieldName, message: `${fieldName} must be a valid date`, value };
+          return {
+            field: fieldName,
+            message: `${fieldName} must be a valid date`,
+            value,
+          };
         }
         break;
     }
@@ -267,7 +341,7 @@ export class BasicInputValidator {
       "'": '&#x27;',
       '/': '&#x2F;',
     };
-    
+
     return str.replace(/[&<>"'/]/g, char => htmlEscapes[char]);
   }
 
@@ -286,7 +360,8 @@ export class BasicInputValidator {
   }
 
   private isValidUUID(uuid: string): boolean {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     return uuidRegex.test(uuid);
   }
 
@@ -294,12 +369,12 @@ export class BasicInputValidator {
     if (value instanceof Date) {
       return !isNaN(value.getTime());
     }
-    
+
     if (typeof value === 'string') {
       const date = new Date(value);
       return !isNaN(date.getTime());
     }
-    
+
     return false;
   }
 

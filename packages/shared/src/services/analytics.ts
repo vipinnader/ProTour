@@ -126,7 +126,7 @@ export class GoogleAnalyticsProvider extends AnalyticsProvider {
 
         // Initialize gtag
         (window as any).dataLayer = (window as any).dataLayer || [];
-        this.gtag = function(...args: any[]) {
+        this.gtag = function (...args: any[]) {
           (window as any).dataLayer.push(args);
         };
 
@@ -137,13 +137,18 @@ export class GoogleAnalyticsProvider extends AnalyticsProvider {
         });
       } else {
         // Mobile/Node.js implementation would use Firebase SDK
-        console.log('[Analytics] Google Analytics initialized for mobile/server');
+        console.log(
+          '[Analytics] Google Analytics initialized for mobile/server'
+        );
       }
 
       this.initialized = true;
       console.log('[Analytics] Google Analytics initialized');
     } catch (error) {
-      console.error('[Analytics] Failed to initialize Google Analytics:', error);
+      console.error(
+        '[Analytics] Failed to initialize Google Analytics:',
+        error
+      );
     }
   }
 
@@ -395,7 +400,10 @@ export class MixpanelProvider extends AnalyticsProvider {
     try {
       this.mixpanel.people.set(properties);
     } catch (error) {
-      console.error('[Analytics] Failed to set Mixpanel user properties:', error);
+      console.error(
+        '[Analytics] Failed to set Mixpanel user properties:',
+        error
+      );
     }
   }
 
@@ -458,11 +466,14 @@ export class FirebaseAnalyticsProvider extends AnalyticsProvider {
     try {
       // Initialize Firebase Analytics
       // this.analytics = getAnalytics(app);
-      
+
       console.log('[Analytics] Firebase Analytics initialized');
       this.initialized = true;
     } catch (error) {
-      console.error('[Analytics] Failed to initialize Firebase Analytics:', error);
+      console.error(
+        '[Analytics] Failed to initialize Firebase Analytics:',
+        error
+      );
     }
   }
 
@@ -531,7 +542,10 @@ export class FirebaseAnalyticsProvider extends AnalyticsProvider {
       //   setUserProperties(this.analytics, { [key]: value });
       // });
     } catch (error) {
-      console.error('[Analytics] Failed to set Firebase user properties:', error);
+      console.error(
+        '[Analytics] Failed to set Firebase user properties:',
+        error
+      );
     }
   }
 
@@ -591,7 +605,11 @@ export class AmplitudeProvider extends AnalyticsProvider {
       // amplitude.track(event.name, eventProperties);
 
       if (this.config.enableDebug) {
-        console.log('[Analytics] Amplitude Event:', event.name, eventProperties);
+        console.log(
+          '[Analytics] Amplitude Event:',
+          event.name,
+          eventProperties
+        );
       }
     } catch (error) {
       console.error('[Analytics] Failed to track Amplitude event:', error);
@@ -641,7 +659,10 @@ export class AmplitudeProvider extends AnalyticsProvider {
     try {
       // amplitude.setUserProperties(properties);
     } catch (error) {
-      console.error('[Analytics] Failed to set Amplitude user properties:', error);
+      console.error(
+        '[Analytics] Failed to set Amplitude user properties:',
+        error
+      );
     }
   }
 
@@ -684,7 +705,9 @@ export class AnalyticsManager {
   private initialized = false;
 
   constructor(configs: AnalyticsConfig[]) {
-    this.providers = configs.map(config => AnalyticsServiceFactory.create(config));
+    this.providers = configs.map(config =>
+      AnalyticsServiceFactory.create(config)
+    );
   }
 
   async initialize(): Promise<void> {
@@ -698,76 +721,120 @@ export class AnalyticsManager {
   async trackEvent(event: AnalyticsEvent): Promise<void> {
     if (!this.initialized) await this.initialize();
 
-    await Promise.all(this.providers.map(provider => 
-      provider.trackEvent(event).catch(error => 
-        console.error(`[Analytics] Provider failed to track event:`, error)
+    await Promise.all(
+      this.providers.map(provider =>
+        provider
+          .trackEvent(event)
+          .catch(error =>
+            console.error(`[Analytics] Provider failed to track event:`, error)
+          )
       )
-    ));
+    );
   }
 
   async trackScreenView(screenView: ScreenView): Promise<void> {
     if (!this.initialized) await this.initialize();
 
-    await Promise.all(this.providers.map(provider => 
-      provider.trackScreenView(screenView).catch(error => 
-        console.error(`[Analytics] Provider failed to track screen view:`, error)
+    await Promise.all(
+      this.providers.map(provider =>
+        provider
+          .trackScreenView(screenView)
+          .catch(error =>
+            console.error(
+              `[Analytics] Provider failed to track screen view:`,
+              error
+            )
+          )
       )
-    ));
+    );
   }
 
   async trackConversion(conversion: ConversionEvent): Promise<void> {
     if (!this.initialized) await this.initialize();
 
-    await Promise.all(this.providers.map(provider => 
-      provider.trackConversion(conversion).catch(error => 
-        console.error(`[Analytics] Provider failed to track conversion:`, error)
+    await Promise.all(
+      this.providers.map(provider =>
+        provider
+          .trackConversion(conversion)
+          .catch(error =>
+            console.error(
+              `[Analytics] Provider failed to track conversion:`,
+              error
+            )
+          )
       )
-    ));
+    );
   }
 
   async setUserId(userId: string): Promise<void> {
     if (!this.initialized) await this.initialize();
 
-    await Promise.all(this.providers.map(provider => 
-      provider.setUserId(userId).catch(error => 
-        console.error(`[Analytics] Provider failed to set user ID:`, error)
+    await Promise.all(
+      this.providers.map(provider =>
+        provider
+          .setUserId(userId)
+          .catch(error =>
+            console.error(`[Analytics] Provider failed to set user ID:`, error)
+          )
       )
-    ));
+    );
   }
 
   async setUserProperties(properties: UserProperties): Promise<void> {
     if (!this.initialized) await this.initialize();
 
-    await Promise.all(this.providers.map(provider => 
-      provider.setUserProperties(properties).catch(error => 
-        console.error(`[Analytics] Provider failed to set user properties:`, error)
+    await Promise.all(
+      this.providers.map(provider =>
+        provider
+          .setUserProperties(properties)
+          .catch(error =>
+            console.error(
+              `[Analytics] Provider failed to set user properties:`,
+              error
+            )
+          )
       )
-    ));
+    );
   }
 
   async trackFunnelStep(step: FunnelStep): Promise<void> {
     if (!this.initialized) await this.initialize();
 
-    await Promise.all(this.providers.map(provider => 
-      provider.trackFunnelStep(step).catch(error => 
-        console.error(`[Analytics] Provider failed to track funnel step:`, error)
+    await Promise.all(
+      this.providers.map(provider =>
+        provider
+          .trackFunnelStep(step)
+          .catch(error =>
+            console.error(
+              `[Analytics] Provider failed to track funnel step:`,
+              error
+            )
+          )
       )
-    ));
+    );
   }
 
   async flush(): Promise<void> {
-    await Promise.all(this.providers.map(provider => 
-      provider.flush().catch(error => 
-        console.error(`[Analytics] Provider failed to flush:`, error)
+    await Promise.all(
+      this.providers.map(provider =>
+        provider
+          .flush()
+          .catch(error =>
+            console.error(`[Analytics] Provider failed to flush:`, error)
+          )
       )
-    ));
+    );
   }
 
   async reset(): Promise<void> {
-    await Promise.all(this.providers.map(provider => 
-      provider.reset().catch(error => 
-        console.error(`[Analytics] Provider failed to reset:`, error)
+    await Promise.all(
+      this.providers.map(provider =>
+        provider
+          .reset()
+          .catch(error =>
+            console.error(`[Analytics] Provider failed to reset:`, error)
+          )
       )
-    ));
+    );
   }
 }

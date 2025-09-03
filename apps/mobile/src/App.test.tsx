@@ -11,7 +11,7 @@ jest.mock('./config/firebase');
 
 // Mock navigation container
 jest.mock('@react-navigation/native', () => ({
-  NavigationContainer: ({ children }: any) => children,
+  NavigationContainer: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 describe('App Component', () => {

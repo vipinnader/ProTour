@@ -67,7 +67,13 @@ export interface ThreatIntelligence {
 export interface VulnerabilityReport {
   id: string;
   severity: 'info' | 'low' | 'medium' | 'high' | 'critical';
-  category: 'injection' | 'authentication' | 'encryption' | 'access_control' | 'configuration' | 'dependency';
+  category:
+    | 'injection'
+    | 'authentication'
+    | 'encryption'
+    | 'access_control'
+    | 'configuration'
+    | 'dependency';
   title: string;
   description: string;
   cwe?: string;
@@ -108,8 +114,14 @@ export interface SecurityMetrics {
 export class SecurityEventDetector extends EventEmitter {
   private events: SecurityEvent[] = [];
   private threatIntel = new Map<string, ThreatIntelligence>();
-  private suspiciousIPs = new Map<string, { attempts: number; lastAttempt: Date }>();
-  private detectionRules = new Map<string, (req: Request, context: any) => SecurityEvent | null>();
+  private suspiciousIPs = new Map<
+    string,
+    { attempts: number; lastAttempt: Date }
+  >();
+  private detectionRules = new Map<
+    string,
+    (req: Request, context: any) => SecurityEvent | null
+  >();
 
   constructor() {
     super();
@@ -121,8 +133,13 @@ export class SecurityEventDetector extends EventEmitter {
     this.detectionRules.set('brute_force', (req: Request, context: any) => {
       const ip = req.ip || req.connection.remoteAddress || 'unknown';
       const suspicious = this.suspiciousIPs.get(ip);
-      
-      if (suspicious && suspicious.attempts > 5 && Date.now() - suspicious.lastAttempt.getTime() < 300000) { // 5 minutes
+
+      if (
+        suspicious &&
+        suspicious.attempts > 5 &&
+        Date.now() - suspicious.lastAttempt.getTime() < 300000
+      ) {
+        // 5 minutes
         return {
           id: crypto.randomUUID(),
           type: 'brute_force_attempt',
@@ -164,7 +181,8 @@ export class SecurityEventDetector extends EventEmitter {
       const checkObject = (obj: any): boolean => {
         if (typeof obj === 'string') return checkValue(obj);
         if (Array.isArray(obj)) return obj.some(checkObject);
-        if (obj && typeof obj === 'object') return Object.values(obj).some(checkObject);
+        if (obj && typeof obj === 'object')
+          return Object.values(obj).some(checkObject);
         return false;
       };
 
@@ -217,7 +235,8 @@ export class SecurityEventDetector extends EventEmitter {
       const checkObject = (obj: any): boolean => {
         if (typeof obj === 'string') return checkValue(obj);
         if (Array.isArray(obj)) return obj.some(checkObject);
-        if (obj && typeof obj === 'object') return Object.values(obj).some(checkObject);
+        if (obj && typeof obj === 'object')
+          return Object.values(obj).some(checkObject);
         return false;
       };
 
@@ -254,52 +273,61 @@ export class SecurityEventDetector extends EventEmitter {
     });
 
     // Anomalous behavior detection
-    this.detectionRules.set('anomalous_behavior', (req: Request, context: any) => {
-      const anomalies = [];
-      
-      // Check for unusual user agent
-      const userAgent = req.get('User-Agent');
-      if (!userAgent || userAgent.length < 10) {
-        anomalies.push('Missing or short User-Agent');
-      }
+    this.detectionRules.set(
+      'anomalous_behavior',
+      (req: Request, context: any) => {
+        const anomalies = [];
 
-      // Check for unusual request patterns
-      if (req.path.includes('..') || req.path.includes('%2e%2e')) {
-        anomalies.push('Path traversal attempt');
-      }
+        // Check for unusual user agent
+        const userAgent = req.get('User-Agent');
+        if (!userAgent || userAgent.length < 10) {
+          anomalies.push('Missing or short User-Agent');
+        }
 
-      // Check for unusual headers
-      const suspiciousHeaders = ['x-forwarded-for', 'x-real-ip', 'x-originating-ip'];
-      const hasSuspiciousHeaders = suspiciousHeaders.some(header => req.get(header));
-      
-      if (anomalies.length > 0 || hasSuspiciousHeaders) {
-        return {
-          id: crypto.randomUUID(),
-          type: 'anomalous_behavior',
-          severity: 'medium',
-          timestamp: new Date(),
-          source: {
-            ip: req.ip || req.connection.remoteAddress || 'unknown',
-            userAgent,
-            userId: context.userId,
-            sessionId: context.sessionId,
-          },
-          details: {
-            anomalies,
-            hasSuspiciousHeaders,
-            endpoint: req.path,
-            headers: req.headers,
-          },
-          status: 'active',
-          metadata: {
-            detectionRule: 'anomalous_behavior',
-            confidence: 0.6,
-            automaticResponse: 'monitor',
-          },
-        };
+        // Check for unusual request patterns
+        if (req.path.includes('..') || req.path.includes('%2e%2e')) {
+          anomalies.push('Path traversal attempt');
+        }
+
+        // Check for unusual headers
+        const suspiciousHeaders = [
+          'x-forwarded-for',
+          'x-real-ip',
+          'x-originating-ip',
+        ];
+        const hasSuspiciousHeaders = suspiciousHeaders.some(header =>
+          req.get(header)
+        );
+
+        if (anomalies.length > 0 || hasSuspiciousHeaders) {
+          return {
+            id: crypto.randomUUID(),
+            type: 'anomalous_behavior',
+            severity: 'medium',
+            timestamp: new Date(),
+            source: {
+              ip: req.ip || req.connection.remoteAddress || 'unknown',
+              userAgent,
+              userId: context.userId,
+              sessionId: context.sessionId,
+            },
+            details: {
+              anomalies,
+              hasSuspiciousHeaders,
+              endpoint: req.path,
+              headers: req.headers,
+            },
+            status: 'active',
+            metadata: {
+              detectionRule: 'anomalous_behavior',
+              confidence: 0.6,
+              automaticResponse: 'monitor',
+            },
+          };
+        }
+        return null;
       }
-      return null;
-    });
+    );
   }
 
   detect(req: Request, context: any = {}): SecurityEvent[] {
@@ -325,7 +353,10 @@ export class SecurityEventDetector extends EventEmitter {
     this.emit('securityEvent', event);
 
     // Update suspicious IP tracking
-    if (event.type === 'authentication_failure' || event.type === 'brute_force_attempt') {
+    if (
+      event.type === 'authentication_failure' ||
+      event.type === 'brute_force_attempt'
+    ) {
       const ip = event.source.ip;
       const existing = this.suspiciousIPs.get(ip);
       this.suspiciousIPs.set(ip, {
@@ -364,16 +395,17 @@ export class SecurityEventDetector extends EventEmitter {
   }
 
   getMetrics(period: { start: Date; end: Date }): SecurityMetrics {
-    const periodEvents = this.events.filter(e => 
-      e.timestamp >= period.start && e.timestamp <= period.end
+    const periodEvents = this.events.filter(
+      e => e.timestamp >= period.start && e.timestamp <= period.end
     );
 
     const eventsByType: Record<SecurityEventType, number> = {} as any;
     const eventsBySeverity: Record<string, number> = {};
-    
+
     periodEvents.forEach(event => {
       eventsByType[event.type] = (eventsByType[event.type] || 0) + 1;
-      eventsBySeverity[event.severity] = (eventsBySeverity[event.severity] || 0) + 1;
+      eventsBySeverity[event.severity] =
+        (eventsBySeverity[event.severity] || 0) + 1;
     });
 
     const topThreats = Object.entries(eventsByType)
@@ -385,9 +417,14 @@ export class SecurityEventDetector extends EventEmitter {
       totalEvents: periodEvents.length,
       eventsByType,
       eventsBySeverity,
-      blocked: periodEvents.filter(e => e.metadata.automaticResponse?.includes('block')).length,
-      allowed: periodEvents.filter(e => !e.metadata.automaticResponse?.includes('block')).length,
-      falsePositives: periodEvents.filter(e => e.status === 'false_positive').length,
+      blocked: periodEvents.filter(e =>
+        e.metadata.automaticResponse?.includes('block')
+      ).length,
+      allowed: periodEvents.filter(
+        e => !e.metadata.automaticResponse?.includes('block')
+      ).length,
+      falsePositives: periodEvents.filter(e => e.status === 'false_positive')
+        .length,
       averageResponseTime: 0, // Would need to track response times
       topThreats,
       vulnerabilities: {
@@ -429,7 +466,7 @@ export class VulnerabilityScanner {
     // Dependency vulnerability scanner
     this.scanners.set('dependencies', async () => {
       const vulnerabilities: VulnerabilityReport[] = [];
-      
+
       // This would integrate with tools like npm audit, Snyk, etc.
       // For now, return empty array
       return vulnerabilities;
@@ -438,10 +475,10 @@ export class VulnerabilityScanner {
     // Configuration scanner
     this.scanners.set('configuration', async () => {
       const vulnerabilities: VulnerabilityReport[] = [];
-      
+
       // Check for common misconfigurations
       // This would check environment variables, security headers, etc.
-      
+
       return vulnerabilities;
     });
   }
@@ -542,7 +579,9 @@ export const securityMonitoring = (detector: SecurityEventDetector) => {
 export const securityMetricsHandler = (detector: SecurityEventDetector) => {
   return (req: Request, res: Response) => {
     const period = {
-      start: req.query.start ? new Date(req.query.start as string) : new Date(Date.now() - 24 * 60 * 60 * 1000),
+      start: req.query.start
+        ? new Date(req.query.start as string)
+        : new Date(Date.now() - 24 * 60 * 60 * 1000),
       end: req.query.end ? new Date(req.query.end as string) : new Date(),
     };
 

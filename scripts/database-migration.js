@@ -29,17 +29,17 @@ const MIGRATION_COLLECTION = 'system_migrations';
 class DatabaseMigrator {
   constructor(projectId, serviceAccountKey = null) {
     this.projectId = projectId;
-    
+
     // Initialize Firebase Admin
     const config = { projectId };
     if (serviceAccountKey) {
       config.credential = admin.credential.cert(serviceAccountKey);
     }
-    
+
     if (!admin.apps.length) {
       admin.initializeApp(config);
     }
-    
+
     this.db = admin.firestore();
   }
 
@@ -52,7 +52,8 @@ class DatabaseMigrator {
       return [];
     }
 
-    return fs.readdirSync(MIGRATIONS_DIR)
+    return fs
+      .readdirSync(MIGRATIONS_DIR)
       .filter(file => file.endsWith('.js'))
       .sort()
       .map(file => ({
@@ -83,16 +84,22 @@ class DatabaseMigrator {
    */
   async recordMigration(migration, result) {
     try {
-      await this.db.collection(MIGRATION_COLLECTION).doc(migration.version).set({
-        filename: migration.filename,
-        executedAt: admin.firestore.FieldValue.serverTimestamp(),
-        success: result.success,
-        error: result.error || null,
-        documentsProcessed: result.documentsProcessed || 0,
-        duration: result.duration || 0,
-      });
-      
-      log(`✅ Recorded migration ${migration.version} as completed`, colors.green);
+      await this.db
+        .collection(MIGRATION_COLLECTION)
+        .doc(migration.version)
+        .set({
+          filename: migration.filename,
+          executedAt: admin.firestore.FieldValue.serverTimestamp(),
+          success: result.success,
+          error: result.error || null,
+          documentsProcessed: result.documentsProcessed || 0,
+          duration: result.duration || 0,
+        });
+
+      log(
+        `✅ Recorded migration ${migration.version} as completed`,
+        colors.green
+      );
     } catch (error) {
       log(`❌ Failed to record migration: ${error.message}`, colors.red);
     }
@@ -103,7 +110,7 @@ class DatabaseMigrator {
    */
   async executeMigration(migration) {
     log(`\n🔄 Executing migration: ${migration.filename}`, colors.blue);
-    
+
     const startTime = Date.now();
     let result = {
       success: false,
@@ -115,28 +122,30 @@ class DatabaseMigrator {
     try {
       // Load migration module
       const migrationModule = require(migration.path);
-      
+
       if (typeof migrationModule.up !== 'function') {
         throw new Error('Migration must export an "up" function');
       }
 
       // Execute migration
       const migrationResult = await migrationModule.up(this.db, admin);
-      
+
       result.success = true;
       result.documentsProcessed = migrationResult?.documentsProcessed || 0;
       result.duration = Date.now() - startTime;
-      
-      log(`✅ Migration completed successfully in ${result.duration}ms`, colors.green);
+
+      log(
+        `✅ Migration completed successfully in ${result.duration}ms`,
+        colors.green
+      );
       if (result.documentsProcessed > 0) {
         log(`   Processed ${result.documentsProcessed} documents`, colors.cyan);
       }
-      
     } catch (error) {
       result.success = false;
       result.error = error.message;
       result.duration = Date.now() - startTime;
-      
+
       log(`❌ Migration failed: ${error.message}`, colors.red);
       log(`   Duration: ${result.duration}ms`, colors.cyan);
     }
@@ -149,7 +158,7 @@ class DatabaseMigrator {
    */
   async runMigrations() {
     log('🚀 Starting database migrations...', colors.cyan);
-    
+
     const migrationFiles = this.getMigrationFiles();
     if (migrationFiles.length === 0) {
       log('No migration files found', colors.yellow);
@@ -159,14 +168,19 @@ class DatabaseMigrator {
     const completedMigrations = await this.getCompletedMigrations();
     const completedVersions = new Set(completedMigrations.map(m => m.version));
 
-    const pendingMigrations = migrationFiles.filter(m => !completedVersions.has(m.version));
-    
+    const pendingMigrations = migrationFiles.filter(
+      m => !completedVersions.has(m.version)
+    );
+
     if (pendingMigrations.length === 0) {
       log('✅ All migrations are up to date', colors.green);
       return;
     }
 
-    log(`📋 Found ${pendingMigrations.length} pending migrations:`, colors.blue);
+    log(
+      `📋 Found ${pendingMigrations.length} pending migrations:`,
+      colors.blue
+    );
     pendingMigrations.forEach(m => log(`   - ${m.filename}`, colors.cyan));
 
     let successCount = 0;
@@ -175,12 +189,12 @@ class DatabaseMigrator {
     for (const migration of pendingMigrations) {
       const result = await this.executeMigration(migration);
       await this.recordMigration(migration, result);
-      
+
       if (result.success) {
         successCount++;
       } else {
         failureCount++;
-        
+
         // Stop on first failure
         log('⏹️  Stopping migrations due to failure', colors.red);
         break;
@@ -293,9 +307,14 @@ module.exports = {
     migrationFiles.forEach(file => {
       const completed = completedMap.get(file.version);
       const status = completed ? '✅ Completed' : '⏸️  Pending';
-      const timestamp = completed ? new Date(completed.executedAt._seconds * 1000).toISOString() : '';
-      
-      log(`${status} ${file.filename}`, completed ? colors.green : colors.yellow);
+      const timestamp = completed
+        ? new Date(completed.executedAt._seconds * 1000).toISOString()
+        : '';
+
+      log(
+        `${status} ${file.filename}`,
+        completed ? colors.green : colors.yellow
+      );
       if (timestamp) {
         log(`   Executed: ${timestamp}`, colors.cyan);
       }
@@ -311,9 +330,10 @@ async function main() {
   const arg = process.argv[3];
 
   // Get project ID from environment or command line
-  const projectId = process.env.FIREBASE_PROJECT_ID || 
-                   process.env.GCLOUD_PROJECT || 
-                   'protour-dev';
+  const projectId =
+    process.env.FIREBASE_PROJECT_ID ||
+    process.env.GCLOUD_PROJECT ||
+    'protour-dev';
 
   // Get service account key if provided
   let serviceAccountKey = null;
@@ -354,7 +374,10 @@ async function main() {
         log('');
         log('Environment Variables:', colors.blue);
         log('  FIREBASE_PROJECT_ID           Firebase project ID', colors.cyan);
-        log('  GOOGLE_APPLICATION_CREDENTIALS Service account key file', colors.cyan);
+        log(
+          '  GOOGLE_APPLICATION_CREDENTIALS Service account key file',
+          colors.cyan
+        );
         break;
     }
   } catch (error) {

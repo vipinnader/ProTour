@@ -96,7 +96,12 @@ export interface CacheEntry<T = any> {
 
 export abstract class ApiCache {
   abstract get<T>(key: string): Promise<CacheEntry<T> | null>;
-  abstract set<T>(key: string, data: T, ttlMs: number, metadata?: any): Promise<void>;
+  abstract set<T>(
+    key: string,
+    data: T,
+    ttlMs: number,
+    metadata?: any
+  ): Promise<void>;
   abstract delete(key: string): Promise<void>;
   abstract clear(): Promise<void>;
   abstract has(key: string): Promise<boolean>;
@@ -238,28 +243,35 @@ export class RateLimitManager {
   private requests: Map<string, Date[]> = new Map();
   private config: { requests: number; windowMs: number; backoffMs: number };
 
-  constructor(config: { requests: number; windowMs: number; backoffMs?: number }) {
+  constructor(config: {
+    requests: number;
+    windowMs: number;
+    backoffMs?: number;
+  }) {
     this.config = {
       backoffMs: 1000,
       ...config,
     };
   }
 
-  async checkLimit(identifier: string): Promise<{ allowed: boolean; retryAfter?: number }> {
+  async checkLimit(
+    identifier: string
+  ): Promise<{ allowed: boolean; retryAfter?: number }> {
     const now = new Date();
     const windowStart = new Date(now.getTime() - this.config.windowMs);
-    
+
     // Get recent requests for this identifier
     let requests = this.requests.get(identifier) || [];
-    
+
     // Filter out requests outside the window
     requests = requests.filter(req => req > windowStart);
-    
+
     // Check if limit is exceeded
     if (requests.length >= this.config.requests) {
       const oldestRequest = requests[0];
-      const retryAfter = oldestRequest.getTime() + this.config.windowMs - now.getTime();
-      
+      const retryAfter =
+        oldestRequest.getTime() + this.config.windowMs - now.getTime();
+
       return {
         allowed: false,
         retryAfter: Math.max(0, retryAfter),
@@ -287,7 +299,7 @@ export class RateLimitManager {
   cleanup(): void {
     const now = new Date();
     const cutoff = new Date(now.getTime() - this.config.windowMs * 2);
-    
+
     for (const [identifier, requests] of this.requests.entries()) {
       const filtered = requests.filter(req => req > cutoff);
       if (filtered.length === 0) {
@@ -322,27 +334,48 @@ export class ApiClient {
     }
   }
 
-  async get<T = any>(url: string, options?: RequestOptions): Promise<ApiResponse<T>> {
+  async get<T = any>(
+    url: string,
+    options?: RequestOptions
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(url, { ...options, method: 'GET' });
   }
 
-  async post<T = any>(url: string, body?: any, options?: RequestOptions): Promise<ApiResponse<T>> {
+  async post<T = any>(
+    url: string,
+    body?: any,
+    options?: RequestOptions
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(url, { ...options, method: 'POST', body });
   }
 
-  async put<T = any>(url: string, body?: any, options?: RequestOptions): Promise<ApiResponse<T>> {
+  async put<T = any>(
+    url: string,
+    body?: any,
+    options?: RequestOptions
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(url, { ...options, method: 'PUT', body });
   }
 
-  async patch<T = any>(url: string, body?: any, options?: RequestOptions): Promise<ApiResponse<T>> {
+  async patch<T = any>(
+    url: string,
+    body?: any,
+    options?: RequestOptions
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(url, { ...options, method: 'PATCH', body });
   }
 
-  async delete<T = any>(url: string, options?: RequestOptions): Promise<ApiResponse<T>> {
+  async delete<T = any>(
+    url: string,
+    options?: RequestOptions
+  ): Promise<ApiResponse<T>> {
     return this.request<T>(url, { ...options, method: 'DELETE' });
   }
 
-  async request<T = any>(url: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
+  async request<T = any>(
+    url: string,
+    options: RequestOptions = {}
+  ): Promise<ApiResponse<T>> {
     const config = this.buildRequestConfig(url, options);
 
     // Apply rate limiting
@@ -399,16 +432,11 @@ export class ApiClient {
       ) {
         const cacheKey = this.generateCacheKey(config.fullUrl, config);
         const ttl = this.config.cache?.ttlMs || 300000; // 5 minutes default
-        
-        await this.cache.set(
-          cacheKey,
-          response.data,
-          ttl,
-          {
-            etag: response.headers.etag,
-            lastModified: response.headers['last-modified'],
-          }
-        );
+
+        await this.cache.set(cacheKey, response.data, ttl, {
+          etag: response.headers.etag,
+          lastModified: response.headers['last-modified'],
+        });
       }
 
       return {
@@ -436,12 +464,14 @@ export class ApiClient {
     }
   }
 
-  private async makeHttpRequest<T>(config: RequestConfig): Promise<ApiResponse<T>> {
+  private async makeHttpRequest<T>(
+    config: RequestConfig
+  ): Promise<ApiResponse<T>> {
     // This is a mock implementation
     // In a real implementation, you'd use fetch, axios, or another HTTP client
-    
+
     const startTime = Date.now();
-    
+
     // Simulate network delay
     await this.delay(Math.random() * 100 + 50);
 
@@ -471,9 +501,14 @@ export class ApiClient {
     };
   }
 
-  private buildRequestConfig(url: string, options: RequestOptions): RequestConfig {
-    const fullUrl = url.startsWith('http') ? url : `${this.config.baseUrl}${url}`;
-    
+  private buildRequestConfig(
+    url: string,
+    options: RequestOptions
+  ): RequestConfig {
+    const fullUrl = url.startsWith('http')
+      ? url
+      : `${this.config.baseUrl}${url}`;
+
     // Add query parameters
     if (options.query && Object.keys(options.query).length > 0) {
       const searchParams = new URLSearchParams();
@@ -526,22 +561,28 @@ export class ApiClient {
           config.headers.authorization = `Bearer ${auth.credentials.token}`;
         }
         break;
-      
+
       case 'basic':
         if (auth.credentials.username && auth.credentials.password) {
-          const credentials = btoa(`${auth.credentials.username}:${auth.credentials.password}`);
+          const credentials = btoa(
+            `${auth.credentials.username}:${auth.credentials.password}`
+          );
           config.headers.authorization = `Basic ${credentials}`;
         }
         break;
-      
+
       case 'apikey':
         if (auth.credentials.apiKey) {
           if (auth.credentials.headerName) {
-            config.headers[auth.credentials.headerName] = auth.credentials.apiKey;
+            config.headers[auth.credentials.headerName] =
+              auth.credentials.apiKey;
           } else if (auth.credentials.queryParam) {
             // Add to query parameters
             const url = new URL(config.fullUrl);
-            url.searchParams.set(auth.credentials.queryParam, auth.credentials.apiKey);
+            url.searchParams.set(
+              auth.credentials.queryParam,
+              auth.credentials.apiKey
+            );
             config.fullUrl = url.toString();
           }
         }
@@ -569,16 +610,16 @@ export class ApiClient {
     retryAttempt: number
   ): ApiError {
     const apiError = new Error(error.message || 'Request failed') as ApiError;
-    
+
     apiError.config = config;
     apiError.retryAttempt = retryAttempt;
-    
+
     if (error.response) {
       apiError.status = error.response.status;
       apiError.statusText = error.response.statusText;
       apiError.response = error.response;
     }
-    
+
     // Determine error type
     if (error.name === 'AbortError' || error.code === 'ETIMEDOUT') {
       apiError.isTimeout = true;
@@ -596,7 +637,7 @@ export class ApiClient {
 
   private shouldRetry(error: ApiError, attempt: number): boolean {
     const maxRetries = error.config?.retries ?? this.config.retries ?? 0;
-    
+
     if (attempt >= maxRetries) {
       return false;
     }
@@ -607,7 +648,7 @@ export class ApiClient {
   private calculateRetryDelay(attempt: number): number {
     const baseDelay = this.config.retryDelay || 1000;
     const multiplier = this.config.backoffMultiplier || 2;
-    
+
     return baseDelay * Math.pow(multiplier, attempt);
   }
 
@@ -658,7 +699,7 @@ export const ApiClientPresets = {
     retries: 3,
     headers: {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      Accept: 'application/json',
     },
     cache: {
       enabled: true,
@@ -677,7 +718,7 @@ export const ApiClientPresets = {
     retries: 2,
     headers: {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
+      Accept: 'application/json',
     },
     cache: {
       enabled: true,

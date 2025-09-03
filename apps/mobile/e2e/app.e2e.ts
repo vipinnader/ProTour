@@ -11,12 +11,16 @@ describe('ProTour App', () => {
 
   it('should show home screen on app launch', async () => {
     await expect(element(by.text('ProTour'))).toBeVisible();
-    await expect(element(by.text('Tournament Management Platform'))).toBeVisible();
+    await expect(
+      element(by.text('Tournament Management Platform'))
+    ).toBeVisible();
   });
 
   it('should navigate through basic app flow', async () => {
     // Test basic navigation and app functionality
-    await expect(element(by.text('Mobile app is ready for development!'))).toBeVisible();
+    await expect(
+      element(by.text('Mobile app is ready for development!'))
+    ).toBeVisible();
   });
 
   it('should handle app state changes', async () => {
@@ -29,7 +33,7 @@ describe('ProTour App', () => {
   it('should handle device rotation', async () => {
     await device.setOrientation('landscape');
     await expect(element(by.text('ProTour'))).toBeVisible();
-    
+
     await device.setOrientation('portrait');
     await expect(element(by.text('ProTour'))).toBeVisible();
   });

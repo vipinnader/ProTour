@@ -17,20 +17,22 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { PlayerDashboardScreenProps } from '../../navigation/types';
 import { useAuth } from '../../contexts/AuthContext';
-import { 
-  Tournament, 
-  TournamentRegistration, 
-  Match, 
+import {
+  Tournament,
+  TournamentRegistration,
+  Match,
   TournamentService,
-  PlayerSchedule 
+  PlayerSchedule,
 } from '@protour/shared';
 import { RefreshControl } from 'react-native';
 
-const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({ 
-  navigation 
+const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({
+  navigation,
 }) => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [registrations, setRegistrations] = useState<TournamentRegistration[]>([]);
+  const [registrations, setRegistrations] = useState<TournamentRegistration[]>(
+    []
+  );
   const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,34 +50,34 @@ const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({
 
     try {
       // Load tournaments the user is registered for
-      const playerRegistrations = await tournamentService.getPlayerRegistrations(user.id);
+      const playerRegistrations =
+        await tournamentService.getPlayerRegistrations(user.id);
       setRegistrations(playerRegistrations);
 
       // Load tournament details
       const tournamentIds = playerRegistrations.map(reg => reg.tournamentId);
-      const tournamentPromises = tournamentIds.map(id => 
+      const tournamentPromises = tournamentIds.map(id =>
         tournamentService.getTournamentById(id)
       );
       const tournamentsData = await Promise.all(tournamentPromises);
       setTournaments(tournamentsData.filter(Boolean) as Tournament[]);
 
       // Load upcoming matches for active tournaments
-      const activeRegistrations = playerRegistrations.filter(reg => 
-        reg.role === 'player' && reg.status === 'active'
+      const activeRegistrations = playerRegistrations.filter(
+        reg => reg.role === 'player' && reg.status === 'active'
       );
-      
-      const matchPromises = activeRegistrations.map(async (reg) => {
+
+      const matchPromises = activeRegistrations.map(async reg => {
         const schedule = await tournamentService.getPlayerSchedule(
-          user.id, 
+          user.id,
           reg.tournamentId
         );
         return schedule.upcomingMatches.slice(0, 2); // Get next 2 matches
       });
-      
+
       const matchResults = await Promise.all(matchPromises);
       const allUpcomingMatches = matchResults.flat();
       setUpcomingMatches(allUpcomingMatches);
-
     } catch (error: any) {
       console.error('Error loading player data:', error);
       toast.show({
@@ -142,13 +144,17 @@ const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({
   };
 
   const getPlayerRole = (tournamentId: string) => {
-    const registration = registrations.find(reg => reg.tournamentId === tournamentId);
+    const registration = registrations.find(
+      reg => reg.tournamentId === tournamentId
+    );
     return registration?.role || 'spectator';
   };
 
   const activeTournaments = tournaments.filter(t => t.status === 'active');
   const upcomingTournaments = tournaments.filter(t => t.status === 'setup');
-  const completedTournaments = tournaments.filter(t => t.status === 'completed');
+  const completedTournaments = tournaments.filter(
+    t => t.status === 'completed'
+  );
 
   return (
     <Box flex={1} bg="gray.50">
@@ -165,7 +171,13 @@ const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({
           </VStack>
 
           <HStack space={3} alignItems="center">
-            <Pressable onPress={() => navigation.navigate('PlayerProfile', { playerId: user?.id || '' })}>
+            <Pressable
+              onPress={() =>
+                navigation.navigate('PlayerProfile', {
+                  playerId: user?.id || '',
+                })
+              }
+            >
               <Avatar
                 size="sm"
                 bg="primary.100"
@@ -263,7 +275,7 @@ const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({
               </HStack>
 
               <VStack space={3}>
-                {upcomingMatches.slice(0, 2).map((match) => (
+                {upcomingMatches.slice(0, 2).map(match => (
                   <Pressable
                     key={match.id}
                     onPress={() =>
@@ -274,7 +286,10 @@ const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({
                     }
                   >
                     <Card>
-                      <HStack justifyContent="space-between" alignItems="center">
+                      <HStack
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
                         <VStack flex={1} space={2}>
                           <HStack space={2} alignItems="center">
                             <Badge colorScheme="blue" rounded="full">
@@ -286,7 +301,11 @@ const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({
                               </Badge>
                             )}
                           </HStack>
-                          <Text fontSize="md" fontWeight="medium" color="gray.800">
+                          <Text
+                            fontSize="md"
+                            fontWeight="medium"
+                            color="gray.800"
+                          >
                             vs Opponent
                           </Text>
                           <Text fontSize="sm" color="gray.600">
@@ -296,16 +315,20 @@ const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({
 
                         <VStack alignItems="flex-end" space={2}>
                           <Badge
-                            colorScheme={match.status === 'pending' ? 'orange' : 'blue'}
+                            colorScheme={
+                              match.status === 'pending' ? 'orange' : 'blue'
+                            }
                             variant="solid"
                           >
-                            {match.status === 'pending' ? 'Upcoming' : match.status}
+                            {match.status === 'pending'
+                              ? 'Upcoming'
+                              : match.status}
                           </Badge>
                           <Button
                             size="xs"
                             colorScheme="primary"
                             variant="outline"
-                            onPress={(e) => {
+                            onPress={e => {
                               e.stopPropagation();
                               navigation.navigate('LiveMatch', {
                                 matchId: match.id,
@@ -332,7 +355,7 @@ const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({
               </Text>
 
               <VStack space={3}>
-                {activeTournaments.map((tournament) => (
+                {activeTournaments.map(tournament => (
                   <Pressable
                     key={tournament.id}
                     onPress={() =>
@@ -342,14 +365,25 @@ const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({
                     }
                   >
                     <Card>
-                      <HStack justifyContent="space-between" alignItems="center">
+                      <HStack
+                        justifyContent="space-between"
+                        alignItems="center"
+                      >
                         <VStack flex={1} space={2}>
                           <HStack space={2} alignItems="center">
-                            <Text fontSize="lg" fontWeight="bold" color="gray.800">
+                            <Text
+                              fontSize="lg"
+                              fontWeight="bold"
+                              color="gray.800"
+                            >
                               {tournament.name}
                             </Text>
                             <Badge
-                              colorScheme={getPlayerRole(tournament.id) === 'player' ? 'green' : 'blue'}
+                              colorScheme={
+                                getPlayerRole(tournament.id) === 'player'
+                                  ? 'green'
+                                  : 'blue'
+                              }
                               rounded="full"
                             >
                               {getPlayerRole(tournament.id)}
@@ -395,7 +429,7 @@ const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({
                                 size="xs"
                                 colorScheme="green"
                                 variant="outline"
-                                onPress={(e) => {
+                                onPress={e => {
                                   e.stopPropagation();
                                   navigation.navigate('MySchedule', {
                                     tournamentId: tournament.id,
@@ -409,7 +443,7 @@ const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({
                               size="xs"
                               colorScheme="blue"
                               variant="outline"
-                              onPress={(e) => {
+                              onPress={e => {
                                 e.stopPropagation();
                                 navigation.navigate('BracketView', {
                                   tournamentId: tournament.id,
@@ -436,7 +470,7 @@ const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({
               </Text>
 
               <VStack space={3}>
-                {upcomingTournaments.map((tournament) => (
+                {upcomingTournaments.map(tournament => (
                   <Card key={tournament.id}>
                     <HStack justifyContent="space-between" alignItems="center">
                       <VStack flex={1} space={2}>
@@ -461,7 +495,8 @@ const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({
                               color="gray.500"
                             />
                             <Text fontSize="sm" color="gray.600">
-                              {tournament.currentPlayerCount} / {tournament.maxPlayers}
+                              {tournament.currentPlayerCount} /{' '}
+                              {tournament.maxPlayers}
                             </Text>
                           </HStack>
                         </HStack>
@@ -495,15 +530,14 @@ const PlayerDashboardScreen: React.FC<PlayerDashboardScreenProps> = ({
                     No Tournaments Yet
                   </Text>
                   <Text fontSize="sm" color="gray.500" textAlign="center">
-                    Join your first tournament using an access code from the organizer
+                    Join your first tournament using an access code from the
+                    organizer
                   </Text>
                 </VStack>
                 <Button
                   colorScheme="primary"
                   onPress={() => navigation.navigate('JoinTournament')}
-                  leftIcon={
-                    <Icon as={<MaterialIcons name="add" />} size={5} />
-                  }
+                  leftIcon={<Icon as={<MaterialIcons name="add" />} size={5} />}
                 >
                   Join Tournament
                 </Button>

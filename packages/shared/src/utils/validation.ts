@@ -3,7 +3,10 @@
 import { Tournament, Player, Match } from '../types';
 
 export class ValidationError extends Error {
-  constructor(message: string, public field?: string) {
+  constructor(
+    message: string,
+    public field?: string
+  ) {
     super(message);
     this.name = 'ValidationError';
   }
@@ -12,7 +15,10 @@ export class ValidationError extends Error {
 // Tournament validation
 export const validateTournament = (tournament: Partial<Tournament>): void => {
   if (!tournament.name || tournament.name.trim().length < 3) {
-    throw new ValidationError('Tournament name must be at least 3 characters', 'name');
+    throw new ValidationError(
+      'Tournament name must be at least 3 characters',
+      'name'
+    );
   }
 
   if (!tournament.date) {
@@ -20,29 +26,49 @@ export const validateTournament = (tournament: Partial<Tournament>): void => {
   }
 
   if (tournament.date) {
-    const dateToCheck = tournament.date.toDate ? tournament.date.toDate() : tournament.date;
+    const dateToCheck = tournament.date.toDate
+      ? tournament.date.toDate()
+      : tournament.date;
     if (new Date(dateToCheck) < new Date()) {
-      throw new ValidationError('Tournament date cannot be in the past', 'date');
+      throw new ValidationError(
+        'Tournament date cannot be in the past',
+        'date'
+      );
     }
   }
 
-  if (!tournament.sport || !['badminton', 'tennis', 'squash'].includes(tournament.sport)) {
+  if (
+    !tournament.sport ||
+    !['badminton', 'tennis', 'squash'].includes(tournament.sport)
+  ) {
     throw new ValidationError('Valid sport selection is required', 'sport');
   }
 
-  if (!tournament.format || !['single-elimination', 'double-elimination'].includes(tournament.format)) {
+  if (
+    !tournament.format ||
+    !['single-elimination', 'double-elimination'].includes(tournament.format)
+  ) {
     throw new ValidationError('Valid tournament format is required', 'format');
   }
 
-  if (tournament.maxPlayers && (tournament.maxPlayers < 4 || tournament.maxPlayers > 64)) {
-    throw new ValidationError('Max players must be between 4 and 64', 'maxPlayers');
+  if (
+    tournament.maxPlayers &&
+    (tournament.maxPlayers < 4 || tournament.maxPlayers > 64)
+  ) {
+    throw new ValidationError(
+      'Max players must be between 4 and 64',
+      'maxPlayers'
+    );
   }
 };
 
 // Player validation
 export const validatePlayer = (player: Partial<Player>): void => {
   if (!player.name || player.name.trim().length < 2) {
-    throw new ValidationError('Player name must be at least 2 characters', 'name');
+    throw new ValidationError(
+      'Player name must be at least 2 characters',
+      'name'
+    );
   }
 
   if (!player.email || !isValidEmail(player.email)) {
@@ -53,7 +79,10 @@ export const validatePlayer = (player: Partial<Player>): void => {
     throw new ValidationError('Phone number format is invalid', 'phone');
   }
 
-  if (player.ranking !== undefined && (player.ranking < 0 || player.ranking > 10000)) {
+  if (
+    player.ranking !== undefined &&
+    (player.ranking < 0 || player.ranking > 10000)
+  ) {
     throw new ValidationError('Ranking must be between 0 and 10000', 'ranking');
   }
 };
@@ -73,10 +102,16 @@ export const validateMatch = (match: Partial<Match>): void => {
   }
 
   if (match.matchNumber !== undefined && match.matchNumber < 1) {
-    throw new ValidationError('Match number must be a positive number', 'matchNumber');
+    throw new ValidationError(
+      'Match number must be a positive number',
+      'matchNumber'
+    );
   }
 
-  if (match.status && !['pending', 'in-progress', 'completed'].includes(match.status)) {
+  if (
+    match.status &&
+    !['pending', 'in-progress', 'completed'].includes(match.status)
+  ) {
     throw new ValidationError('Invalid match status', 'status');
   }
 };
@@ -101,20 +136,20 @@ export const isValidTournamentCode = (code: string): boolean => {
 
 // CSV validation helpers
 export const validateCSVHeaders = (
-  headers: string[], 
+  headers: string[],
   requiredHeaders: string[]
 ): { isValid: boolean; missingHeaders: string[] } => {
   const normalizedHeaders = headers.map(h => h.toLowerCase().trim());
   const normalizedRequired = requiredHeaders.map(h => h.toLowerCase());
-  
+
   const missingHeaders = normalizedRequired.filter(
     required => !normalizedHeaders.includes(required)
   );
 
   return {
     isValid: missingHeaders.length === 0,
-    missingHeaders: missingHeaders.map(h => 
-      requiredHeaders[normalizedRequired.indexOf(h)]
+    missingHeaders: missingHeaders.map(
+      h => requiredHeaders[normalizedRequired.indexOf(h)]
     ),
   };
 };
@@ -131,7 +166,10 @@ export const sanitizeEmail = (email: string | undefined): string => {
 };
 
 // Tournament business logic validation
-export const canStartTournament = (tournament: Tournament, playerCount: number): boolean => {
+export const canStartTournament = (
+  tournament: Tournament,
+  playerCount: number
+): boolean => {
   return (
     tournament.status === 'setup' &&
     playerCount >= 4 &&

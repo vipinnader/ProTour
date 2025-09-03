@@ -2,19 +2,31 @@
 // AC2B.3.3, AC2B.3.4: Smart notification delivery with multi-channel reliability
 
 import { realTimeSyncService, TournamentUpdate } from './RealTimeSyncService';
-import { PushNotificationService, PushNotificationFactory, PushConfig, PushNotificationPayload, NotificationTarget, NotificationResult } from './pushNotifications';
+import {
+  PushNotificationService,
+  PushNotificationFactory,
+  PushConfig,
+  PushNotificationPayload,
+  NotificationTarget,
+  NotificationResult,
+} from './pushNotifications';
 import { offlineDataService } from './OfflineDataService';
 import { multiDeviceService } from './MultiDeviceService';
 
 export interface NotificationPreference {
   userId: string;
-  type: 'match_completion' | 'bracket_advancement' | 'tournament_milestone' | 'emergency' | 'all';
+  type:
+    | 'match_completion'
+    | 'bracket_advancement'
+    | 'tournament_milestone'
+    | 'emergency'
+    | 'all';
   enabled: boolean;
   priority: 'low' | 'normal' | 'high' | 'critical';
   channels: NotificationChannel[];
   quietHours?: {
     start: string; // "22:00"
-    end: string;   // "08:00"
+    end: string; // "08:00"
     timezone: string;
   };
 }
@@ -31,7 +43,11 @@ export interface InAppNotification {
   userId: string;
   title: string;
   body: string;
-  type: 'match_completion' | 'bracket_advancement' | 'tournament_milestone' | 'emergency';
+  type:
+    | 'match_completion'
+    | 'bracket_advancement'
+    | 'tournament_milestone'
+    | 'emergency';
   data?: Record<string, any>;
   read: boolean;
   createdAt: number;
@@ -64,16 +80,17 @@ export interface SMSConfig {
 export class RealTimeNotificationService {
   private pushService: PushNotificationService | null = null;
   private smsConfig: SMSConfig | null = null;
-  private notificationQueue: Map<string, NotificationDeliveryAttempt> = new Map();
+  private notificationQueue: Map<string, NotificationDeliveryAttempt> =
+    new Map();
   private inAppNotifications: Map<string, InAppNotification[]> = new Map();
   private retryIntervals = [1000, 5000, 15000, 30000, 60000]; // 1s, 5s, 15s, 30s, 1m
-  
+
   constructor(pushConfig?: PushConfig, smsConfig?: SMSConfig) {
     if (pushConfig) {
       this.pushService = PushNotificationFactory.create(pushConfig);
       this.pushService.initialize();
     }
-    
+
     if (smsConfig) {
       this.smsConfig = smsConfig;
     }
@@ -87,21 +104,33 @@ export class RealTimeNotificationService {
    */
   private initializeRealTimeListeners(): void {
     // Listen for tournament updates from real-time sync service
-    realTimeSyncService.subscribe('tournament_update', (update: TournamentUpdate) => {
-      this.handleTournamentUpdate(update);
-    });
+    realTimeSyncService.subscribe(
+      'tournament_update',
+      (update: TournamentUpdate) => {
+        this.handleTournamentUpdate(update);
+      }
+    );
 
-    realTimeSyncService.subscribe('update_score_update', (update: TournamentUpdate) => {
-      this.handleMatchCompletion(update);
-    });
+    realTimeSyncService.subscribe(
+      'update_score_update',
+      (update: TournamentUpdate) => {
+        this.handleMatchCompletion(update);
+      }
+    );
 
-    realTimeSyncService.subscribe('update_bracket_update', (update: TournamentUpdate) => {
-      this.handleBracketAdvancement(update);
-    });
+    realTimeSyncService.subscribe(
+      'update_bracket_update',
+      (update: TournamentUpdate) => {
+        this.handleBracketAdvancement(update);
+      }
+    );
 
-    realTimeSyncService.subscribe('update_tournament_status', (update: TournamentUpdate) => {
-      this.handleTournamentMilestone(update);
-    });
+    realTimeSyncService.subscribe(
+      'update_tournament_status',
+      (update: TournamentUpdate) => {
+        this.handleTournamentMilestone(update);
+      }
+    );
   }
 
   /**
@@ -113,9 +142,11 @@ export class RealTimeNotificationService {
     try {
       // Get match data to identify players
       const matchData = update.data;
-      const players = [matchData.player1Id, matchData.player2Id].filter(Boolean);
+      const players = [matchData.player1Id, matchData.player2Id].filter(
+        Boolean
+      );
       const winnerId = matchData.winnerId;
-      
+
       if (!winnerId) return; // Match not completed yet
 
       // Create notification for players
@@ -143,7 +174,6 @@ export class RealTimeNotificationService {
         priority: 'normal',
         body: `${matchData.player1Name} vs ${matchData.player2Name} - ${winnerId === matchData.player1Id ? matchData.player1Name : matchData.player2Name} wins!`,
       });
-
     } catch (error) {
       console.error('Failed to handle match completion notification:', error);
     }
@@ -152,7 +182,9 @@ export class RealTimeNotificationService {
   /**
    * AC2B.3.3: Bracket advancement notifications to spectators
    */
-  private async handleBracketAdvancement(update: TournamentUpdate): Promise<void> {
+  private async handleBracketAdvancement(
+    update: TournamentUpdate
+  ): Promise<void> {
     const notification = {
       title: '📊 Bracket Updated',
       body: 'The tournament bracket has been updated with new match results',
@@ -170,7 +202,9 @@ export class RealTimeNotificationService {
   /**
    * AC2B.3.3: Tournament milestone notifications
    */
-  private async handleTournamentMilestone(update: TournamentUpdate): Promise<void> {
+  private async handleTournamentMilestone(
+    update: TournamentUpdate
+  ): Promise<void> {
     const tournamentData = update.data;
     let title = '';
     let priority: 'low' | 'normal' | 'high' | 'critical' = 'normal';
@@ -229,7 +263,7 @@ export class RealTimeNotificationService {
     };
 
     // Send to all recipients with highest priority
-    const promises = recipients.map(userId => 
+    const promises = recipients.map(userId =>
       this.sendSmartNotification(userId, notification)
     );
 
@@ -244,7 +278,11 @@ export class RealTimeNotificationService {
     notification: {
       title: string;
       body: string;
-      type: 'match_completion' | 'bracket_advancement' | 'tournament_milestone' | 'emergency';
+      type:
+        | 'match_completion'
+        | 'bracket_advancement'
+        | 'tournament_milestone'
+        | 'emergency';
       priority: 'low' | 'normal' | 'high' | 'critical';
       data?: Record<string, any>;
     }
@@ -252,17 +290,28 @@ export class RealTimeNotificationService {
     try {
       // Get user's notification preferences
       const preferences = await this.getUserNotificationPreferences(userId);
-      const typePreference = preferences.find(p => p.type === notification.type || p.type === 'all');
+      const typePreference = preferences.find(
+        p => p.type === notification.type || p.type === 'all'
+      );
 
       if (!typePreference || !typePreference.enabled) {
-        console.log(`Notifications disabled for user ${userId} and type ${notification.type}`);
+        console.log(
+          `Notifications disabled for user ${userId} and type ${notification.type}`
+        );
         return;
       }
 
       // Check quiet hours
-      if (this.isQuietHours(typePreference.quietHours) && notification.priority !== 'critical') {
+      if (
+        this.isQuietHours(typePreference.quietHours) &&
+        notification.priority !== 'critical'
+      ) {
         // Queue for later delivery
-        await this.queueForLaterDelivery(userId, notification, typePreference.quietHours!);
+        await this.queueForLaterDelivery(
+          userId,
+          notification,
+          typePreference.quietHours!
+        );
         return;
       }
 
@@ -285,8 +334,12 @@ export class RealTimeNotificationService {
       this.notificationQueue.set(deliveryAttempt.id, deliveryAttempt);
 
       // Start delivery process
-      await this.attemptDelivery(userId, notification, sortedChannels, deliveryAttempt);
-
+      await this.attemptDelivery(
+        userId,
+        notification,
+        sortedChannels,
+        deliveryAttempt
+      );
     } catch (error) {
       console.error('Failed to send smart notification:', error);
     }
@@ -310,7 +363,11 @@ export class RealTimeNotificationService {
             success = await this.sendPushNotification(userId, notification);
             break;
           case 'sms':
-            success = await this.sendSMSNotification(userId, notification, channel.address);
+            success = await this.sendSMSNotification(
+              userId,
+              notification,
+              channel.address
+            );
             break;
           case 'in_app':
             success = await this.sendInAppNotification(userId, notification);
@@ -321,10 +378,11 @@ export class RealTimeNotificationService {
           deliveryAttempt.status = 'delivered';
           deliveryAttempt.channel = channel.type;
           deliveryAttempt.deliveryConfirmation = true;
-          console.log(`Notification delivered to ${userId} via ${channel.type}`);
+          console.log(
+            `Notification delivered to ${userId} via ${channel.type}`
+          );
           return;
         }
-
       } catch (error) {
         console.error(`Failed to deliver via ${channel.type}:`, error);
         deliveryAttempt.error = error.message;
@@ -336,7 +394,10 @@ export class RealTimeNotificationService {
     deliveryAttempt.attempts++;
 
     // Schedule retry for critical notifications
-    if (notification.priority === 'critical' && deliveryAttempt.attempts < deliveryAttempt.maxAttempts) {
+    if (
+      notification.priority === 'critical' &&
+      deliveryAttempt.attempts < deliveryAttempt.maxAttempts
+    ) {
       this.scheduleRetry(userId, notification, channels, deliveryAttempt);
     }
   }
@@ -344,7 +405,10 @@ export class RealTimeNotificationService {
   /**
    * AC2B.3.4: Primary push notification delivery via FCM
    */
-  private async sendPushNotification(userId: string, notification: any): Promise<boolean> {
+  private async sendPushNotification(
+    userId: string,
+    notification: any
+  ): Promise<boolean> {
     if (!this.pushService) return false;
 
     try {
@@ -367,7 +431,6 @@ export class RealTimeNotificationService {
 
       const result = await this.pushService.sendNotification(payload, target);
       return result.success && (result.successCount || 0) > 0;
-
     } catch (error) {
       console.error('Push notification failed:', error);
       return false;
@@ -377,7 +440,11 @@ export class RealTimeNotificationService {
   /**
    * AC2B.3.4: SMS fallback for critical updates
    */
-  private async sendSMSNotification(userId: string, notification: any, phoneNumber?: string): Promise<boolean> {
+  private async sendSMSNotification(
+    userId: string,
+    notification: any,
+    phoneNumber?: string
+  ): Promise<boolean> {
     if (!this.smsConfig || !this.smsConfig.enabled) return false;
 
     try {
@@ -399,7 +466,6 @@ export class RealTimeNotificationService {
         default:
           return false;
       }
-
     } catch (error) {
       console.error('SMS notification failed:', error);
       return false;
@@ -409,7 +475,10 @@ export class RealTimeNotificationService {
   /**
    * AC2B.3.4: In-app notification queue for offline users
    */
-  private async sendInAppNotification(userId: string, notification: any): Promise<boolean> {
+  private async sendInAppNotification(
+    userId: string,
+    notification: any
+  ): Promise<boolean> {
     try {
       const inAppNotif: InAppNotification = {
         id: `inapp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -420,12 +489,16 @@ export class RealTimeNotificationService {
         data: notification.data,
         read: false,
         createdAt: Date.now(),
-        expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 days
+        expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
         priority: notification.priority,
       };
 
       // Store in offline data service for persistence
-      await offlineDataService.createOffline('in_app_notifications', inAppNotif, userId);
+      await offlineDataService.createOffline(
+        'in_app_notifications',
+        inAppNotif,
+        userId
+      );
 
       // Add to in-memory cache
       if (!this.inAppNotifications.has(userId)) {
@@ -440,7 +513,6 @@ export class RealTimeNotificationService {
       }
 
       return true;
-
     } catch (error) {
       console.error('In-app notification failed:', error);
       return false;
@@ -450,10 +522,15 @@ export class RealTimeNotificationService {
   /**
    * Send notifications to tournament spectators
    */
-  private async sendSpectatorNotification(tournamentId: string, notification: any): Promise<void> {
+  private async sendSpectatorNotification(
+    tournamentId: string,
+    notification: any
+  ): Promise<void> {
     try {
       const spectators = await this.getTournamentSpectators(tournamentId);
-      const promises = spectators.map(userId => this.sendSmartNotification(userId, notification));
+      const promises = spectators.map(userId =>
+        this.sendSmartNotification(userId, notification)
+      );
       await Promise.all(promises);
     } catch (error) {
       console.error('Failed to send spectator notifications:', error);
@@ -469,7 +546,10 @@ export class RealTimeNotificationService {
     channels: NotificationChannel[],
     deliveryAttempt: NotificationDeliveryAttempt
   ): void {
-    const retryDelay = this.retryIntervals[Math.min(deliveryAttempt.attempts - 1, this.retryIntervals.length - 1)];
+    const retryDelay =
+      this.retryIntervals[
+        Math.min(deliveryAttempt.attempts - 1, this.retryIntervals.length - 1)
+      ];
     deliveryAttempt.nextAttempt = Date.now() + retryDelay;
 
     setTimeout(() => {
@@ -480,15 +560,17 @@ export class RealTimeNotificationService {
   /**
    * Check if current time is within quiet hours
    */
-  private isQuietHours(quietHours?: NotificationPreference['quietHours']): boolean {
+  private isQuietHours(
+    quietHours?: NotificationPreference['quietHours']
+  ): boolean {
     if (!quietHours) return false;
 
     const now = new Date();
-    const currentTime = now.toLocaleTimeString('en-US', { 
-      hour12: false, 
-      hour: '2-digit', 
+    const currentTime = now.toLocaleTimeString('en-US', {
+      hour12: false,
+      hour: '2-digit',
       minute: '2-digit',
-      timeZone: quietHours.timezone 
+      timeZone: quietHours.timezone,
     });
 
     return currentTime >= quietHours.start || currentTime <= quietHours.end;
@@ -522,9 +604,13 @@ export class RealTimeNotificationService {
   private startDeliveryProcessor(): void {
     setInterval(() => {
       const now = Date.now();
-      
+
       for (const [id, attempt] of this.notificationQueue.entries()) {
-        if (attempt.status === 'pending' && attempt.nextAttempt && attempt.nextAttempt <= now) {
+        if (
+          attempt.status === 'pending' &&
+          attempt.nextAttempt &&
+          attempt.nextAttempt <= now
+        ) {
           // Retry delivery
           console.log(`Retrying delivery for ${attempt.notificationId}`);
           // Implementation would retry the specific delivery
@@ -532,7 +618,8 @@ export class RealTimeNotificationService {
 
         // Clean up old completed attempts
         if (attempt.status === 'delivered' || attempt.status === 'failed') {
-          if (now - attempt.lastAttempt > 60000) { // 1 minute
+          if (now - attempt.lastAttempt > 60000) {
+            // 1 minute
             this.notificationQueue.delete(id);
           }
         }
@@ -545,7 +632,11 @@ export class RealTimeNotificationService {
   /**
    * Get user's in-app notifications
    */
-  async getInAppNotifications(userId: string, limit = 20, offset = 0): Promise<InAppNotification[]> {
+  async getInAppNotifications(
+    userId: string,
+    limit = 20,
+    offset = 0
+  ): Promise<InAppNotification[]> {
     const cached = this.inAppNotifications.get(userId) || [];
     if (cached.length > offset) {
       return cached.slice(offset, offset + limit);
@@ -571,7 +662,10 @@ export class RealTimeNotificationService {
   /**
    * Mark notification as read
    */
-  async markNotificationRead(userId: string, notificationId: string): Promise<void> {
+  async markNotificationRead(
+    userId: string,
+    notificationId: string
+  ): Promise<void> {
     try {
       await offlineDataService.updateOffline(
         'in_app_notifications',
@@ -599,7 +693,7 @@ export class RealTimeNotificationService {
   async getUnreadCount(userId: string): Promise<number> {
     const cached = this.inAppNotifications.get(userId) || [];
     const unreadCached = cached.filter(n => !n.read).length;
-    
+
     if (cached.length > 0) {
       return unreadCached;
     }
@@ -623,7 +717,10 @@ export class RealTimeNotificationService {
   /**
    * Update user notification preferences
    */
-  async updateNotificationPreferences(userId: string, preferences: NotificationPreference[]): Promise<void> {
+  async updateNotificationPreferences(
+    userId: string,
+    preferences: NotificationPreference[]
+  ): Promise<void> {
     try {
       for (const preference of preferences) {
         await offlineDataService.createOffline(
@@ -639,7 +736,9 @@ export class RealTimeNotificationService {
 
   // Private helper methods
 
-  private async getUserNotificationPreferences(userId: string): Promise<NotificationPreference[]> {
+  private async getUserNotificationPreferences(
+    userId: string
+  ): Promise<NotificationPreference[]> {
     try {
       const stored = await offlineDataService.queryOffline({
         collection: 'notification_preferences',
@@ -673,7 +772,8 @@ export class RealTimeNotificationService {
   private async getUserPushTokens(userId: string): Promise<string[]> {
     try {
       // This would get from user's device registrations
-      const devices = await multiDeviceService.getActiveDevices('current-tournament');
+      const devices =
+        await multiDeviceService.getActiveDevices('current-tournament');
       const userDevices = devices.filter(d => d.userId === userId);
       return userDevices.map(d => d.deviceId); // In real implementation, these would be FCM tokens
     } catch (error) {
@@ -692,7 +792,9 @@ export class RealTimeNotificationService {
     }
   }
 
-  private async getTournamentSpectators(tournamentId: string): Promise<string[]> {
+  private async getTournamentSpectators(
+    tournamentId: string
+  ): Promise<string[]> {
     try {
       // Get all devices connected to this tournament with spectator role
       const devices = await multiDeviceService.getActiveDevices(tournamentId);
@@ -705,23 +807,34 @@ export class RealTimeNotificationService {
     }
   }
 
-  private async handleTournamentUpdate(update: TournamentUpdate): Promise<void> {
+  private async handleTournamentUpdate(
+    update: TournamentUpdate
+  ): Promise<void> {
     // General handler for tournament updates
     console.log('Tournament update received:', update.type, update.id);
   }
 
   // SMS provider implementations (mocked for now)
-  private async sendTwilioSMS(phoneNumber: string, message: string): Promise<boolean> {
+  private async sendTwilioSMS(
+    phoneNumber: string,
+    message: string
+  ): Promise<boolean> {
     console.log(`[SMS-Twilio] Sending to ${phoneNumber}: ${message}`);
     return true; // Mock success
   }
 
-  private async sendAWSSMS(phoneNumber: string, message: string): Promise<boolean> {
+  private async sendAWSSMS(
+    phoneNumber: string,
+    message: string
+  ): Promise<boolean> {
     console.log(`[SMS-AWS] Sending to ${phoneNumber}: ${message}`);
     return true; // Mock success
   }
 
-  private async sendFirebaseSMS(phoneNumber: string, message: string): Promise<boolean> {
+  private async sendFirebaseSMS(
+    phoneNumber: string,
+    message: string
+  ): Promise<boolean> {
     console.log(`[SMS-Firebase] Sending to ${phoneNumber}: ${message}`);
     return true; // Mock success
   }

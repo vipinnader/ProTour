@@ -1,13 +1,18 @@
 // Enhanced Offline Service for Story 2B.1 - Offline-First Data Architecture
 // Extends OfflineDataService with tournament-specific offline capabilities
 
-import { OfflineDataService, OfflineQuery, CachedDocument, OfflineStatus } from './OfflineDataService';
+import {
+  OfflineDataService,
+  OfflineQuery,
+  CachedDocument,
+  OfflineStatus,
+} from './OfflineDataService';
 import { realTimeSyncService } from './RealTimeSyncService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
 import { Tournament, Match, Player, BracketData } from '../types';
 
-export interface TournamentCache {
+interface LocalLocalTournamentCache {
   tournamentId: string;
   tournament: Tournament;
   matches: Match[];
@@ -59,7 +64,7 @@ export interface EmergencyExport {
 }
 
 export class EnhancedOfflineService extends OfflineDataService {
-  private tournamentCaches: Map<string, TournamentCache> = new Map();
+  private tournamentCaches: Map<string, LocalTournamentCache> = new Map();
   private searchIndex: Map<string, SearchIndex[]> = new Map();
   private prefetchSettings: PrefetchSettings;
   private mediaCache: Map<string, string> = new Map(); // URL -> local path
@@ -84,16 +89,16 @@ export class EnhancedOfflineService extends OfflineDataService {
     try {
       // Create cache directories
       await this.ensureCacheDirectories();
-      
+
       // Load prefetch settings
       await this.loadPrefetchSettings();
-      
+
       // Initialize search index
       await this.loadSearchIndex();
-      
+
       // Set up automatic cleanup
       this.scheduleAutomaticCleanup();
-      
+
       console.log('Enhanced offline features initialized');
     } catch (error) {
       console.error('Failed to initialize enhanced offline features:', error);
@@ -102,7 +107,7 @@ export class EnhancedOfflineService extends OfflineDataService {
 
   private async ensureCacheDirectories(): Promise<void> {
     const directories = [this.CACHE_DIR, this.MEDIA_CACHE_DIR];
-    
+
     for (const dir of directories) {
       if (!(await RNFS.exists(dir))) {
         await RNFS.mkdir(dir, { NSURLIsExcludedFromBackupKey: true });
@@ -115,31 +120,36 @@ export class EnhancedOfflineService extends OfflineDataService {
    */
   async cacheEssentialData(tournamentId: string): Promise<void> {
     try {
-      console.log(`Starting essential data cache for tournament ${tournamentId}`);
+      console.log(
+        `Starting essential data cache for tournament ${tournamentId}`
+      );
 
       // Fetch tournament data
-      const tournament = await this.readOffline<Tournament>('tournaments', tournamentId);
+      const tournament = await this.readOffline<Tournament>(
+        'tournaments',
+        tournamentId
+      );
       if (!tournament) {
         throw new Error('Tournament not found for caching');
       }
 
       // Fetch related data
       const [matches, players, bracket] = await Promise.all([
-        this.queryOffline<Match>({ 
+        this.queryOffline<Match>({
           collection: 'matches',
           where: [['tournamentId', '==', tournamentId]],
-          orderBy: [['startTime', 'ASC']]
+          orderBy: [['startTime', 'ASC']],
         }),
-        this.queryOffline<Player>({ 
+        this.queryOffline<Player>({
           collection: 'players',
-          where: [['tournamentIds', 'IN', [tournamentId]]]
+          where: [['tournamentIds', 'IN', [tournamentId]]],
         }),
-        this.readOffline<BracketData>('brackets', `bracket_${tournamentId}`)
+        this.readOffline<BracketData>('brackets', `bracket_${tournamentId}`),
       ]);
 
       // Prefetch upcoming matches (next 24 hours by default)
       const upcomingMatches = this.filterUpcomingMatches(
-        matches.map(m => m.data), 
+        matches.map(m => m.data),
         this.prefetchSettings.upcomingMatchesHours
       );
 
@@ -147,7 +157,7 @@ export class EnhancedOfflineService extends OfflineDataService {
       const imagePaths = await this.cacheMatchImages(upcomingMatches);
 
       // Create tournament cache
-      const cache: TournamentCache = {
+      const cache: LocalTournamentCache = {
         tournamentId,
         tournament: tournament.data,
         matches: matches.map(m => m.data),
@@ -155,16 +165,18 @@ export class EnhancedOfflineService extends OfflineDataService {
         bracket: bracket?.data || { rounds: [], participants: [] },
         images: imagePaths,
         lastUpdated: Date.now(),
-        expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
         sizeBytes: await this.calculateCacheSize(tournamentId),
       };
 
       this.tournamentCaches.set(tournamentId, cache);
-      
+
       // Update search index for the cached data
       await this.updateSearchIndex(tournamentId, cache);
 
-      console.log(`Essential data cached for tournament ${tournamentId}: ${cache.sizeBytes} bytes`);
+      console.log(
+        `Essential data cached for tournament ${tournamentId}: ${cache.sizeBytes} bytes`
+      );
     } catch (error) {
       console.error('Failed to cache essential data:', error);
       throw error;
@@ -173,11 +185,14 @@ export class EnhancedOfflineService extends OfflineDataService {
 
   private filterUpcomingMatches(matches: Match[], hoursAhead: number): Match[] {
     const now = Date.now();
-    const cutoff = now + (hoursAhead * 60 * 60 * 1000);
-    
+    const cutoff = now + hoursAhead * 60 * 60 * 1000;
+
     return matches.filter(match => {
       if (!match.startTime) return false;
-      const startTime = typeof match.startTime === 'number' ? match.startTime : match.startTime.toMillis();
+      const startTime =
+        typeof match.startTime === 'number'
+          ? match.startTime
+          : match.startTime.toMillis();
       return startTime >= now && startTime <= cutoff;
     });
   }
@@ -185,36 +200,50 @@ export class EnhancedOfflineService extends OfflineDataService {
   /**
    * AC2B.1.2: Image and media caching for offline bracket viewing
    */
-  private async cacheMatchImages(matches: Match[]): Promise<{ [key: string]: string }> {
+  private async cacheMatchImages(
+    matches: Match[]
+  ): Promise<{ [key: string]: string }> {
     const imagePaths: { [key: string]: string } = {};
-    
+
     for (const match of matches) {
       try {
         // Cache player photos
         if (match.player1Id && match.player1Photo) {
-          const localPath = await this.cacheImage(match.player1Photo, `player_${match.player1Id}`);
+          const localPath = await this.cacheImage(
+            match.player1Photo,
+            `player_${match.player1Id}`
+          );
           if (localPath) imagePaths[match.player1Photo] = localPath;
         }
-        
+
         if (match.player2Id && match.player2Photo) {
-          const localPath = await this.cacheImage(match.player2Photo, `player_${match.player2Id}`);
+          const localPath = await this.cacheImage(
+            match.player2Photo,
+            `player_${match.player2Id}`
+          );
           if (localPath) imagePaths[match.player2Photo] = localPath;
         }
 
         // Cache court images or tournament logos
         if (match.courtImage) {
-          const localPath = await this.cacheImage(match.courtImage, `court_${match.court}`);
+          const localPath = await this.cacheImage(
+            match.courtImage,
+            `court_${match.court}`
+          );
           if (localPath) imagePaths[match.courtImage] = localPath;
         }
       } catch (error) {
         console.warn(`Failed to cache images for match ${match.id}:`, error);
       }
     }
-    
+
     return imagePaths;
   }
 
-  private async cacheImage(url: string, identifier: string): Promise<string | null> {
+  private async cacheImage(
+    url: string,
+    identifier: string
+  ): Promise<string | null> {
     try {
       // Check if already cached
       if (this.mediaCache.has(url)) {
@@ -254,27 +283,36 @@ export class EnhancedOfflineService extends OfflineDataService {
   /**
    * AC2B.1.2: Local search functionality for players and matches
    */
-  async searchOffline(query: string, collections: string[] = ['players', 'matches']): Promise<any[]> {
+  async searchOffline(
+    query: string,
+    collections: string[] = ['players', 'matches']
+  ): Promise<any[]> {
     const results: any[] = [];
     const searchTerm = query.toLowerCase().trim();
-    
+
     if (searchTerm.length < 2) return results;
 
     for (const collection of collections) {
       const indexes = this.searchIndex.get(collection) || [];
-      
+
       for (const index of indexes) {
         const document = await this.readOffline(collection, index.documentId);
         if (!document) continue;
 
         // Search through indexed fields
-        const matchScore = this.calculateSearchScore(index.searchableFields, searchTerm);
-        
+        const matchScore = this.calculateSearchScore(
+          index.searchableFields,
+          searchTerm
+        );
+
         if (matchScore > 0) {
           results.push({
             ...document,
             searchScore: matchScore,
-            matchedFields: this.getMatchedFields(index.searchableFields, searchTerm),
+            matchedFields: this.getMatchedFields(
+              index.searchableFields,
+              searchTerm
+            ),
           });
         }
       }
@@ -284,12 +322,15 @@ export class EnhancedOfflineService extends OfflineDataService {
     return results.sort((a, b) => b.searchScore - a.searchScore);
   }
 
-  private calculateSearchScore(fields: { [field: string]: string }, searchTerm: string): number {
+  private calculateSearchScore(
+    fields: { [field: string]: string },
+    searchTerm: string
+  ): number {
     let score = 0;
-    
+
     Object.entries(fields).forEach(([field, value]) => {
       const lowerValue = value.toLowerCase();
-      
+
       // Exact match gets highest score
       if (lowerValue === searchTerm) {
         score += field === 'name' ? 100 : 50;
@@ -304,7 +345,10 @@ export class EnhancedOfflineService extends OfflineDataService {
       }
       // Fuzzy match (simple character similarity)
       else {
-        const similarity = this.calculateStringSimilarity(lowerValue, searchTerm);
+        const similarity = this.calculateStringSimilarity(
+          lowerValue,
+          searchTerm
+        );
         if (similarity > 0.6) {
           score += Math.floor(similarity * 30);
         }
@@ -317,24 +361,24 @@ export class EnhancedOfflineService extends OfflineDataService {
   private calculateStringSimilarity(str1: string, str2: string): number {
     const longer = str1.length > str2.length ? str1 : str2;
     const shorter = str1.length > str2.length ? str2 : str1;
-    
+
     if (longer.length === 0) return 1.0;
-    
+
     const distance = this.levenshteinDistance(longer, shorter);
     return (longer.length - distance) / longer.length;
   }
 
   private levenshteinDistance(str1: string, str2: string): number {
     const matrix = [];
-    
+
     for (let i = 0; i <= str2.length; i++) {
       matrix[i] = [i];
     }
-    
+
     for (let j = 0; j <= str1.length; j++) {
       matrix[0][j] = j;
     }
-    
+
     for (let i = 1; i <= str2.length; i++) {
       for (let j = 1; j <= str1.length; j++) {
         if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
@@ -348,13 +392,16 @@ export class EnhancedOfflineService extends OfflineDataService {
         }
       }
     }
-    
+
     return matrix[str2.length][str1.length];
   }
 
-  private getMatchedFields(fields: { [field: string]: string }, searchTerm: string): string[] {
+  private getMatchedFields(
+    fields: { [field: string]: string },
+    searchTerm: string
+  ): string[] {
     const matched: string[] = [];
-    
+
     Object.entries(fields).forEach(([field, value]) => {
       if (value.toLowerCase().includes(searchTerm.toLowerCase())) {
         matched.push(field);
@@ -364,7 +411,10 @@ export class EnhancedOfflineService extends OfflineDataService {
     return matched;
   }
 
-  private async updateSearchIndex(tournamentId: string, cache: TournamentCache): Promise<void> {
+  private async updateSearchIndex(
+    tournamentId: string,
+    cache: LocalTournamentCache
+  ): Promise<void> {
     // Index players
     const playerIndexes = cache.players.map(player => ({
       collection: 'players',
@@ -397,11 +447,14 @@ export class EnhancedOfflineService extends OfflineDataService {
     this.searchIndex.set('matches', matchIndexes);
 
     // Persist search index
-    await AsyncStorage.setItem(this.SEARCH_INDEX_KEY, JSON.stringify({
-      players: playerIndexes,
-      matches: matchIndexes,
-      lastUpdated: Date.now(),
-    }));
+    await AsyncStorage.setItem(
+      this.SEARCH_INDEX_KEY,
+      JSON.stringify({
+        players: playerIndexes,
+        matches: matchIndexes,
+        lastUpdated: Date.now(),
+      })
+    );
   }
 
   /**
@@ -409,12 +462,13 @@ export class EnhancedOfflineService extends OfflineDataService {
    */
   async getOfflineOperationLimits(): Promise<OfflineOperationLimits> {
     const baseStatus = await this.getOfflineStatus();
-    const currentOfflineTime = baseStatus.offlineStartTime ? 
-      Date.now() - baseStatus.offlineStartTime : 0;
-    
+    const currentOfflineTime = baseStatus.offlineStartTime
+      ? Date.now() - baseStatus.offlineStartTime
+      : 0;
+
     const maxOfflineTime = 8 * 60 * 60 * 1000; // 8 hours
     const warningThreshold = 6 * 60 * 60 * 1000; // 6 hours
-    
+
     let degradationLevel: 'full' | 'limited' | 'emergency' = 'full';
     const featuresDisabled: string[] = [];
 
@@ -447,27 +501,30 @@ export class EnhancedOfflineService extends OfflineDataService {
       console.log(`Creating emergency export for tournament ${tournamentId}`);
 
       // Gather all tournament data
-      const tournament = await this.readOffline<Tournament>('tournaments', tournamentId);
+      const tournament = await this.readOffline<Tournament>(
+        'tournaments',
+        tournamentId
+      );
       if (!tournament) {
         throw new Error('Tournament not found for export');
       }
 
       const [matches, players, scores, auditLogs] = await Promise.all([
-        this.queryOffline<Match>({ 
+        this.queryOffline<Match>({
           collection: 'matches',
-          where: [['tournamentId', '==', tournamentId]]
+          where: [['tournamentId', '==', tournamentId]],
         }),
-        this.queryOffline<Player>({ 
+        this.queryOffline<Player>({
           collection: 'players',
-          where: [['tournamentIds', 'IN', [tournamentId]]]
+          where: [['tournamentIds', 'IN', [tournamentId]]],
         }),
-        this.queryOffline({ 
+        this.queryOffline({
           collection: 'score_entries',
-          where: [['tournamentId', '==', tournamentId]]
+          where: [['tournamentId', '==', tournamentId]],
         }),
-        this.queryOffline({ 
+        this.queryOffline({
           collection: 'audit_logs',
-          where: [['tournamentId', '==', tournamentId]]
+          where: [['tournamentId', '==', tournamentId]],
         }),
       ]);
 
@@ -482,9 +539,13 @@ export class EnhancedOfflineService extends OfflineDataService {
       // Create export file
       const fileName = `emergency_export_${tournamentId}_${Date.now()}.json`;
       const filePath = `${RNFS.DocumentDirectoryPath}/${fileName}`;
-      
-      await RNFS.writeFile(filePath, JSON.stringify(exportData, null, 2), 'utf8');
-      
+
+      await RNFS.writeFile(
+        filePath,
+        JSON.stringify(exportData, null, 2),
+        'utf8'
+      );
+
       const fileStats = await RNFS.stat(filePath);
 
       const emergencyExport: EmergencyExport = {
@@ -495,9 +556,10 @@ export class EnhancedOfflineService extends OfflineDataService {
         filePath,
       };
 
-      console.log(`Emergency export created: ${fileName} (${fileStats.size} bytes)`);
+      console.log(
+        `Emergency export created: ${fileName} (${fileStats.size} bytes)`
+      );
       return emergencyExport;
-
     } catch (error) {
       console.error('Failed to create emergency export:', error);
       throw error;
@@ -507,11 +569,15 @@ export class EnhancedOfflineService extends OfflineDataService {
   /**
    * Storage and cache management
    */
-  private async getStorageInfo(): Promise<{ used: number; total: number; available: number }> {
+  private async getStorageInfo(): Promise<{
+    used: number;
+    total: number;
+    available: number;
+  }> {
     try {
       const freeSpace = await RNFS.getFSInfo();
       const cacheStats = await this.getCacheStats();
-      
+
       return {
         used: cacheStats.totalSize,
         total: this.prefetchSettings.maxCacheSize * 1024 * 1024, // Convert MB to bytes
@@ -523,11 +589,14 @@ export class EnhancedOfflineService extends OfflineDataService {
     }
   }
 
-  private async getCacheStats(): Promise<{ totalSize: number; fileCount: number }> {
+  private async getCacheStats(): Promise<{
+    totalSize: number;
+    fileCount: number;
+  }> {
     try {
       let totalSize = 0;
       let fileCount = 0;
-      
+
       // Check cache directory
       if (await RNFS.exists(this.CACHE_DIR)) {
         const files = await RNFS.readDir(this.CACHE_DIR);
@@ -550,7 +619,7 @@ export class EnhancedOfflineService extends OfflineDataService {
 
     // Rough calculation based on data size
     const dataSize = JSON.stringify(cache).length;
-    
+
     // Add image sizes
     let imageSize = 0;
     for (const imagePath of Object.values(cache.images)) {
@@ -569,19 +638,25 @@ export class EnhancedOfflineService extends OfflineDataService {
 
   private scheduleAutomaticCleanup(): void {
     // Clean up expired caches every hour
-    setInterval(async () => {
-      if (this.prefetchSettings.autoCleanup) {
-        await this.cleanupExpiredCaches();
-      }
-    }, 60 * 60 * 1000); // 1 hour
+    setInterval(
+      async () => {
+        if (this.prefetchSettings.autoCleanup) {
+          await this.cleanupExpiredCaches();
+        }
+      },
+      60 * 60 * 1000
+    ); // 1 hour
 
     // Check offline time limits every 30 minutes
-    setInterval(async () => {
-      const limits = await this.getOfflineOperationLimits();
-      if (limits.degradationLevel !== 'full') {
-        this.emit('degradationMode', limits);
-      }
-    }, 30 * 60 * 1000); // 30 minutes
+    setInterval(
+      async () => {
+        const limits = await this.getOfflineOperationLimits();
+        if (limits.degradationLevel !== 'full') {
+          this.emit('degradationMode', limits);
+        }
+      },
+      30 * 60 * 1000
+    ); // 30 minutes
   }
 
   private async cleanupExpiredCaches(): Promise<void> {
@@ -596,16 +671,20 @@ export class EnhancedOfflineService extends OfflineDataService {
       }
 
       for (const tournamentId of expiredCaches) {
-        await this.removeTournamentCache(tournamentId);
+        await this.removeLocalTournamentCache(tournamentId);
       }
 
-      console.log(`Cleaned up ${expiredCaches.length} expired tournament caches`);
+      console.log(
+        `Cleaned up ${expiredCaches.length} expired tournament caches`
+      );
     } catch (error) {
       console.error('Failed to cleanup expired caches:', error);
     }
   }
 
-  private async removeTournamentCache(tournamentId: string): Promise<void> {
+  private async removeLocalTournamentCache(
+    tournamentId: string
+  ): Promise<void> {
     const cache = this.tournamentCaches.get(tournamentId);
     if (!cache) return;
 
@@ -628,16 +707,24 @@ export class EnhancedOfflineService extends OfflineDataService {
     try {
       const stored = await AsyncStorage.getItem(this.PREFETCH_SETTINGS_KEY);
       if (stored) {
-        this.prefetchSettings = { ...this.prefetchSettings, ...JSON.parse(stored) };
+        this.prefetchSettings = {
+          ...this.prefetchSettings,
+          ...JSON.parse(stored),
+        };
       }
     } catch (error) {
       console.error('Failed to load prefetch settings:', error);
     }
   }
 
-  async updatePrefetchSettings(settings: Partial<PrefetchSettings>): Promise<void> {
+  async updatePrefetchSettings(
+    settings: Partial<PrefetchSettings>
+  ): Promise<void> {
     this.prefetchSettings = { ...this.prefetchSettings, ...settings };
-    await AsyncStorage.setItem(this.PREFETCH_SETTINGS_KEY, JSON.stringify(this.prefetchSettings));
+    await AsyncStorage.setItem(
+      this.PREFETCH_SETTINGS_KEY,
+      JSON.stringify(this.prefetchSettings)
+    );
   }
 
   private async loadSearchIndex(): Promise<void> {
@@ -654,16 +741,16 @@ export class EnhancedOfflineService extends OfflineDataService {
   }
 
   // Public API methods for tournament-specific operations
-  getCachedTournament(tournamentId: string): TournamentCache | undefined {
+  getCachedTournament(tournamentId: string): LocalTournamentCache | undefined {
     return this.tournamentCaches.get(tournamentId);
   }
 
-  async isTournamentCached(tournamentId: string): Promise<boolean> {
+  async isLocalTournamentCached(tournamentId: string): Promise<boolean> {
     const cache = this.tournamentCaches.get(tournamentId);
     return cache !== undefined && cache.expiresAt > Date.now();
   }
 
-  async refreshTournamentCache(tournamentId: string): Promise<void> {
+  async refreshLocalTournamentCache(tournamentId: string): Promise<void> {
     await this.cacheEssentialData(tournamentId);
   }
 

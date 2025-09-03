@@ -3,7 +3,7 @@
  * This file sets up the testing environment and global mocks
  */
 
-import 'react-native-gesture-handler/jestSetup';
+// Note: gesture handler and flipper are mocked via moduleNameMapper in jest.config.js
 
 // Mock react-native modules
 jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
@@ -182,18 +182,7 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: jest.fn(() => ({ top: 0, bottom: 0, left: 0, right: 0 })),
 }));
 
-// Mock Flipper
-jest.mock('react-native-flipper', () => ({
-  logger: {
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-  },
-  networker: jest.fn(() => ({
-    logRequest: jest.fn(),
-    logResponse: jest.fn(),
-  })),
-}));
+// Note: react-native-flipper is mocked via moduleNameMapper in jest.config.js
 
 // Global test utilities
 (global as any).__DEV__ = true;

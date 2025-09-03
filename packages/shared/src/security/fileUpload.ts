@@ -77,7 +77,10 @@ export class SecureFileUploadManager {
   private config: FileUploadConfig;
   private upload: multer.Multer;
   private suspiciousPatterns: RegExp[];
-  private encryptionKeys = new Map<string, { key: Buffer; iv: Buffer; createdAt: Date }>();
+  private encryptionKeys = new Map<
+    string,
+    { key: Buffer; iv: Buffer; createdAt: Date }
+  >();
 
   constructor(config: Partial<FileUploadConfig> = {}) {
     this.config = {
@@ -92,7 +95,17 @@ export class SecureFileUploadManager {
         'text/csv',
         'application/json',
       ],
-      allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.txt', '.csv', '.json'],
+      allowedExtensions: [
+        '.jpg',
+        '.jpeg',
+        '.png',
+        '.gif',
+        '.webp',
+        '.pdf',
+        '.txt',
+        '.csv',
+        '.json',
+      ],
       uploadPath: './uploads',
       tempPath: './temp',
       virusScanEnabled: true,
@@ -168,7 +181,11 @@ export class SecureFileUploadManager {
     });
   }
 
-  private fileFilter(req: Request, file: Express.Multer.File, cb: FileFilterCallback): void {
+  private fileFilter(
+    req: Request,
+    file: Express.Multer.File,
+    cb: FileFilterCallback
+  ): void {
     // Check MIME type
     if (!this.config.allowedMimeTypes.includes(file.mimetype)) {
       return cb(new Error(`MIME type ${file.mimetype} not allowed`));
@@ -192,7 +209,7 @@ export class SecureFileUploadManager {
     const suspiciousPatterns = [
       /\.(exe|bat|cmd|scr|pif|com)$/i,
       /\.(asp|aspx|jsp|php|cgi|pl)$/i,
-      /^\./,  // Hidden files
+      /^\./, // Hidden files
       /\$|%|&|\||;|<|>/, // Shell metacharacters
       /\0/, // Null bytes
     ];
@@ -203,7 +220,7 @@ export class SecureFileUploadManager {
   private sanitizeFilename(filename: string): string {
     // Remove path traversal attempts
     let sanitized = path.basename(filename);
-    
+
     // Remove or replace dangerous characters
     sanitized = sanitized
       .replace(/[<>:"/\\|?*\0]/g, '_')
@@ -215,10 +232,7 @@ export class SecureFileUploadManager {
   }
 
   private async ensureDirectories(): Promise<void> {
-    const dirs = [
-      this.config.uploadPath,
-      this.config.tempPath,
-    ];
+    const dirs = [this.config.uploadPath, this.config.tempPath];
 
     if (this.config.quarantine.enabled) {
       dirs.push(this.config.quarantine.quarantinePath);
@@ -233,7 +247,10 @@ export class SecureFileUploadManager {
     }
   }
 
-  async processUpload(file: Express.Multer.File, uploadedBy: string): Promise<ProcessedFile> {
+  async processUpload(
+    file: Express.Multer.File,
+    uploadedBy: string
+  ): Promise<ProcessedFile> {
     try {
       // 1. Validate file content
       await this.validateFileContent(file);
@@ -244,7 +261,9 @@ export class SecureFileUploadManager {
         scanResults = await this.scanForThreats(file);
         if (!scanResults.safe) {
           await this.quarantineFile(file, scanResults);
-          throw new Error(`File contains threats: ${scanResults.threats.join(', ')}`);
+          throw new Error(
+            `File contains threats: ${scanResults.threats.join(', ')}`
+          );
         }
       }
 
@@ -260,7 +279,10 @@ export class SecureFileUploadManager {
       }
 
       // 6. Move to final destination
-      const finalPath = path.join(this.config.uploadPath, processedFile.filename);
+      const finalPath = path.join(
+        this.config.uploadPath,
+        processedFile.filename
+      );
       await fs.rename(processedFile.path, finalPath);
 
       const result: ProcessedFile = {
@@ -273,12 +295,14 @@ export class SecureFileUploadManager {
         encrypted: this.config.encryption.enabled,
         processed: true,
         metadata: processedFile.metadata || { customFields: {} },
-        scanResults: scanResults ? {
-          clean: scanResults.safe,
-          threats: scanResults.threats,
-          engine: scanResults.details.engine,
-          timestamp: new Date(),
-        } : undefined,
+        scanResults: scanResults
+          ? {
+              clean: scanResults.safe,
+              threats: scanResults.threats,
+              engine: scanResults.details.engine,
+              timestamp: new Date(),
+            }
+          : undefined,
         uploadedAt: new Date(),
         uploadedBy,
       };
@@ -291,7 +315,6 @@ export class SecureFileUploadManager {
       }
 
       return result;
-
     } catch (error) {
       // Clean up on error
       try {
@@ -323,13 +346,17 @@ export class SecureFileUploadManager {
       if (this.config.contentValidation.strictMode) {
         await this.validateMimeTypeConsistency(file, buffer);
       }
-
     } catch (error) {
-      throw new Error(`Content validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Content validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
-  private async validateMimeTypeConsistency(file: Express.Multer.File, buffer: Buffer): Promise<void> {
+  private async validateMimeTypeConsistency(
+    file: Express.Multer.File,
+    buffer: Buffer
+  ): Promise<void> {
     const signatures: Record<string, RegExp[]> = {
       'image/jpeg': [/^\xFF\xD8\xFF/],
       'image/png': [/^\x89PNG\r\n\x1A\n/],
@@ -342,20 +369,24 @@ export class SecureFileUploadManager {
     if (expectedSignatures) {
       const header = buffer.subarray(0, 20).toString('binary');
       const matches = expectedSignatures.some(sig => sig.test(header));
-      
+
       if (!matches) {
-        throw new Error(`File content doesn't match declared MIME type ${file.mimetype}`);
+        throw new Error(
+          `File content doesn't match declared MIME type ${file.mimetype}`
+        );
       }
     }
   }
 
-  private async scanForThreats(file: Express.Multer.File): Promise<SecurityScanResult> {
+  private async scanForThreats(
+    file: Express.Multer.File
+  ): Promise<SecurityScanResult> {
     // In production, this would integrate with ClamAV, VirusTotal, etc.
     // For now, we'll do basic pattern matching
-    
+
     const buffer = await fs.readFile(file.path);
     const content = buffer.toString('binary');
-    
+
     const threats: string[] = [];
     const warnings: string[] = [];
 
@@ -370,7 +401,10 @@ export class SecureFileUploadManager {
     }
 
     // Check for embedded JavaScript in PDFs
-    if (file.mimetype === 'application/pdf' && content.includes('/JavaScript')) {
+    if (
+      file.mimetype === 'application/pdf' &&
+      content.includes('/JavaScript')
+    ) {
       threats.push('PDF_WITH_JAVASCRIPT');
     }
 
@@ -387,7 +421,10 @@ export class SecureFileUploadManager {
     };
   }
 
-  private async quarantineFile(file: Express.Multer.File, scanResult: SecurityScanResult): Promise<void> {
+  private async quarantineFile(
+    file: Express.Multer.File,
+    scanResult: SecurityScanResult
+  ): Promise<void> {
     if (!this.config.quarantine.enabled) {
       return;
     }
@@ -400,14 +437,18 @@ export class SecureFileUploadManager {
     await fs.rename(file.path, quarantinePath);
 
     // Log quarantine action
-    const logPath = path.join(this.config.quarantine.quarantinePath, 'quarantine.log');
-    const logEntry = JSON.stringify({
-      timestamp: new Date().toISOString(),
-      originalFile: file.originalname,
-      quarantinedFile: quarantinePath,
-      threats: scanResult.threats,
-      warnings: scanResult.warnings,
-    }) + '\n';
+    const logPath = path.join(
+      this.config.quarantine.quarantinePath,
+      'quarantine.log'
+    );
+    const logEntry =
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        originalFile: file.originalname,
+        quarantinedFile: quarantinePath,
+        threats: scanResult.threats,
+        warnings: scanResult.warnings,
+      }) + '\n';
 
     await fs.appendFile(logPath, logEntry);
   }
@@ -419,7 +460,7 @@ export class SecureFileUploadManager {
     metadata?: any;
   }> {
     const isImage = file.mimetype.startsWith('image/');
-    
+
     if (isImage && this.config.imageProcessing.enabled) {
       return this.processImage(file);
     }
@@ -456,8 +497,11 @@ export class SecureFileUploadManager {
 
     // Convert to safe format and optimize
     const outputFormat = this.getSafeImageFormat(file.mimetype);
-    const processedPath = file.path.replace(path.extname(file.path), `.${outputFormat}`);
-    
+    const processedPath = file.path.replace(
+      path.extname(file.path),
+      `.${outputFormat}`
+    );
+
     switch (outputFormat) {
       case 'jpeg':
         await processedImage
@@ -516,11 +560,16 @@ export class SecureFileUploadManager {
     return createHash('sha256').update(buffer).digest('hex');
   }
 
-  private async encryptFile(file: { filename: string; path: string; size: number; metadata?: any }): Promise<typeof file> {
+  private async encryptFile(file: {
+    filename: string;
+    path: string;
+    size: number;
+    metadata?: any;
+  }): Promise<typeof file> {
     const keyId = crypto.randomUUID();
     const key = crypto.randomBytes(32);
     const iv = crypto.randomBytes(16);
-    
+
     this.encryptionKeys.set(keyId, {
       key,
       iv,
@@ -556,23 +605,30 @@ export class SecureFileUploadManager {
     }
 
     // Rotate encryption keys periodically
-    setInterval(() => {
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - this.config.encryption.keyRotationDays);
+    setInterval(
+      () => {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(
+          cutoffDate.getDate() - this.config.encryption.keyRotationDays
+        );
 
-      for (const [keyId, keyInfo] of this.encryptionKeys.entries()) {
-        if (keyInfo.createdAt < cutoffDate) {
-          this.encryptionKeys.delete(keyId);
+        for (const [keyId, keyInfo] of this.encryptionKeys.entries()) {
+          if (keyInfo.createdAt < cutoffDate) {
+            this.encryptionKeys.delete(keyId);
+          }
         }
-      }
-    }, 24 * 60 * 60 * 1000); // Check daily
+      },
+      24 * 60 * 60 * 1000
+    ); // Check daily
   }
 
   middleware() {
     return {
       single: (fieldName: string) => this.upload.single(fieldName),
-      array: (fieldName: string, maxCount?: number) => this.upload.array(fieldName, maxCount),
-      fields: (fields: { name: string; maxCount?: number }[]) => this.upload.fields(fields),
+      array: (fieldName: string, maxCount?: number) =>
+        this.upload.array(fieldName, maxCount),
+      fields: (fields: { name: string; maxCount?: number }[]) =>
+        this.upload.fields(fields),
       any: () => this.upload.any(),
     };
   }
@@ -601,13 +657,15 @@ export class SecureFileUploadManager {
 
         // Handle multiple files
         if (req.files) {
-          const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-          
+          const files = Array.isArray(req.files)
+            ? req.files
+            : Object.values(req.files).flat();
+
           for (const file of files) {
             const processed = await this.processUpload(file, user.userId);
             processedFiles.push(processed);
           }
-          
+
           (req as any).processedFiles = processedFiles;
         }
 
@@ -638,17 +696,19 @@ export class SecureFileUploadManager {
     }
 
     const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - this.config.quarantine.retentionDays);
+    cutoffDate.setDate(
+      cutoffDate.getDate() - this.config.quarantine.retentionDays
+    );
 
     try {
       const files = await fs.readdir(this.config.quarantine.quarantinePath);
-      
+
       for (const file of files) {
         if (file === 'quarantine.log') continue;
-        
+
         const filePath = path.join(this.config.quarantine.quarantinePath, file);
         const stats = await fs.stat(filePath);
-        
+
         if (stats.mtime < cutoffDate) {
           await fs.unlink(filePath);
         }

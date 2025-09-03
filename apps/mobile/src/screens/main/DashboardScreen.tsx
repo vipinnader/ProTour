@@ -1,6 +1,6 @@
 // Dashboard screen for ProTour - Epic 1 Implementation
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   ScrollView,
@@ -19,9 +19,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { Tournament, TournamentService } from '@protour/shared';
 import { RefreshControl } from 'react-native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 interface DashboardScreenProps {
-  navigation: any;
+  navigation: NativeStackNavigationProp<any>;
 }
 
 const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
@@ -33,11 +34,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
   const toast = useToast();
   const tournamentService = new TournamentService();
 
-  useEffect(() => {
-    loadTournaments();
-  }, []);
-
-  const loadTournaments = async () => {
+  const loadTournaments = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -45,7 +42,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         user.id
       );
       setTournaments(userTournaments);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading tournaments:', error);
       toast.show({
         title: 'Error Loading Tournaments',
@@ -55,7 +52,11 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [user, tournamentService, toast]);
+
+  useEffect(() => {
+    loadTournaments();
+  }, [loadTournaments]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -69,7 +70,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) => {
         title: 'Logged Out',
         description: 'You have been successfully logged out',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.show({
         title: 'Logout Error',
         description: error.message || 'Error during logout',

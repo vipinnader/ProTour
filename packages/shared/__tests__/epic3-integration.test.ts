@@ -1,18 +1,18 @@
 // Epic 3 Integration Tests - Multi-Role Tournament Experience
 
-import { 
-  TournamentService, 
-  PlayerService, 
-  MatchService, 
-  NotificationService 
+import {
+  TournamentService,
+  PlayerService,
+  MatchService,
+  NotificationService,
 } from '../src/services';
-import { 
+import {
   Tournament,
   TournamentAccess,
   PlayerSchedule,
   PlayerProfile,
   Match,
-  TournamentRegistration
+  TournamentRegistration,
 } from '../src/types';
 
 // Mock Firebase Firestore
@@ -34,7 +34,10 @@ jest.mock('@react-native-firebase/firestore', () => ({
   }),
   Timestamp: {
     now: () => ({ toDate: () => new Date(), toMillis: () => Date.now() }),
-    fromDate: (date: Date) => ({ toDate: () => date, toMillis: () => date.getTime() }),
+    fromDate: (date: Date) => ({
+      toDate: () => date,
+      toMillis: () => date.getTime(),
+    }),
   },
 }));
 
@@ -57,7 +60,10 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
       const mockTournament: Tournament = {
         id: 'tournament-123',
         name: 'Spring Championship',
-        date: { toDate: () => new Date('2024-04-15'), toMillis: () => Date.now() } as any,
+        date: {
+          toDate: () => new Date('2024-04-15'),
+          toMillis: () => Date.now(),
+        } as any,
         sport: 'badminton',
         format: 'single-elimination',
         matchFormat: 'best-of-3',
@@ -67,30 +73,37 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
         tournamentCode: 'ABC123',
         maxPlayers: 16,
         currentPlayerCount: 5,
-        createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        updatedAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
+        createdAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+        updatedAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
       };
 
       // Mock the database query to return our tournament
-      jest.spyOn(tournamentService, 'findTournamentByCode')
+      jest
+        .spyOn(tournamentService, 'findTournamentByCode')
         .mockResolvedValue(mockTournament);
-      
-      jest.spyOn(tournamentService, 'query')
-        .mockResolvedValue([]); // No existing access
-      
-      jest.spyOn(tournamentService, 'create')
-        .mockResolvedValue({
-          id: 'access-123',
-          tournamentId: mockTournament.id,
-          accessCode: 'ABC123',
-          userId: 'player-1',
-          role: 'player',
-          active: true,
-          joinedAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        });
 
-      jest.spyOn(tournamentService, 'incrementPlayerCount')
-        .mockResolvedValue();
+      jest.spyOn(tournamentService, 'query').mockResolvedValue([]); // No existing access
+
+      jest.spyOn(tournamentService, 'create').mockResolvedValue({
+        id: 'access-123',
+        tournamentId: mockTournament.id,
+        accessCode: 'ABC123',
+        userId: 'player-1',
+        role: 'player',
+        active: true,
+        joinedAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+      });
+
+      jest.spyOn(tournamentService, 'incrementPlayerCount').mockResolvedValue();
 
       // Test joining tournament
       const accessData: Omit<TournamentAccess, 'joinedAt'> = {
@@ -102,18 +115,23 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
       };
 
       const result = await tournamentService.joinTournament(accessData);
-      
+
       expect(result.tournamentId).toBe(mockTournament.id);
       expect(result.userId).toBe('player-1');
       expect(result.role).toBe('player');
-      expect(tournamentService.incrementPlayerCount).toHaveBeenCalledWith(mockTournament.id);
+      expect(tournamentService.incrementPlayerCount).toHaveBeenCalledWith(
+        mockTournament.id
+      );
     });
 
     it('should reject joining when tournament is full', async () => {
       const mockTournament: Tournament = {
         id: 'tournament-123',
         name: 'Full Tournament',
-        date: { toDate: () => new Date('2024-04-15'), toMillis: () => Date.now() } as any,
+        date: {
+          toDate: () => new Date('2024-04-15'),
+          toMillis: () => Date.now(),
+        } as any,
         sport: 'badminton',
         format: 'single-elimination',
         matchFormat: 'best-of-3',
@@ -123,15 +141,21 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
         tournamentCode: 'FULL01',
         maxPlayers: 16,
         currentPlayerCount: 16, // Full tournament
-        createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        updatedAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
+        createdAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+        updatedAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
       };
 
-      jest.spyOn(tournamentService, 'findTournamentByCode')
+      jest
+        .spyOn(tournamentService, 'findTournamentByCode')
         .mockResolvedValue(mockTournament);
-      
-      jest.spyOn(tournamentService, 'query')
-        .mockResolvedValue([]);
+
+      jest.spyOn(tournamentService, 'query').mockResolvedValue([]);
 
       const accessData: Omit<TournamentAccess, 'joinedAt'> = {
         tournamentId: mockTournament.id,
@@ -141,8 +165,9 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
         active: true,
       };
 
-      await expect(tournamentService.joinTournament(accessData))
-        .rejects.toThrow('Tournament is full');
+      await expect(
+        tournamentService.joinTournament(accessData)
+      ).rejects.toThrow('Tournament is full');
     });
   });
 
@@ -157,8 +182,14 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
           player1Id: 'player-1',
           player2Id: 'player-2',
           status: 'pending',
-          createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-          updatedAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
+          createdAt: {
+            toDate: () => new Date(),
+            toMillis: () => Date.now(),
+          } as any,
+          updatedAt: {
+            toDate: () => new Date(),
+            toMillis: () => Date.now(),
+          } as any,
         },
         {
           id: 'match-2',
@@ -169,15 +200,23 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
           player2Id: 'player-3',
           winnerId: 'player-1',
           status: 'completed',
-          createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-          updatedAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        }
+          createdAt: {
+            toDate: () => new Date(),
+            toMillis: () => Date.now(),
+          } as any,
+          updatedAt: {
+            toDate: () => new Date(),
+            toMillis: () => Date.now(),
+          } as any,
+        },
       ];
 
-      jest.spyOn(tournamentService, 'query')
-        .mockResolvedValue(mockMatches);
+      jest.spyOn(tournamentService, 'query').mockResolvedValue(mockMatches);
 
-      const schedule = await tournamentService.getPlayerSchedule('player-1', 'tournament-123');
+      const schedule = await tournamentService.getPlayerSchedule(
+        'player-1',
+        'tournament-123'
+      );
 
       expect(schedule.playerId).toBe('player-1');
       expect(schedule.tournamentId).toBe('tournament-123');
@@ -197,47 +236,59 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
         player1Id: 'player-1',
         player2Id: 'player-2',
         status: 'in-progress',
-        createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        updatedAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
+        createdAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+        updatedAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
       };
 
-      jest.spyOn(matchService, 'query')
-        .mockResolvedValue([]);
-      
-      jest.spyOn(matchService, 'create')
-        .mockResolvedValue({
-          id: 'follow-123',
-          userId: 'spectator-1',
-          matchId: 'match-123',
-          createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        });
+      jest.spyOn(matchService, 'query').mockResolvedValue([]);
+
+      jest.spyOn(matchService, 'create').mockResolvedValue({
+        id: 'follow-123',
+        userId: 'spectator-1',
+        matchId: 'match-123',
+        createdAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+      });
 
       await matchService.followMatch('spectator-1', 'match-123');
-      
+
       expect(matchService.create).toHaveBeenCalled();
     });
 
     it('should create match timeline events', async () => {
-      jest.spyOn(matchService, 'read')
-        .mockResolvedValue(null); // No existing timeline
-      
-      jest.spyOn(matchService, 'create')
-        .mockResolvedValue({
-          id: 'timeline-123',
-          matchId: 'match-123',
-          events: [],
-          duration: 0,
-          createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-          updatedAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        });
-      
-      jest.spyOn(matchService, 'update')
-        .mockResolvedValue();
+      jest.spyOn(matchService, 'read').mockResolvedValue(null); // No existing timeline
+
+      jest.spyOn(matchService, 'create').mockResolvedValue({
+        id: 'timeline-123',
+        matchId: 'match-123',
+        events: [],
+        duration: 0,
+        createdAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+        updatedAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+      });
+
+      jest.spyOn(matchService, 'update').mockResolvedValue();
 
       await matchService.addMatchEvent('match-123', {
         timestamp: new Date(),
         type: 'point-scored',
-        details: { score: { player1Sets: [5], player2Sets: [3], winner: 'player1' } }
+        details: {
+          score: { player1Sets: [5], player2Sets: [3], winner: 'player1' },
+        },
       });
 
       expect(matchService.create).toHaveBeenCalled();
@@ -272,35 +323,41 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
           allowFollowing: true,
           allowNotifications: true,
         },
-        createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        updatedAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
+        createdAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+        updatedAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
       };
 
-      jest.spyOn(playerService, 'read')
-        .mockResolvedValue(mockProfile);
+      jest.spyOn(playerService, 'read').mockResolvedValue(mockProfile);
 
       const profile = await playerService.getPlayerProfile('player-1');
-      
+
       expect(profile).toBeDefined();
       expect(profile?.name).toBe('John Player');
       expect(profile?.statistics.winPercentage).toBe(80);
     });
 
     it('should allow players to follow other players', async () => {
-      jest.spyOn(playerService, 'query')
-        .mockResolvedValue([]); // No existing follow
-      
-      jest.spyOn(playerService, 'create')
-        .mockResolvedValue({
-          id: 'follow-123',
-          followerId: 'player-1',
-          followedPlayerId: 'player-2',
-          createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-          notificationsEnabled: true,
-        });
+      jest.spyOn(playerService, 'query').mockResolvedValue([]); // No existing follow
+
+      jest.spyOn(playerService, 'create').mockResolvedValue({
+        id: 'follow-123',
+        followerId: 'player-1',
+        followedPlayerId: 'player-2',
+        createdAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+        notificationsEnabled: true,
+      });
 
       const result = await playerService.followPlayer('player-1', 'player-2');
-      
+
       expect(result.followerId).toBe('player-1');
       expect(result.followedPlayerId).toBe('player-2');
       expect(result.notificationsEnabled).toBe(true);
@@ -317,18 +374,27 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
         player1Id: 'player-1',
         player2Id: 'player-2',
         status: 'pending',
-        startTime: { 
+        startTime: {
           toDate: () => new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
-          toMillis: () => Date.now() + 30 * 60 * 1000 
+          toMillis: () => Date.now() + 30 * 60 * 1000,
         } as any,
-        createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        updatedAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
+        createdAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+        updatedAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
       };
 
       const mockTournament: Tournament = {
         id: 'tournament-123',
         name: 'Test Tournament',
-        date: { toDate: () => new Date('2024-04-15'), toMillis: () => Date.now() } as any,
+        date: {
+          toDate: () => new Date('2024-04-15'),
+          toMillis: () => Date.now(),
+        } as any,
         sport: 'badminton',
         format: 'single-elimination',
         matchFormat: 'best-of-3',
@@ -338,28 +404,35 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
         tournamentCode: 'TEST01',
         maxPlayers: 16,
         currentPlayerCount: 8,
-        createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        updatedAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
+        createdAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+        updatedAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
       };
 
-      jest.spyOn(notificationService, 'query')
-        .mockResolvedValue([]); // No existing preferences, use defaults
-      
-      jest.spyOn(notificationService, 'create')
-        .mockResolvedValue({
-          id: 'notification-123',
-          config: {
-            type: 'match-ready',
-            title: '🎾 Match Starting Soon',
-            body: 'Your Test Tournament match vs Player 2 starts in 30 minutes!',
-            recipients: ['player-1', 'player-2']
-          },
-          status: 'pending',
-          createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        });
+      jest.spyOn(notificationService, 'query').mockResolvedValue([]); // No existing preferences, use defaults
+
+      jest.spyOn(notificationService, 'create').mockResolvedValue({
+        id: 'notification-123',
+        config: {
+          type: 'match-ready',
+          title: '🎾 Match Starting Soon',
+          body: 'Your Test Tournament match vs Player 2 starts in 30 minutes!',
+          recipients: ['player-1', 'player-2'],
+        },
+        status: 'pending',
+        createdAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+      });
 
       await notificationService.notifyMatchReady(mockMatch, mockTournament, 30);
-      
+
       expect(notificationService.create).toHaveBeenCalled();
     });
 
@@ -373,14 +446,23 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
         player2Id: 'player-2',
         winnerId: 'player-1',
         status: 'completed',
-        createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        updatedAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
+        createdAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+        updatedAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
       };
 
       const mockTournament: Tournament = {
         id: 'tournament-123',
         name: 'Test Tournament',
-        date: { toDate: () => new Date('2024-04-15'), toMillis: () => Date.now() } as any,
+        date: {
+          toDate: () => new Date('2024-04-15'),
+          toMillis: () => Date.now(),
+        } as any,
         sport: 'badminton',
         format: 'single-elimination',
         matchFormat: 'best-of-3',
@@ -390,32 +472,45 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
         tournamentCode: 'TEST01',
         maxPlayers: 16,
         currentPlayerCount: 8,
-        createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        updatedAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
+        createdAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+        updatedAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
       };
 
       // Mock followers
-      jest.spyOn(notificationService, 'query')
+      jest
+        .spyOn(notificationService, 'query')
         .mockResolvedValueOnce([
-          { userId: 'spectator-1', tournamentId: 'tournament-123' } as any
+          { userId: 'spectator-1', tournamentId: 'tournament-123' } as any,
         ])
         .mockResolvedValueOnce([]); // No notification preferences
 
-      jest.spyOn(notificationService, 'create')
-        .mockResolvedValue({
-          id: 'notification-124',
-          config: {
-            type: 'match-completed',
-            title: '🏆 Match Completed',
-            body: 'Player 1 defeated Player 2 in Test Tournament',
-            recipients: ['player-1', 'player-2', 'spectator-1']
-          },
-          status: 'pending',
-          createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        });
+      jest.spyOn(notificationService, 'create').mockResolvedValue({
+        id: 'notification-124',
+        config: {
+          type: 'match-completed',
+          title: '🏆 Match Completed',
+          body: 'Player 1 defeated Player 2 in Test Tournament',
+          recipients: ['player-1', 'player-2', 'spectator-1'],
+        },
+        status: 'pending',
+        createdAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+      });
 
-      await notificationService.notifyMatchCompleted(mockMatch, mockTournament, 'player-1');
-      
+      await notificationService.notifyMatchCompleted(
+        mockMatch,
+        mockTournament,
+        'player-1'
+      );
+
       expect(notificationService.create).toHaveBeenCalled();
     });
   });
@@ -426,7 +521,10 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
       const mockTournament: Tournament = {
         id: 'tournament-123',
         name: 'Integration Test Tournament',
-        date: { toDate: () => new Date('2024-04-15'), toMillis: () => Date.now() } as any,
+        date: {
+          toDate: () => new Date('2024-04-15'),
+          toMillis: () => Date.now(),
+        } as any,
         sport: 'badminton',
         format: 'single-elimination',
         matchFormat: 'best-of-3',
@@ -436,27 +534,34 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
         tournamentCode: 'INT123',
         maxPlayers: 16,
         currentPlayerCount: 7,
-        createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        updatedAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
+        createdAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+        updatedAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
       };
 
       // Mock tournament joining
-      jest.spyOn(tournamentService, 'findTournamentByCode')
+      jest
+        .spyOn(tournamentService, 'findTournamentByCode')
         .mockResolvedValue(mockTournament);
-      jest.spyOn(tournamentService, 'query')
-        .mockResolvedValue([]);
-      jest.spyOn(tournamentService, 'create')
-        .mockResolvedValue({
-          id: 'access-123',
-          tournamentId: mockTournament.id,
-          accessCode: 'INT123',
-          userId: 'player-1',
-          role: 'player',
-          active: true,
-          joinedAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        });
-      jest.spyOn(tournamentService, 'incrementPlayerCount')
-        .mockResolvedValue();
+      jest.spyOn(tournamentService, 'query').mockResolvedValue([]);
+      jest.spyOn(tournamentService, 'create').mockResolvedValue({
+        id: 'access-123',
+        tournamentId: mockTournament.id,
+        accessCode: 'INT123',
+        userId: 'player-1',
+        role: 'player',
+        active: true,
+        joinedAt: {
+          toDate: () => new Date(),
+          toMillis: () => Date.now(),
+        } as any,
+      });
+      jest.spyOn(tournamentService, 'incrementPlayerCount').mockResolvedValue();
 
       // Player joins
       await tournamentService.joinTournament({
@@ -477,20 +582,30 @@ describe('Epic 3: Multi-Role Tournament Experience', () => {
           player1Id: 'player-1',
           player2Id: 'player-2',
           status: 'pending',
-          createdAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-          updatedAt: { toDate: () => new Date(), toMillis: () => Date.now() } as any,
-        }
+          createdAt: {
+            toDate: () => new Date(),
+            toMillis: () => Date.now(),
+          } as any,
+          updatedAt: {
+            toDate: () => new Date(),
+            toMillis: () => Date.now(),
+          } as any,
+        },
       ];
 
-      jest.spyOn(tournamentService, 'query')
-        .mockResolvedValue(mockMatches);
+      jest.spyOn(tournamentService, 'query').mockResolvedValue(mockMatches);
 
-      const schedule = await tournamentService.getPlayerSchedule('player-1', 'tournament-123');
+      const schedule = await tournamentService.getPlayerSchedule(
+        'player-1',
+        'tournament-123'
+      );
 
       // Assertions
       expect(schedule.upcomingMatches).toHaveLength(1);
       expect(schedule.upcomingMatches[0].player1Id).toBe('player-1');
-      expect(tournamentService.incrementPlayerCount).toHaveBeenCalledWith(mockTournament.id);
+      expect(tournamentService.incrementPlayerCount).toHaveBeenCalledWith(
+        mockTournament.id
+      );
     });
   });
 });

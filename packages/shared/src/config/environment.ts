@@ -311,7 +311,12 @@ export class EnvironmentManager {
       const stage = process.env.STAGE?.toLowerCase();
 
       if (nodeEnv === 'test' || environment === 'test') return 'test';
-      if (nodeEnv === 'production' || environment === 'production' || stage === 'prod') return 'production';
+      if (
+        nodeEnv === 'production' ||
+        environment === 'production' ||
+        stage === 'prod'
+      )
+        return 'production';
       if (environment === 'staging' || stage === 'staging') return 'staging';
     }
 
@@ -323,8 +328,10 @@ export class EnvironmentManager {
     // Check for browser environment
     if (typeof window !== 'undefined') {
       const hostname = window.location?.hostname;
-      if (hostname?.includes('localhost') || hostname?.includes('127.0.0.1')) return 'development';
-      if (hostname?.includes('staging') || hostname?.includes('dev')) return 'staging';
+      if (hostname?.includes('localhost') || hostname?.includes('127.0.0.1'))
+        return 'development';
+      if (hostname?.includes('staging') || hostname?.includes('dev'))
+        return 'staging';
       return 'production';
     }
 
@@ -369,7 +376,7 @@ export class EnvironmentManager {
   private getDevelopmentConfig(): EnvironmentConfig {
     return {
       environment: 'development',
-      
+
       app: {
         ...this.getBaseConfig().app!,
         baseUrl: 'http://localhost:3000',
@@ -399,11 +406,13 @@ export class EnvironmentManager {
           razorpay: {
             keyId: process.env.RAZORPAY_KEY_ID_DEV || 'rzp_test_dev',
             keySecret: process.env.RAZORPAY_KEY_SECRET_DEV || 'test_secret',
-            webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET_DEV || 'webhook_secret',
+            webhookSecret:
+              process.env.RAZORPAY_WEBHOOK_SECRET_DEV || 'webhook_secret',
             environment: 'test',
           },
           stripe: {
-            publishableKey: process.env.STRIPE_PUBLISHABLE_KEY_DEV || 'pk_test_dev',
+            publishableKey:
+              process.env.STRIPE_PUBLISHABLE_KEY_DEV || 'pk_test_dev',
             secretKey: process.env.STRIPE_SECRET_KEY_DEV || 'sk_test_dev',
             webhookSecret: process.env.STRIPE_WEBHOOK_SECRET_DEV || 'whsec_dev',
             environment: 'test',
@@ -480,15 +489,19 @@ export class EnvironmentManager {
           },
           aws: {
             accessKeyId: process.env.AWS_ACCESS_KEY_ID_DEV || 'aws_dev',
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY_DEV || 'aws_secret_dev',
+            secretAccessKey:
+              process.env.AWS_SECRET_ACCESS_KEY_DEV || 'aws_secret_dev',
             region: process.env.AWS_REGION_DEV || 'us-east-1',
             bucketName: process.env.AWS_BUCKET_NAME_DEV || 'protour-dev-bucket',
           },
         },
         auth: {
           google: {
-            clientId: process.env.GOOGLE_CLIENT_ID_DEV || 'google_dev.apps.googleusercontent.com',
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET_DEV || 'google_secret_dev',
+            clientId:
+              process.env.GOOGLE_CLIENT_ID_DEV ||
+              'google_dev.apps.googleusercontent.com',
+            clientSecret:
+              process.env.GOOGLE_CLIENT_SECRET_DEV || 'google_secret_dev',
             redirectUri: 'http://localhost:3000/auth/google/callback',
           },
           facebook: {
@@ -601,11 +614,11 @@ export class EnvironmentManager {
 
   private getStagingConfig(): EnvironmentConfig {
     const devConfig = this.getDevelopmentConfig();
-    
+
     return {
       ...devConfig,
       environment: 'staging',
-      
+
       app: {
         ...devConfig.app,
         baseUrl: 'https://staging.protour.com',
@@ -649,10 +662,7 @@ export class EnvironmentManager {
         },
         logging: {
           level: 'info',
-          transports: [
-            { type: 'console' },
-            { type: 'cloudLogging' },
-          ],
+          transports: [{ type: 'console' }, { type: 'cloudLogging' }],
         },
       },
 
@@ -669,11 +679,11 @@ export class EnvironmentManager {
 
   private getProductionConfig(): EnvironmentConfig {
     const stagingConfig = this.getStagingConfig();
-    
+
     return {
       ...stagingConfig,
       environment: 'production',
-      
+
       app: {
         ...stagingConfig.app,
         baseUrl: 'https://protour.com',
@@ -717,9 +727,7 @@ export class EnvironmentManager {
         },
         logging: {
           level: 'error',
-          transports: [
-            { type: 'cloudLogging' },
-          ],
+          transports: [{ type: 'cloudLogging' }],
         },
       },
 
@@ -740,11 +748,11 @@ export class EnvironmentManager {
 
   private getTestConfig(): EnvironmentConfig {
     const devConfig = this.getDevelopmentConfig();
-    
+
     return {
       ...devConfig,
       environment: 'test',
-      
+
       app: {
         ...devConfig.app,
         baseUrl: 'http://localhost:3000',
@@ -779,7 +787,9 @@ export class EnvironmentManager {
   }
 
   // Utility methods
-  getServiceConfig<K extends keyof ServicesConfig>(service: K): ServicesConfig[K] {
+  getServiceConfig<K extends keyof ServicesConfig>(
+    service: K
+  ): ServicesConfig[K] {
     return this.config.services[service];
   }
 
@@ -790,7 +800,7 @@ export class EnvironmentManager {
   isFeatureEnabled(featurePath: string): boolean {
     const parts = featurePath.split('.');
     let current: any = this.config.features;
-    
+
     for (const part of parts) {
       if (current && typeof current === 'object' && part in current) {
         current = current[part];
@@ -798,7 +808,7 @@ export class EnvironmentManager {
         return false;
       }
     }
-    
+
     return Boolean(current);
   }
 

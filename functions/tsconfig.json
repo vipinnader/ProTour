@@ -18,16 +18,7 @@
     "declaration": true,
     "sourceMap": true
   },
-  "references": [
-    { "path": "../packages/shared" }
-  ],
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "lib",
-    "**/*.test.ts",
-    "**/__tests__/**"
-  ]
+  "references": [{ "path": "../packages/shared" }],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "lib", "**/*.test.ts", "**/__tests__/**"]
 }

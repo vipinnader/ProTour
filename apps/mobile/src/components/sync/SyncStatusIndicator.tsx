@@ -21,16 +21,11 @@ const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
   style,
   showDetails = true,
 }) => {
-  const {
-    syncStatus,
-    lastSyncTime,
-    forceSync,
-    isOnline,
-    isConnected,
-  } = useSync();
-  
+  const { syncStatus, lastSyncTime, forceSync, isOnline, isConnected } =
+    useSync();
+
   const { hasConflicts, conflicts } = useConflictResolution();
-  
+
   const [showConflictModal, setShowConflictModal] = useState(false);
   const [pulseAnim] = useState(new Animated.Value(1));
   const [showSyncDetails, setShowSyncDetails] = useState(false);
@@ -53,7 +48,7 @@ const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
         ])
       );
       pulseAnimation.start();
-      
+
       return () => pulseAnimation.stop();
     }
   }, [isOnline, pulseAnim]);
@@ -67,10 +62,12 @@ const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
   };
 
   const getStatusText = (): string => {
-    if (hasConflicts) return `${conflicts.length} conflict${conflicts.length > 1 ? 's' : ''}`;
+    if (hasConflicts)
+      return `${conflicts.length} conflict${conflicts.length > 1 ? 's' : ''}`;
     if (!isOnline) return 'Offline';
     if (syncStatus.syncInProgress) return 'Syncing...';
-    if (syncStatus.pendingOperations > 0) return `${syncStatus.pendingOperations} pending`;
+    if (syncStatus.pendingOperations > 0)
+      return `${syncStatus.pendingOperations} pending`;
     return 'Synced';
   };
 
@@ -100,10 +97,10 @@ const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
 
   const formatLastSyncTime = (): string => {
     if (!lastSyncTime) return 'Never';
-    
+
     const now = new Date();
     const diff = now.getTime() - lastSyncTime.getTime();
-    
+
     if (diff < 60000) return 'Just now';
     if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
@@ -149,19 +146,19 @@ const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
           <View style={styles.detailsContent}>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Connection:</Text>
-              <Text style={[
-                styles.detailValue,
-                { color: isOnline ? '#28a745' : '#dc3545' }
-              ]}>
+              <Text
+                style={[
+                  styles.detailValue,
+                  { color: isOnline ? '#28a745' : '#dc3545' },
+                ]}
+              >
                 {isOnline ? 'Online' : 'Offline'}
               </Text>
             </View>
 
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Last Sync:</Text>
-              <Text style={styles.detailValue}>
-                {formatLastSyncTime()}
-              </Text>
+              <Text style={styles.detailValue}>{formatLastSyncTime()}</Text>
             </View>
 
             <View style={styles.detailRow}>
@@ -190,7 +187,7 @@ const SyncStatusIndicator: React.FC<SyncStatusIndicatorProps> = ({
                 <Text style={styles.actionButtonText}>Resolve Conflicts</Text>
               </TouchableOpacity>
             )}
-            
+
             {isOnline && (
               <TouchableOpacity
                 style={[styles.actionButton, styles.syncButton]}

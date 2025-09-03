@@ -14,8 +14,10 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 interface EmailVerificationScreenProps {
-  navigation: any;
+  navigation: NativeStackNavigationProp<any>;
 }
 
 const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = ({
@@ -59,7 +61,7 @@ const EmailVerificationScreen: React.FC<EmailVerificationScreenProps> = ({
         title: 'Verification Email Sent',
         description: 'Check your email for verification instructions',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.show({
         title: 'Failed to Send Email',
         description: error.message || 'Could not send verification email',

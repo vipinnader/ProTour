@@ -7,7 +7,12 @@ import NetInfo from '@react-native-community/netinfo';
 
 export interface TournamentUpdate {
   id: string;
-  type: 'score_update' | 'bracket_update' | 'match_status' | 'tournament_status' | 'player_update';
+  type:
+    | 'score_update'
+    | 'bracket_update'
+    | 'match_status'
+    | 'tournament_status'
+    | 'player_update';
   tournamentId: string;
   matchId?: string;
   playerId?: string;
@@ -102,7 +107,10 @@ export class RealTimeSyncService {
   /**
    * AC2B.3.1: Instant bracket updates - Initialize WebSocket connection
    */
-  async establishConnection(userId: string, role: 'organizer' | 'referee' | 'spectator'): Promise<SyncConnection> {
+  async establishConnection(
+    userId: string,
+    role: 'organizer' | 'referee' | 'spectator'
+  ): Promise<SyncConnection> {
     if (this.connection && this.connection.readyState === WebSocket.OPEN) {
       console.log('WebSocket connection already established');
       return this.getCurrentConnection();
@@ -111,9 +119,10 @@ export class RealTimeSyncService {
     return new Promise((resolve, reject) => {
       try {
         this.isConnecting = true;
-        const deviceId = multiDeviceService.getCurrentDevice()?.deviceId || 'unknown';
+        const deviceId =
+          multiDeviceService.getCurrentDevice()?.deviceId || 'unknown';
         const wsUrl = this.buildWebSocketUrl(userId, role, deviceId);
-        
+
         console.log('Establishing WebSocket connection to:', wsUrl);
         this.connection = new WebSocket(wsUrl);
 
@@ -122,12 +131,13 @@ export class RealTimeSyncService {
           this.isConnecting = false;
           this.reconnectAttempts = 0;
           this.reconnectDelay = 1000;
-          
+
           const connectionInfo: SyncConnection = {
             connectionId: this.generateConnectionId(),
             userId,
             deviceId,
-            tournamentId: multiDeviceService.getCurrentSession()?.tournamentId || '',
+            tournamentId:
+              multiDeviceService.getCurrentSession()?.tournamentId || '',
             role,
             connectedAt: Date.now(),
             lastActivity: Date.now(),
@@ -144,22 +154,22 @@ export class RealTimeSyncService {
           resolve(connectionInfo);
         };
 
-        this.connection.onmessage = (event) => {
+        this.connection.onmessage = event => {
           this.handleIncomingMessage(event.data);
         };
 
-        this.connection.onclose = (event) => {
+        this.connection.onclose = event => {
           console.log('WebSocket connection closed:', event.code, event.reason);
           this.isConnecting = false;
           this.emit('disconnected', { code: event.code, reason: event.reason });
-          
+
           // Attempt reconnection if not intentionally closed
           if (event.code !== 1000) {
             this.scheduleReconnection(userId, role);
           }
         };
 
-        this.connection.onerror = (error) => {
+        this.connection.onerror = error => {
           console.error('WebSocket error:', error);
           this.isConnecting = false;
           reject(error);
@@ -172,7 +182,6 @@ export class RealTimeSyncService {
             reject(new Error('WebSocket connection timeout'));
           }
         }, 10000);
-
       } catch (error) {
         this.isConnecting = false;
         reject(error);
@@ -201,7 +210,7 @@ export class RealTimeSyncService {
    */
   async broadcastUpdate(update: TournamentUpdate): Promise<BroadcastResult> {
     const startTime = Date.now();
-    
+
     try {
       // Store locally first for offline-first architecture
       if (update.type === 'score_update' || update.type === 'match_status') {
@@ -220,14 +229,14 @@ export class RealTimeSyncService {
 
         this.connectionStats.totalUpdates++;
         this.connectionStats.lastUpdateTime = Date.now();
-        
+
         const latency = Date.now() - startTime;
         this.updateAverageLatency(latency);
 
         return {
           success: true,
           targetDevices: 0, // Will be set by server response
-          deliveredTo: 0,   // Will be set by server response
+          deliveredTo: 0, // Will be set by server response
           failedDeliveries: [],
           averageLatency: latency,
         };
@@ -265,14 +274,20 @@ export class RealTimeSyncService {
    */
   optimizeForNetwork(networkQuality: NetworkQuality): void {
     this.networkQuality = networkQuality;
-    
+
     console.log('Optimizing sync for network quality:', networkQuality);
 
     // Adjust sync behavior based on network quality
-    if (networkQuality.effectiveType === '2g' || networkQuality.downlink < 0.5) {
+    if (
+      networkQuality.effectiveType === '2g' ||
+      networkQuality.downlink < 0.5
+    ) {
       // 2G mode: Reduce frequency, increase batching
       this.enableLowBandwidthMode();
-    } else if (networkQuality.effectiveType === '3g' || networkQuality.downlink < 2) {
+    } else if (
+      networkQuality.effectiveType === '3g' ||
+      networkQuality.downlink < 2
+    ) {
       // 3G mode: Moderate optimization
       this.enableModerateBandwidthMode();
     } else {
@@ -291,13 +306,16 @@ export class RealTimeSyncService {
     }
 
     // Sort by priority and timestamp
-    const sortedOperations = Array.from(this.syncQueue.values()).sort((a, b) => {
-      const priorityOrder = { critical: 4, high: 3, normal: 2, low: 1 };
-      const priorityDiff = priorityOrder[b.priority] - priorityOrder[a.priority];
-      
-      if (priorityDiff !== 0) return priorityDiff;
-      return a.timestamp - b.timestamp; // Older first within same priority
-    });
+    const sortedOperations = Array.from(this.syncQueue.values()).sort(
+      (a, b) => {
+        const priorityOrder = { critical: 4, high: 3, normal: 2, low: 1 };
+        const priorityDiff =
+          priorityOrder[b.priority] - priorityOrder[a.priority];
+
+        if (priorityDiff !== 0) return priorityDiff;
+        return a.timestamp - b.timestamp; // Older first within same priority
+      }
+    );
 
     console.log(`Processing ${sortedOperations.length} queued operations`);
 
@@ -306,7 +324,7 @@ export class RealTimeSyncService {
     for (let i = 0; i < sortedOperations.length; i += batchSize) {
       const batch = sortedOperations.slice(i, i + batchSize);
       await this.processBatch(batch);
-      
+
       // Add delay between batches for 2G networks
       if (this.networkQuality?.effectiveType === '2g') {
         await this.delay(1000);
@@ -317,7 +335,10 @@ export class RealTimeSyncService {
   /**
    * AC2B.3.6: Network resilience with automatic retry and exponential backoff
    */
-  private scheduleReconnection(userId: string, role: 'organizer' | 'referee' | 'spectator'): void {
+  private scheduleReconnection(
+    userId: string,
+    role: 'organizer' | 'referee' | 'spectator'
+  ): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error('Max reconnection attempts reached');
       this.emit('reconnectionFailed', { attempts: this.reconnectAttempts });
@@ -325,10 +346,15 @@ export class RealTimeSyncService {
     }
 
     this.reconnectAttempts++;
-    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000);
-    
-    console.log(`Scheduling reconnection attempt ${this.reconnectAttempts} in ${delay}ms`);
-    
+    const delay = Math.min(
+      this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1),
+      30000
+    );
+
+    console.log(
+      `Scheduling reconnection attempt ${this.reconnectAttempts} in ${delay}ms`
+    );
+
     setTimeout(async () => {
       try {
         await this.establishConnection(userId, role);
@@ -346,7 +372,7 @@ export class RealTimeSyncService {
     try {
       const message = JSON.parse(data);
       const latency = Date.now() - (message.timestamp || Date.now());
-      
+
       this.updateAverageLatency(latency);
 
       switch (message.type) {
@@ -376,11 +402,11 @@ export class RealTimeSyncService {
 
   private handleTournamentUpdate(update: TournamentUpdate): void {
     console.log('Received tournament update:', update.type, update.id);
-    
+
     // Emit to listeners
     this.emit('tournament_update', update);
     this.emit(`update_${update.type}`, update);
-    
+
     this.connectionStats.successfulUpdates++;
   }
 
@@ -396,10 +422,12 @@ export class RealTimeSyncService {
 
   private sendMessage(message: any): void {
     if (this.connection && this.connection.readyState === WebSocket.OPEN) {
-      this.connection.send(JSON.stringify({
-        ...message,
-        timestamp: Date.now(),
-      }));
+      this.connection.send(
+        JSON.stringify({
+          ...message,
+          timestamp: Date.now(),
+        })
+      );
     } else {
       console.warn('Cannot send message - WebSocket not connected');
     }
@@ -408,14 +436,19 @@ export class RealTimeSyncService {
   private async storeUpdateLocally(update: TournamentUpdate): Promise<void> {
     try {
       const collection = this.getCollectionFromUpdateType(update.type);
-      const documentId = update.matchId || update.playerId || update.tournamentId;
-      
-      await offlineDataService.createOffline(collection, {
-        ...update.data,
-        id: documentId,
-        lastUpdated: update.timestamp,
-        updatedBy: update.deviceId,
-      }, update.userId);
+      const documentId =
+        update.matchId || update.playerId || update.tournamentId;
+
+      await offlineDataService.createOffline(
+        collection,
+        {
+          ...update.data,
+          id: documentId,
+          lastUpdated: update.timestamp,
+          updatedBy: update.deviceId,
+        },
+        update.userId
+      );
     } catch (error) {
       console.error('Failed to store update locally:', error);
     }
@@ -427,14 +460,16 @@ export class RealTimeSyncService {
   private compressData(data: any): string {
     try {
       const jsonString = JSON.stringify(data);
-      
+
       // Simple compression using LZ-string algorithm (would use actual library in production)
       // This is a placeholder for actual compression implementation
       const compressed = this.simpleCompress(jsonString);
-      
+
       const compressionRatio = compressed.length / jsonString.length;
-      console.log(`Data compressed from ${jsonString.length} to ${compressed.length} bytes (${(1 - compressionRatio) * 100}% reduction)`);
-      
+      console.log(
+        `Data compressed from ${jsonString.length} to ${compressed.length} bytes (${(1 - compressionRatio) * 100}% reduction)`
+      );
+
       return compressed;
     } catch (error) {
       console.error('Data compression failed:', error);
@@ -449,18 +484,26 @@ export class RealTimeSyncService {
 
   private getCollectionFromUpdateType(type: string): string {
     switch (type) {
-      case 'score_update': return 'matches';
-      case 'bracket_update': return 'brackets';
-      case 'match_status': return 'matches';
-      case 'tournament_status': return 'tournaments';
-      case 'player_update': return 'players';
-      default: return 'updates';
+      case 'score_update':
+        return 'matches';
+      case 'bracket_update':
+        return 'brackets';
+      case 'match_status':
+        return 'matches';
+      case 'tournament_status':
+        return 'tournaments';
+      case 'player_update':
+        return 'players';
+      default:
+        return 'updates';
     }
   }
 
   private async queueSyncOperation(operation: SyncOperation): Promise<void> {
     this.syncQueue.set(operation.id, operation);
-    console.log(`Queued sync operation: ${operation.operation} on ${operation.collection}/${operation.documentId}`);
+    console.log(
+      `Queued sync operation: ${operation.operation} on ${operation.collection}/${operation.documentId}`
+    );
   }
 
   private async processBatch(operations: SyncOperation[]): Promise<void> {
@@ -473,7 +516,7 @@ export class RealTimeSyncService {
     };
 
     this.sendMessage(batchMessage);
-    
+
     // Remove processed operations from queue
     operations.forEach(op => this.syncQueue.delete(op.id));
   }
@@ -495,21 +538,25 @@ export class RealTimeSyncService {
 
   private getBatchSizeForNetwork(): number {
     if (!this.networkQuality) return 10;
-    
+
     switch (this.networkQuality.effectiveType) {
-      case '2g': return 5;
-      case '3g': return 10;
+      case '2g':
+        return 5;
+      case '3g':
+        return 10;
       case '4g':
-      case '5g': return 20;
-      default: return 10;
+      case '5g':
+        return 20;
+      default:
+        return 10;
     }
   }
 
   private updateAverageLatency(latency: number): void {
     const alpha = 0.1; // Exponential moving average factor
-    this.connectionStats.averageLatency = 
-      this.connectionStats.averageLatency === 0 
-        ? latency 
+    this.connectionStats.averageLatency =
+      this.connectionStats.averageLatency === 0
+        ? latency
         : this.connectionStats.averageLatency * (1 - alpha) + latency * alpha;
   }
 
@@ -528,7 +575,11 @@ export class RealTimeSyncService {
     });
   }
 
-  private buildWebSocketUrl(userId: string, role: string, deviceId: string): string {
+  private buildWebSocketUrl(
+    userId: string,
+    role: string,
+    deviceId: string
+  ): string {
     // In production, this would be your actual WebSocket server URL
     const baseUrl = 'wss://api.protour.com/ws';
     return `${baseUrl}?userId=${userId}&role=${role}&deviceId=${deviceId}`;
@@ -541,7 +592,7 @@ export class RealTimeSyncService {
   private getCurrentConnection(): SyncConnection {
     const device = multiDeviceService.getCurrentDevice();
     const session = multiDeviceService.getCurrentSession();
-    
+
     return {
       connectionId: this.generateConnectionId(),
       userId: device?.userId || 'unknown',

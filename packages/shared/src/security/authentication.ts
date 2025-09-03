@@ -80,7 +80,11 @@ export class JWTManager {
       expiresIn: this.config.refreshTokenExpiry,
     };
 
-    const accessToken = jwt.sign(enhancedPayload, this.config.accessTokenSecret, signOptions);
+    const accessToken = jwt.sign(
+      enhancedPayload,
+      this.config.accessTokenSecret,
+      signOptions
+    );
     const refreshToken = jwt.sign(
       { userId: payload.userId, sessionId, type: 'refresh' },
       this.config.refreshTokenSecret,
@@ -106,8 +110,12 @@ export class JWTManager {
       audience: this.config.audience,
     };
 
-    const decoded = jwt.verify(token, this.config.accessTokenSecret, verifyOptions) as JwtPayload;
-    
+    const decoded = jwt.verify(
+      token,
+      this.config.accessTokenSecret,
+      verifyOptions
+    ) as JwtPayload;
+
     if (!decoded.userId || !decoded.email || !decoded.role) {
       throw new Error('Invalid token payload');
     }
@@ -126,8 +134,12 @@ export class JWTManager {
       audience: this.config.audience,
     };
 
-    const decoded = jwt.verify(token, this.config.refreshTokenSecret, verifyOptions) as JwtPayload;
-    
+    const decoded = jwt.verify(
+      token,
+      this.config.refreshTokenSecret,
+      verifyOptions
+    ) as JwtPayload;
+
     if (!decoded.userId || !decoded.sessionId || decoded.type !== 'refresh') {
       throw new Error('Invalid refresh token payload');
     }
@@ -137,13 +149,13 @@ export class JWTManager {
 
   refreshTokens(refreshToken: string, userPayload: UserPayload): AuthTokens {
     const { userId, sessionId } = this.verifyRefreshToken(refreshToken);
-    
+
     if (userId !== userPayload.userId) {
       throw new Error('Token user mismatch');
     }
 
     this.blacklistedTokens.add(refreshToken);
-    
+
     return this.generateTokens({
       ...userPayload,
       sessionId,
@@ -162,13 +174,18 @@ export class JWTManager {
   private parseExpiry(expiry: string): number {
     const unit = expiry.slice(-1);
     const value = parseInt(expiry.slice(0, -1));
-    
+
     switch (unit) {
-      case 's': return value;
-      case 'm': return value * 60;
-      case 'h': return value * 60 * 60;
-      case 'd': return value * 60 * 60 * 24;
-      default: return 3600; // 1 hour default
+      case 's':
+        return value;
+      case 'm':
+        return value * 60;
+      case 'h':
+        return value * 60 * 60;
+      case 'd':
+        return value * 60 * 60 * 24;
+      default:
+        return 3600; // 1 hour default
     }
   }
 }
@@ -177,7 +194,9 @@ export class APIKeyManager {
   private keys = new Map<string, APIKeyConfig>();
   private saltRounds = 12;
 
-  async generateAPIKey(config: Omit<APIKeyConfig, 'keyId' | 'hashedKey' | 'createdAt'>): Promise<{ keyId: string; apiKey: string }> {
+  async generateAPIKey(
+    config: Omit<APIKeyConfig, 'keyId' | 'hashedKey' | 'createdAt'>
+  ): Promise<{ keyId: string; apiKey: string }> {
     const keyId = crypto.randomUUID();
     const apiKey = this.generateSecureKey();
     const hashedKey = await bcrypt.hash(apiKey, this.saltRounds);
@@ -202,7 +221,7 @@ export class APIKeyManager {
 
     const keyId = parts[1];
     const key = parts[2];
-    
+
     const config = this.keys.get(keyId);
     if (!config || !config.isActive) {
       return null;
@@ -278,7 +297,11 @@ export class OAuth2Manager {
     return `${baseURL}?${params.toString()}`;
   }
 
-  async exchangeCodeForTokens(providerId: string, code: string, state?: string): Promise<any> {
+  async exchangeCodeForTokens(
+    providerId: string,
+    code: string,
+    state?: string
+  ): Promise<any> {
     const config = this.providers.get(providerId);
     if (!config) {
       throw new Error(`OAuth2 provider ${providerId} not configured`);
@@ -297,7 +320,7 @@ export class OAuth2Manager {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
       body: params.toString(),
     });
@@ -314,7 +337,8 @@ export class OAuth2Manager {
       google: 'https://accounts.google.com/o/oauth2/v2/auth',
       facebook: 'https://www.facebook.com/v18.0/dialog/oauth',
       apple: 'https://appleid.apple.com/auth/authorize',
-      microsoft: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+      microsoft:
+        'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
     };
     return urls[provider];
   }
@@ -334,7 +358,7 @@ export class OAuth2Manager {
 export const authenticateJWT = (jwtManager: JWTManager) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader) {
       return res.status(401).json({ error: 'Authorization header missing' });
     }
@@ -358,7 +382,7 @@ export const authenticateJWT = (jwtManager: JWTManager) => {
 export const authenticateAPIKey = (apiKeyManager: APIKeyManager) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const apiKey = req.headers['x-api-key'] as string;
-    
+
     if (!apiKey) {
       return res.status(401).json({ error: 'API key missing' });
     }
@@ -386,7 +410,10 @@ export const authenticateAPIKey = (apiKeyManager: APIKeyManager) => {
 };
 
 // Combined authentication middleware (JWT or API Key)
-export const authenticate = (jwtManager: JWTManager, apiKeyManager: APIKeyManager) => {
+export const authenticate = (
+  jwtManager: JWTManager,
+  apiKeyManager: APIKeyManager
+) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     const authHeader = req.headers.authorization;
     const apiKey = req.headers['x-api-key'] as string;

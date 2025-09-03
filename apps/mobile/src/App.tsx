@@ -51,7 +51,9 @@ const App: React.FC = () => {
         <AuthProvider>
           <SyncProvider>
             <StatusBar
-              barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'}
+              barStyle={
+                Platform.OS === 'ios' ? 'dark-content' : 'light-content'
+              }
               backgroundColor={theme.colors.primary[600]}
             />
             <NavigationContainer>

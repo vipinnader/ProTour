@@ -65,7 +65,12 @@ export interface RefereeSession {
 export interface AccessCodeValidation {
   isValid: boolean;
   invitation?: RefereeInvitation;
-  error?: 'invalid_code' | 'expired' | 'revoked' | 'already_used' | 'tournament_not_found';
+  error?:
+    | 'invalid_code'
+    | 'expired'
+    | 'revoked'
+    | 'already_used'
+    | 'tournament_not_found';
   deviceRestriction?: boolean; // If code was already used on different device
 }
 
@@ -75,7 +80,7 @@ export class RefereeAccessService {
   private readonly MAX_ACCESS_ATTEMPTS = 3;
   private readonly INVITATION_STORAGE_KEY = '@protour/referee_invitations';
   private readonly SESSION_STORAGE_KEY = '@protour/referee_sessions';
-  
+
   private invitations: Map<string, RefereeInvitation> = new Map();
   private sessions: Map<string, RefereeSession> = new Map();
   private accessAttempts: Map<string, number> = new Map(); // deviceId -> attempt count
@@ -88,7 +93,9 @@ export class RefereeAccessService {
   private async loadStoredData(): Promise<void> {
     try {
       // Load invitations
-      const invitationsData = await AsyncStorage.getItem(this.INVITATION_STORAGE_KEY);
+      const invitationsData = await AsyncStorage.getItem(
+        this.INVITATION_STORAGE_KEY
+      );
       if (invitationsData) {
         const invitations = JSON.parse(invitationsData);
         invitations.forEach((inv: RefereeInvitation) => {
@@ -112,10 +119,10 @@ export class RefereeAccessService {
   private async persistData(): Promise<void> {
     try {
       await AsyncStorage.setItem(
-        this.INVITATION_STORAGE_KEY, 
+        this.INVITATION_STORAGE_KEY,
         JSON.stringify(Array.from(this.invitations.values()))
       );
-      
+
       await AsyncStorage.setItem(
         this.SESSION_STORAGE_KEY,
         JSON.stringify(Array.from(this.sessions.values()))
@@ -142,10 +149,10 @@ export class RefereeAccessService {
     try {
       // Generate secure access code
       const accessCode = this.generateAccessCode();
-      
+
       // Generate QR code data
       const qrCodeData = this.generateQRCodeData(tournamentId, accessCode);
-      
+
       const invitation: RefereeInvitation = {
         id: uuid.v4() as string,
         tournamentId,
@@ -155,7 +162,12 @@ export class RefereeAccessService {
         accessCode,
         qrCodeData,
         permissions,
-        expiresAt: Date.now() + ((options?.validityHours || this.DEFAULT_INVITATION_VALIDITY_HOURS) * 60 * 60 * 1000),
+        expiresAt:
+          Date.now() +
+          (options?.validityHours || this.DEFAULT_INVITATION_VALIDITY_HOURS) *
+            60 *
+            60 *
+            1000,
         status: 'pending',
         createdAt: Date.now(),
       };
@@ -168,9 +180,10 @@ export class RefereeAccessService {
         await this.sendInvitation(invitation, options.customMessage);
       }
 
-      console.log(`Created referee invitation: ${invitation.accessCode} for tournament ${tournamentId}`);
+      console.log(
+        `Created referee invitation: ${invitation.accessCode} for tournament ${tournamentId}`
+      );
       return invitation;
-
     } catch (error) {
       console.error('Failed to create referee invitation:', error);
       throw error;
@@ -181,19 +194,19 @@ export class RefereeAccessService {
     // Generate cryptographically secure 6-digit code
     const chars = '0123456789';
     let result = '';
-    
+
     for (let i = 0; i < this.ACCESS_CODE_LENGTH; i++) {
       // Use crypto for secure random generation
       const randomBytes = CryptoJS.lib.WordArray.random(1);
       const randomIndex = Math.abs(randomBytes.words[0]) % chars.length;
       result += chars[randomIndex];
     }
-    
+
     // Ensure uniqueness
     if (this.isCodeInUse(result)) {
       return this.generateAccessCode(); // Recursive retry
     }
-    
+
     return result;
   }
 
@@ -216,16 +229,20 @@ export class RefereeAccessService {
       version: '1.0',
       timestamp: Date.now(),
     };
-    
+
     return JSON.stringify(qrData);
   }
 
   /**
    * AC2B.2.1: Send invitation via email or SMS
    */
-  private async sendInvitation(invitation: RefereeInvitation, customMessage?: string): Promise<void> {
+  private async sendInvitation(
+    invitation: RefereeInvitation,
+    customMessage?: string
+  ): Promise<void> {
     try {
-      const message = customMessage || 
+      const message =
+        customMessage ||
         `You've been invited to referee matches in ProTour tournament. Access code: ${invitation.accessCode}. The invitation expires in 24 hours.`;
 
       const notificationData = {
@@ -255,7 +272,6 @@ export class RefereeAccessService {
           invitation.refereePhone
         );
       }
-
     } catch (error) {
       console.error('Failed to send referee invitation:', error);
       // Don't throw - invitation should still be created even if sending fails
@@ -281,8 +297,9 @@ export class RefereeAccessService {
       }
 
       // Find invitation by access code
-      const invitation = Array.from(this.invitations.values())
-        .find(inv => inv.accessCode === accessCode);
+      const invitation = Array.from(this.invitations.values()).find(
+        inv => inv.accessCode === accessCode
+      );
 
       if (!invitation) {
         this.recordFailedAttempt(deviceId);
@@ -300,12 +317,23 @@ export class RefereeAccessService {
       }
 
       // Check if already accepted on a different device
-      if (invitation.status === 'accepted' && invitation.deviceId !== deviceId) {
-        return { isValid: false, error: 'already_used', invitation, deviceRestriction: true };
+      if (
+        invitation.status === 'accepted' &&
+        invitation.deviceId !== deviceId
+      ) {
+        return {
+          isValid: false,
+          error: 'already_used',
+          invitation,
+          deviceRestriction: true,
+        };
       }
 
       // Validate tournament exists and is accessible
-      const tournament = await enhancedOfflineService.readOffline('tournaments', invitation.tournamentId);
+      const tournament = await enhancedOfflineService.readOffline(
+        'tournaments',
+        invitation.tournamentId
+      );
       if (!tournament) {
         return { isValid: false, error: 'tournament_not_found', invitation };
       }
@@ -314,7 +342,6 @@ export class RefereeAccessService {
       this.accessAttempts.delete(deviceId);
 
       return { isValid: true, invitation };
-
     } catch (error) {
       console.error('Failed to validate access code:', error);
       this.recordFailedAttempt(deviceId);
@@ -325,11 +352,14 @@ export class RefereeAccessService {
   private recordFailedAttempt(deviceId: string): void {
     const attempts = this.accessAttempts.get(deviceId) || 0;
     this.accessAttempts.set(deviceId, attempts + 1);
-    
+
     // Clear attempts after 30 minutes
-    setTimeout(() => {
-      this.accessAttempts.delete(deviceId);
-    }, 30 * 60 * 1000);
+    setTimeout(
+      () => {
+        this.accessAttempts.delete(deviceId);
+      },
+      30 * 60 * 1000
+    );
   }
 
   /**
@@ -384,9 +414,10 @@ export class RefereeAccessService {
         deviceInfo,
       });
 
-      console.log(`Referee session created for ${refereeId} on device ${deviceId}`);
+      console.log(
+        `Referee session created for ${refereeId} on device ${deviceId}`
+      );
       return session;
-
     } catch (error) {
       console.error('Failed to accept invitation:', error);
       throw error;
@@ -396,7 +427,10 @@ export class RefereeAccessService {
   /**
    * AC2B.2.2: Emergency permission revocation
    */
-  async revokeRefereeAccess(refereeId: string, reason: string = 'Access revoked by organizer'): Promise<void> {
+  async revokeRefereeAccess(
+    refereeId: string,
+    reason: string = 'Access revoked by organizer'
+  ): Promise<void> {
     try {
       const session = this.sessions.get(refereeId);
       if (!session) {
@@ -431,7 +465,6 @@ export class RefereeAccessService {
       await this.persistData();
 
       console.log(`Revoked referee access for ${refereeId}: ${reason}`);
-
     } catch (error) {
       console.error('Failed to revoke referee access:', error);
       throw error;
@@ -441,7 +474,11 @@ export class RefereeAccessService {
   /**
    * AC2B.2.2: Check if referee has permission for specific match
    */
-  hasMatchPermission(refereeId: string, matchId: string, action: 'view' | 'edit' | 'start' | 'complete'): boolean {
+  hasMatchPermission(
+    refereeId: string,
+    matchId: string,
+    action: 'view' | 'edit' | 'start' | 'complete'
+  ): boolean {
     const session = this.sessions.get(refereeId);
     if (!session || !session.isActive) {
       return false;
@@ -450,7 +487,9 @@ export class RefereeAccessService {
     const permissions = session.permissions;
 
     // Check if match is assigned
-    const hasMatchAccess = permissions.assignedMatches.includes(matchId) || permissions.canViewAllMatches;
+    const hasMatchAccess =
+      permissions.assignedMatches.includes(matchId) ||
+      permissions.canViewAllMatches;
     if (!hasMatchAccess) {
       return false;
     }
@@ -489,28 +528,30 @@ export class RefereeAccessService {
 
     if (metrics.matchCompleted) {
       perf.matchesCompleted++;
-      
+
       if (metrics.matchDurationMinutes) {
         // Update average match time
-        perf.averageMatchTime = (
-          (perf.averageMatchTime * (perf.matchesCompleted - 1)) + 
-          metrics.matchDurationMinutes
-        ) / perf.matchesCompleted;
+        perf.averageMatchTime =
+          (perf.averageMatchTime * (perf.matchesCompleted - 1) +
+            metrics.matchDurationMinutes) /
+          perf.matchesCompleted;
       }
     }
 
     if (metrics.responseTimeMs) {
       // Exponential moving average for response time
-      perf.responseTime = perf.responseTime === 0 ? 
-        metrics.responseTimeMs : 
-        (perf.responseTime * 0.8) + (metrics.responseTimeMs * 0.2);
+      perf.responseTime =
+        perf.responseTime === 0
+          ? metrics.responseTimeMs
+          : perf.responseTime * 0.8 + metrics.responseTimeMs * 0.2;
     }
 
     if (metrics.accuracyAdjustment !== undefined) {
       // Adjust accuracy score (clamped between 0-100)
-      perf.accuracyScore = Math.max(0, Math.min(100, 
-        perf.accuracyScore + metrics.accuracyAdjustment
-      ));
+      perf.accuracyScore = Math.max(
+        0,
+        Math.min(100, perf.accuracyScore + metrics.accuracyAdjustment)
+      );
     }
 
     session.lastActivity = Date.now();
@@ -521,11 +562,9 @@ export class RefereeAccessService {
    * Get all active referee sessions for tournament
    */
   getActiveReferees(tournamentId: string): RefereeSession[] {
-    return Array.from(this.sessions.values())
-      .filter(session => 
-        session.tournamentId === tournamentId && 
-        session.isActive
-      );
+    return Array.from(this.sessions.values()).filter(
+      session => session.tournamentId === tournamentId && session.isActive
+    );
   }
 
   /**
@@ -539,21 +578,27 @@ export class RefereeAccessService {
    * Get all invitations for tournament
    */
   getTournamentInvitations(tournamentId: string): RefereeInvitation[] {
-    return Array.from(this.invitations.values())
-      .filter(inv => inv.tournamentId === tournamentId);
+    return Array.from(this.invitations.values()).filter(
+      inv => inv.tournamentId === tournamentId
+    );
   }
 
   /**
    * Assign match to referee
    */
-  async assignMatchToReferee(refereeId: string, matchId: string): Promise<void> {
+  async assignMatchToReferee(
+    refereeId: string,
+    matchId: string
+  ): Promise<void> {
     const session = this.sessions.get(refereeId);
     if (!session || !session.isActive) {
       throw new Error('Referee session not found or inactive');
     }
 
     // Check concurrent match limit
-    if (session.currentMatches.length >= session.permissions.maxConcurrentMatches) {
+    if (
+      session.currentMatches.length >= session.permissions.maxConcurrentMatches
+    ) {
       throw new Error('Referee has reached maximum concurrent matches limit');
     }
 
@@ -587,17 +632,21 @@ export class RefereeAccessService {
   /**
    * Remove match assignment from referee
    */
-  async unassignMatchFromReferee(refereeId: string, matchId: string): Promise<void> {
+  async unassignMatchFromReferee(
+    refereeId: string,
+    matchId: string
+  ): Promise<void> {
     const session = this.sessions.get(refereeId);
     if (!session) return;
 
     // Remove from assigned matches
-    session.permissions.assignedMatches = session.permissions.assignedMatches
-      .filter(id => id !== matchId);
+    session.permissions.assignedMatches =
+      session.permissions.assignedMatches.filter(id => id !== matchId);
 
     // Remove from current matches
-    session.currentMatches = session.currentMatches
-      .filter(id => id !== matchId);
+    session.currentMatches = session.currentMatches.filter(
+      id => id !== matchId
+    );
 
     session.lastActivity = Date.now();
     await this.persistData();
@@ -607,9 +656,12 @@ export class RefereeAccessService {
    * Cleanup expired invitations and inactive sessions
    */
   private scheduleCleanup(): void {
-    setInterval(async () => {
-      await this.cleanupExpiredData();
-    }, 60 * 60 * 1000); // Run every hour
+    setInterval(
+      async () => {
+        await this.cleanupExpiredData();
+      },
+      60 * 60 * 1000
+    ); // Run every hour
   }
 
   private async cleanupExpiredData(): Promise<void> {
@@ -626,7 +678,7 @@ export class RefereeAccessService {
       }
 
       // Clean up inactive sessions (inactive for more than 24 hours)
-      const inactiveThreshold = now - (24 * 60 * 60 * 1000);
+      const inactiveThreshold = now - 24 * 60 * 60 * 1000;
       for (const [refereeId, session] of this.sessions) {
         if (session.lastActivity < inactiveThreshold) {
           session.isActive = false;
@@ -637,7 +689,6 @@ export class RefereeAccessService {
       if (hasChanges) {
         await this.persistData();
       }
-
     } catch (error) {
       console.error('Failed to cleanup expired data:', error);
     }

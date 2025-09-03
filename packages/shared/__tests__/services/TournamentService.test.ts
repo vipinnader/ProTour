@@ -14,7 +14,7 @@ describe('TournamentService', () => {
   beforeEach(() => {
     // Reset all mocks
     jest.clearAllMocks();
-    
+
     // Setup mock objects
     mockDoc = {
       get: jest.fn(),
@@ -68,7 +68,10 @@ describe('TournamentService', () => {
         id: mockTournamentId,
       });
 
-      const result = await tournamentService.createTournament(validTournamentData, organizerId);
+      const result = await tournamentService.createTournament(
+        validTournamentData,
+        organizerId
+      );
 
       expect(mockCollection.add).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -99,7 +102,10 @@ describe('TournamentService', () => {
     });
 
     it('should validate sport enum', async () => {
-      const invalidData = { ...validTournamentData, sport: 'invalid-sport' as any };
+      const invalidData = {
+        ...validTournamentData,
+        sport: 'invalid-sport' as any,
+      };
 
       await expect(
         tournamentService.createTournament(invalidData, organizerId)
@@ -107,7 +113,10 @@ describe('TournamentService', () => {
     });
 
     it('should validate format enum', async () => {
-      const invalidData = { ...validTournamentData, format: 'invalid-format' as any };
+      const invalidData = {
+        ...validTournamentData,
+        format: 'invalid-format' as any,
+      };
 
       await expect(
         tournamentService.createTournament(invalidData, organizerId)
@@ -159,11 +168,19 @@ describe('TournamentService', () => {
     it('should generate unique tournament codes', async () => {
       mockCollection.add.mockResolvedValue({ id: 'test-id' });
 
-      const tournament1 = await tournamentService.createTournament(validTournamentData, organizerId);
-      const tournament2 = await tournamentService.createTournament(validTournamentData, organizerId);
+      const tournament1 = await tournamentService.createTournament(
+        validTournamentData,
+        organizerId
+      );
+      const tournament2 = await tournamentService.createTournament(
+        validTournamentData,
+        organizerId
+      );
 
       expect(tournament1.tournamentCode).not.toBe(tournament2.tournamentCode);
-      expect(tournament1.tournamentCode).toMatch(/^[ABCDEFGHIJKLMNPQRSTUVWXYZ123456789]{6}$/);
+      expect(tournament1.tournamentCode).toMatch(
+        /^[ABCDEFGHIJKLMNPQRSTUVWXYZ123456789]{6}$/
+      );
     });
   });
 
@@ -244,7 +261,9 @@ describe('TournamentService', () => {
 
       await expect(
         tournamentService.updateTournament(tournamentId, updates)
-      ).rejects.toThrow('Cannot change tournament format after players are added');
+      ).rejects.toThrow(
+        'Cannot change tournament format after players are added'
+      );
     });
 
     it('should validate status transitions', async () => {
@@ -307,7 +326,9 @@ describe('TournamentService', () => {
 
       await expect(
         tournamentService.deleteTournament(tournamentId, organizerId)
-      ).rejects.toThrow('Unauthorized: You can only delete your own tournaments');
+      ).rejects.toThrow(
+        'Unauthorized: You can only delete your own tournaments'
+      );
     });
 
     it('should prevent deletion of active tournaments', async () => {
@@ -359,7 +380,8 @@ describe('TournamentService', () => {
 
       mockCollection.where.mockReturnValue(mockQuery);
 
-      const result = await tournamentService.getTournamentsByOrganizer(organizerId);
+      const result =
+        await tournamentService.getTournamentsByOrganizer(organizerId);
 
       expect(result).toHaveLength(2);
       expect(result[0].organizerId).toBe(organizerId);
@@ -376,7 +398,11 @@ describe('TournamentService', () => {
 
       await tournamentService.getTournamentsByOrganizer(organizerId, filters);
 
-      expect(mockCollection.where).toHaveBeenCalledWith('organizerId', '==', organizerId);
+      expect(mockCollection.where).toHaveBeenCalledWith(
+        'organizerId',
+        '==',
+        organizerId
+      );
       // Note: In a real implementation, we'd check for the status filter too
     });
   });
@@ -393,16 +419,19 @@ describe('TournamentService', () => {
 
       const mockQuery = {
         get: jest.fn().mockResolvedValue({
-          docs: [{
-            id: mockTournament.id,
-            data: () => mockTournament,
-          }],
+          docs: [
+            {
+              id: mockTournament.id,
+              data: () => mockTournament,
+            },
+          ],
         }),
       };
 
       mockCollection.where.mockReturnValue(mockQuery);
 
-      const result = await tournamentService.findTournamentByCode(tournamentCode);
+      const result =
+        await tournamentService.findTournamentByCode(tournamentCode);
 
       expect(result).toEqual({ ...mockTournament, id: mockTournament.id });
     });
@@ -414,7 +443,8 @@ describe('TournamentService', () => {
 
       mockCollection.where.mockReturnValue(mockQuery);
 
-      const result = await tournamentService.findTournamentByCode(tournamentCode);
+      const result =
+        await tournamentService.findTournamentByCode(tournamentCode);
 
       expect(result).toBeNull();
     });

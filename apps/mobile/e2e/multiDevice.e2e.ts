@@ -14,7 +14,7 @@ describe('Multi-Device Tournament Scenarios', () => {
     it('should create tournament on organizer device', async () => {
       // This would be expanded when actual screens are implemented
       await expect(element(by.text('ProTour'))).toBeVisible();
-      
+
       // Mock tournament creation flow
       // 1. Navigate to create tournament
       // 2. Fill tournament details
@@ -25,7 +25,7 @@ describe('Multi-Device Tournament Scenarios', () => {
     it('should manage tournament settings', async () => {
       // Test tournament settings management
       await expect(element(by.text('ProTour'))).toBeVisible();
-      
+
       // Mock settings management
       // 1. Edit tournament details
       // 2. Manage participants
@@ -37,7 +37,7 @@ describe('Multi-Device Tournament Scenarios', () => {
   describe('Player Registration Workflow', () => {
     it('should register for tournament on player device', async () => {
       await expect(element(by.text('ProTour'))).toBeVisible();
-      
+
       // Mock player registration flow
       // 1. Browse available tournaments
       // 2. View tournament details
@@ -47,7 +47,7 @@ describe('Multi-Device Tournament Scenarios', () => {
 
     it('should view tournament bracket and schedule', async () => {
       await expect(element(by.text('ProTour'))).toBeVisible();
-      
+
       // Mock bracket viewing
       // 1. Navigate to tournament
       // 2. View current bracket
@@ -59,7 +59,7 @@ describe('Multi-Device Tournament Scenarios', () => {
   describe('Referee Match Management', () => {
     it('should score matches on referee device', async () => {
       await expect(element(by.text('ProTour'))).toBeVisible();
-      
+
       // Mock match scoring
       // 1. Select active match
       // 2. Enter match scores
@@ -69,7 +69,7 @@ describe('Multi-Device Tournament Scenarios', () => {
 
     it('should handle match disputes', async () => {
       await expect(element(by.text('ProTour'))).toBeVisible();
-      
+
       // Mock dispute handling
       // 1. Receive dispute notification
       // 2. Review match details
@@ -81,7 +81,7 @@ describe('Multi-Device Tournament Scenarios', () => {
   describe('Real-time Synchronization', () => {
     it('should sync tournament updates across devices', async () => {
       await expect(element(by.text('ProTour'))).toBeVisible();
-      
+
       // Test real-time sync
       // This would require multiple device instances
       // 1. Update tournament on device A
@@ -92,7 +92,7 @@ describe('Multi-Device Tournament Scenarios', () => {
 
     it('should handle offline mode gracefully', async () => {
       await expect(element(by.text('ProTour'))).toBeVisible();
-      
+
       // Test offline functionality
       // 1. Disable network
       // 2. Perform tournament operations
@@ -104,7 +104,7 @@ describe('Multi-Device Tournament Scenarios', () => {
   describe('Notification Testing', () => {
     it('should receive tournament notifications', async () => {
       await expect(element(by.text('ProTour'))).toBeVisible();
-      
+
       // Test push notifications
       // 1. Match scheduled notification
       // 2. Tournament update notification
@@ -116,7 +116,7 @@ describe('Multi-Device Tournament Scenarios', () => {
   describe('Performance Under Load', () => {
     it('should handle large tournaments efficiently', async () => {
       await expect(element(by.text('ProTour'))).toBeVisible();
-      
+
       // Test with large datasets
       // 1. Tournament with 128+ participants
       // 2. Complex bracket rendering

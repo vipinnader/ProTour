@@ -27,9 +27,18 @@ class VersionManager {
   constructor() {
     this.rootPath = path.join(__dirname, '..');
     this.packagePath = path.join(this.rootPath, 'package.json');
-    this.mobilePackagePath = path.join(this.rootPath, 'apps/mobile/package.json');
-    this.functionsPackagePath = path.join(this.rootPath, 'functions/package.json');
-    this.sharedPackagePath = path.join(this.rootPath, 'packages/shared/package.json');
+    this.mobilePackagePath = path.join(
+      this.rootPath,
+      'apps/mobile/package.json'
+    );
+    this.functionsPackagePath = path.join(
+      this.rootPath,
+      'functions/package.json'
+    );
+    this.sharedPackagePath = path.join(
+      this.rootPath,
+      'packages/shared/package.json'
+    );
     this.changelogPath = path.join(this.rootPath, 'CHANGELOG.md');
   }
 
@@ -50,7 +59,7 @@ class VersionManager {
    */
   calculateNextVersion(currentVersion, bumpType) {
     const [major, minor, patch] = currentVersion.split('.').map(Number);
-    
+
     switch (bumpType) {
       case 'major':
         return `${major + 1}.0.0`;
@@ -59,7 +68,9 @@ class VersionManager {
       case 'patch':
         return `${major}.${minor}.${patch + 1}`;
       case 'prerelease':
-        const prereleaseMatch = currentVersion.match(/(\d+\.\d+\.\d+)-(\w+)\.(\d+)/);
+        const prereleaseMatch = currentVersion.match(
+          /(\d+\.\d+\.\d+)-(\w+)\.(\d+)/
+        );
         if (prereleaseMatch) {
           const [, base, tag, num] = prereleaseMatch;
           return `${base}-${tag}.${Number(num) + 1}`;
@@ -86,8 +97,14 @@ class VersionManager {
       if (fs.existsSync(packagePath)) {
         const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
         packageJson.version = newVersion;
-        fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2) + '\n');
-        log(`✅ Updated ${path.relative(this.rootPath, packagePath)} to v${newVersion}`, colors.green);
+        fs.writeFileSync(
+          packagePath,
+          JSON.stringify(packageJson, null, 2) + '\n'
+        );
+        log(
+          `✅ Updated ${path.relative(this.rootPath, packagePath)} to v${newVersion}`,
+          colors.green
+        );
       }
     });
   }
@@ -96,8 +113,14 @@ class VersionManager {
    * Update iOS version in Info.plist and project.pbxproj
    */
   updateiOSVersion(newVersion) {
-    const infoPlistPath = path.join(this.rootPath, 'apps/mobile/ios/ProTour/Info.plist');
-    const projectPath = path.join(this.rootPath, 'apps/mobile/ios/ProTour.xcodeproj/project.pbxproj');
+    const infoPlistPath = path.join(
+      this.rootPath,
+      'apps/mobile/ios/ProTour/Info.plist'
+    );
+    const projectPath = path.join(
+      this.rootPath,
+      'apps/mobile/ios/ProTour.xcodeproj/project.pbxproj'
+    );
 
     if (fs.existsSync(infoPlistPath)) {
       let infoPlist = fs.readFileSync(infoPlistPath, 'utf8');
@@ -124,11 +147,14 @@ class VersionManager {
    * Update Android version in build.gradle
    */
   updateAndroidVersion(newVersion) {
-    const buildGradlePath = path.join(this.rootPath, 'apps/mobile/android/app/build.gradle');
+    const buildGradlePath = path.join(
+      this.rootPath,
+      'apps/mobile/android/app/build.gradle'
+    );
 
     if (fs.existsSync(buildGradlePath)) {
       let buildGradle = fs.readFileSync(buildGradlePath, 'utf8');
-      
+
       // Update versionName
       buildGradle = buildGradle.replace(
         /versionName\s+["'][^"']*["']/,
@@ -155,16 +181,22 @@ class VersionManager {
    */
   getCommitsSinceLastTag() {
     try {
-      const lastTag = execSync('git describe --tags --abbrev=0 2>/dev/null || echo ""', 
-        { encoding: 'utf8' }).trim();
-      
+      const lastTag = execSync(
+        'git describe --tags --abbrev=0 2>/dev/null || echo ""',
+        { encoding: 'utf8' }
+      ).trim();
+
       const range = lastTag ? `${lastTag}..HEAD` : 'HEAD';
-      const commits = execSync(`git log ${range} --oneline --no-merges`, 
-        { encoding: 'utf8' }).trim();
-      
+      const commits = execSync(`git log ${range} --oneline --no-merges`, {
+        encoding: 'utf8',
+      }).trim();
+
       return commits ? commits.split('\n') : [];
     } catch (error) {
-      log(`Warning: Could not get git commits: ${error.message}`, colors.yellow);
+      log(
+        `Warning: Could not get git commits: ${error.message}`,
+        colors.yellow
+      );
       return [];
     }
   }
@@ -184,9 +216,15 @@ class VersionManager {
 
       if (lowerMessage.includes('breaking') || lowerMessage.includes('!:')) {
         breaking.push(message);
-      } else if (lowerMessage.startsWith('feat') || lowerMessage.includes('add')) {
+      } else if (
+        lowerMessage.startsWith('feat') ||
+        lowerMessage.includes('add')
+      ) {
         features.push(message);
-      } else if (lowerMessage.startsWith('fix') || lowerMessage.includes('fix')) {
+      } else if (
+        lowerMessage.startsWith('fix') ||
+        lowerMessage.includes('fix')
+      ) {
         fixes.push(message);
       } else {
         other.push(message);
@@ -198,25 +236,25 @@ class VersionManager {
 
     if (breaking.length > 0) {
       releaseNotes += '## 💥 Breaking Changes\n\n';
-      breaking.forEach(commit => releaseNotes += `- ${commit}\n`);
+      breaking.forEach(commit => (releaseNotes += `- ${commit}\n`));
       releaseNotes += '\n';
     }
 
     if (features.length > 0) {
       releaseNotes += '## ✨ New Features\n\n';
-      features.forEach(commit => releaseNotes += `- ${commit}\n`);
+      features.forEach(commit => (releaseNotes += `- ${commit}\n`));
       releaseNotes += '\n';
     }
 
     if (fixes.length > 0) {
       releaseNotes += '## 🐛 Bug Fixes\n\n';
-      fixes.forEach(commit => releaseNotes += `- ${commit}\n`);
+      fixes.forEach(commit => (releaseNotes += `- ${commit}\n`));
       releaseNotes += '\n';
     }
 
     if (other.length > 0) {
       releaseNotes += '## 🔧 Other Changes\n\n';
-      other.forEach(commit => releaseNotes += `- ${commit}\n`);
+      other.forEach(commit => (releaseNotes += `- ${commit}\n`));
       releaseNotes += '\n';
     }
 
@@ -228,19 +266,20 @@ class VersionManager {
    */
   updateChangelog(version, releaseNotes) {
     let changelog = '';
-    
+
     if (fs.existsSync(this.changelogPath)) {
       changelog = fs.readFileSync(this.changelogPath, 'utf8');
     } else {
-      changelog = '# Changelog\n\nAll notable changes to ProTour will be documented in this file.\n\n';
+      changelog =
+        '# Changelog\n\nAll notable changes to ProTour will be documented in this file.\n\n';
     }
 
     // Insert new release notes at the top
     const lines = changelog.split('\n');
     const headerEnd = lines.findIndex(line => line.startsWith('# ')) + 2;
-    
+
     lines.splice(headerEnd, 0, releaseNotes);
-    
+
     fs.writeFileSync(this.changelogPath, lines.join('\n'));
     log(`✅ Updated CHANGELOG.md with v${version} release notes`, colors.green);
   }
@@ -251,7 +290,9 @@ class VersionManager {
   createGitTag(version, releaseNotes) {
     try {
       const tagMessage = `Release v${version}\n\n${releaseNotes}`;
-      execSync(`git tag -a v${version} -m "${tagMessage}"`, { stdio: 'inherit' });
+      execSync(`git tag -a v${version} -m "${tagMessage}"`, {
+        stdio: 'inherit',
+      });
       log(`✅ Created git tag v${version}`, colors.green);
     } catch (error) {
       log(`❌ Failed to create git tag: ${error.message}`, colors.red);
@@ -264,7 +305,9 @@ class VersionManager {
   commitVersionChanges(version) {
     try {
       execSync('git add .', { stdio: 'inherit' });
-      execSync(`git commit -m "chore: bump version to v${version}"`, { stdio: 'inherit' });
+      execSync(`git commit -m "chore: bump version to v${version}"`, {
+        stdio: 'inherit',
+      });
       log(`✅ Committed version changes for v${version}`, colors.green);
     } catch (error) {
       log(`❌ Failed to commit version changes: ${error.message}`, colors.red);
@@ -275,11 +318,11 @@ class VersionManager {
    * Main version bump function
    */
   async bump(bumpType, options = {}) {
-    const { 
-      skipGit = false, 
-      skipTag = false, 
+    const {
+      skipGit = false,
+      skipTag = false,
       dryRun = false,
-      prerelease = false 
+      prerelease = false,
     } = options;
 
     log('🚀 Starting version bump process...', colors.cyan);
@@ -321,7 +364,7 @@ class VersionManager {
     }
 
     log(`\n🎉 Successfully bumped version to v${newVersion}!`, colors.green);
-    
+
     if (!skipGit && !skipTag) {
       log(`\n📝 Don't forget to push the tag:`, colors.cyan);
       log(`   git push origin v${newVersion}`, colors.cyan);
@@ -341,8 +384,10 @@ class VersionManager {
     log(`Current version: ${currentVersion}`, colors.green);
 
     try {
-      const lastTag = execSync('git describe --tags --abbrev=0 2>/dev/null || echo "No tags"', 
-        { encoding: 'utf8' }).trim();
+      const lastTag = execSync(
+        'git describe --tags --abbrev=0 2>/dev/null || echo "No tags"',
+        { encoding: 'utf8' }
+      ).trim();
       log(`Last git tag: ${lastTag}`, colors.cyan);
     } catch (error) {
       log('Last git tag: No tags found', colors.yellow);
@@ -377,7 +422,10 @@ async function main() {
       case 'bump':
         if (!arg || !['major', 'minor', 'patch', 'prerelease'].includes(arg)) {
           log('❌ Invalid bump type', colors.red);
-          log('Usage: npm run version:bump <major|minor|patch|prerelease>', colors.cyan);
+          log(
+            'Usage: npm run version:bump <major|minor|patch|prerelease>',
+            colors.cyan
+          );
           process.exit(1);
         }
 
@@ -403,12 +451,18 @@ async function main() {
         log('======================', colors.cyan);
         log('');
         log('Commands:', colors.blue);
-        log('  bump <type>    Bump version (major, minor, patch, prerelease)', colors.cyan);
+        log(
+          '  bump <type>    Bump version (major, minor, patch, prerelease)',
+          colors.cyan
+        );
         log('  status         Show current version status', colors.cyan);
         log('  current        Show current version number', colors.cyan);
         log('');
         log('Options:', colors.blue);
-        log('  --dry-run      Show what would be changed without making changes', colors.cyan);
+        log(
+          '  --dry-run      Show what would be changed without making changes',
+          colors.cyan
+        );
         log('  --skip-git     Skip git operations (commit, tag)', colors.cyan);
         log('  --skip-tag     Skip creating git tag', colors.cyan);
         log('');

@@ -1,16 +1,20 @@
 // Notification service for ProTour - Epic 3 Implementation
 
 import { DatabaseService } from './DatabaseService';
-import { 
+import {
   NotificationPreference,
   Match,
   Tournament,
-  TournamentRegistration 
+  TournamentRegistration,
 } from '../types';
 import firestore from '@react-native-firebase/firestore';
 
 export interface NotificationConfig {
-  type: 'match-ready' | 'match-completed' | 'bracket-updated' | 'tournament-update';
+  type:
+    | 'match-ready'
+    | 'match-completed'
+    | 'bracket-updated'
+    | 'tournament-update';
   title: string;
   body: string;
   data?: Record<string, string>;
@@ -33,9 +37,11 @@ export class NotificationService extends DatabaseService {
   private readonly DELIVERY_LOG_COLLECTION = 'notification_delivery_log';
 
   // Notification Preferences Management
-  async getUserNotificationPreferences(userId: string): Promise<NotificationPreference[]> {
+  async getUserNotificationPreferences(
+    userId: string
+  ): Promise<NotificationPreference[]> {
     return this.query<NotificationPreference>(this.PREFERENCES_COLLECTION, [
-      { fieldPath: 'userId', opStr: '==', value: userId }
+      { fieldPath: 'userId', opStr: '==', value: userId },
     ]);
   }
 
@@ -48,7 +54,11 @@ export class NotificationService extends DatabaseService {
       [
         { fieldPath: 'userId', opStr: '==', value: preference.userId },
         { fieldPath: 'type', opStr: '==', value: preference.type },
-        { fieldPath: 'tournamentId', opStr: '==', value: preference.tournamentId || null }
+        {
+          fieldPath: 'tournamentId',
+          opStr: '==',
+          value: preference.tournamentId || null,
+        },
       ]
     );
 
@@ -62,12 +72,15 @@ export class NotificationService extends DatabaseService {
       return { ...existing[0], ...preference };
     } else {
       // Create new preference
-      return this.create<NotificationPreference>(this.PREFERENCES_COLLECTION, preference);
+      return this.create<NotificationPreference>(
+        this.PREFERENCES_COLLECTION,
+        preference
+      );
     }
   }
 
   async isNotificationEnabled(
-    userId: string, 
+    userId: string,
     type: NotificationPreference['type'],
     tournamentId?: string
   ): Promise<boolean> {
@@ -76,13 +89,15 @@ export class NotificationService extends DatabaseService {
       [
         { fieldPath: 'userId', opStr: '==', value: userId },
         { fieldPath: 'type', opStr: '==', value: type },
-        { fieldPath: 'tournamentId', opStr: '==', value: tournamentId || null }
+        { fieldPath: 'tournamentId', opStr: '==', value: tournamentId || null },
       ]
     );
 
     if (preferences.length === 0) {
       // Default to enabled for most notification types
-      return ['match-ready', 'match-completed', 'tournament-update'].includes(type);
+      return ['match-ready', 'match-completed', 'tournament-update'].includes(
+        type
+      );
     }
 
     return preferences[0].enabled;
@@ -90,12 +105,12 @@ export class NotificationService extends DatabaseService {
 
   // Tournament-Specific Notifications
   async notifyMatchReady(
-    match: Match, 
+    match: Match,
     tournament: Tournament,
     minutesBefore: number = 30
   ): Promise<void> {
     const recipients = [match.player1Id, match.player2Id].filter(Boolean);
-    
+
     // Filter recipients based on their notification preferences
     const enabledRecipients = await this.filterRecipientsByPreference(
       recipients,
@@ -107,8 +122,10 @@ export class NotificationService extends DatabaseService {
 
     // Get player names for notification
     const player1Name = await this.getPlayerName(match.player1Id);
-    const player2Name = match.player2Id ? await this.getPlayerName(match.player2Id) : null;
-    
+    const player2Name = match.player2Id
+      ? await this.getPlayerName(match.player2Id)
+      : null;
+
     const vsText = player2Name ? `vs ${player2Name}` : '(bye)';
     const timeText = minutesBefore > 0 ? `in ${minutesBefore} minutes` : 'now';
 
@@ -122,28 +139,32 @@ export class NotificationService extends DatabaseService {
         tournamentId: tournament.id,
         tournamentName: tournament.name,
         round: match.round.toString(),
-        court: match.court || 'TBD'
+        court: match.court || 'TBD',
       },
-      recipients: enabledRecipients
+      recipients: enabledRecipients,
     };
 
     await this.scheduleNotification(config);
   }
 
   async notifyMatchCompleted(
-    match: Match, 
+    match: Match,
     tournament: Tournament,
     winnerId: string
   ): Promise<void> {
     // Notify players in the match
-    const matchParticipants = [match.player1Id, match.player2Id].filter(Boolean);
-    
+    const matchParticipants = [match.player1Id, match.player2Id].filter(
+      Boolean
+    );
+
     // Notify tournament followers/spectators
-    const tournamentFollowers = await this.getTournamentFollowers(tournament.id);
-    
+    const tournamentFollowers = await this.getTournamentFollowers(
+      tournament.id
+    );
+
     const allRecipients = [...matchParticipants, ...tournamentFollowers];
     const uniqueRecipients = [...new Set(allRecipients)];
-    
+
     // Filter by preferences
     const enabledRecipients = await this.filterRecipientsByPreference(
       uniqueRecipients,
@@ -170,9 +191,9 @@ export class NotificationService extends DatabaseService {
         tournamentName: tournament.name,
         winnerId,
         winnerName,
-        round: match.round.toString()
+        round: match.round.toString(),
       },
-      recipients: enabledRecipients
+      recipients: enabledRecipients,
     };
 
     await this.scheduleNotification(config);
@@ -180,7 +201,7 @@ export class NotificationService extends DatabaseService {
 
   async notifyBracketUpdated(tournament: Tournament): Promise<void> {
     const followers = await this.getTournamentFollowers(tournament.id);
-    
+
     const enabledRecipients = await this.filterRecipientsByPreference(
       followers,
       'bracket-updated',
@@ -197,21 +218,21 @@ export class NotificationService extends DatabaseService {
         type: 'bracket-updated',
         tournamentId: tournament.id,
         tournamentName: tournament.name,
-        sport: tournament.sport
+        sport: tournament.sport,
       },
-      recipients: enabledRecipients
+      recipients: enabledRecipients,
     };
 
     await this.scheduleNotification(config);
   }
 
   async notifyTournamentUpdate(
-    tournament: Tournament, 
+    tournament: Tournament,
     updateType: 'started' | 'completed' | 'cancelled',
     customMessage?: string
   ): Promise<void> {
     const participants = await this.getTournamentParticipants(tournament.id);
-    
+
     const enabledRecipients = await this.filterRecipientsByPreference(
       participants,
       'tournament-update',
@@ -230,11 +251,15 @@ export class NotificationService extends DatabaseService {
         break;
       case 'completed':
         title = '🎉 Tournament Completed';
-        body = customMessage || `${tournament.name} has been completed. Check out the final results!`;
+        body =
+          customMessage ||
+          `${tournament.name} has been completed. Check out the final results!`;
         break;
       case 'cancelled':
         title = '⚠️ Tournament Cancelled';
-        body = customMessage || `${tournament.name} has been cancelled. Please check for updates.`;
+        body =
+          customMessage ||
+          `${tournament.name} has been cancelled. Please check for updates.`;
         break;
     }
 
@@ -247,16 +272,18 @@ export class NotificationService extends DatabaseService {
         updateType,
         tournamentId: tournament.id,
         tournamentName: tournament.name,
-        sport: tournament.sport
+        sport: tournament.sport,
       },
-      recipients: enabledRecipients
+      recipients: enabledRecipients,
     };
 
     await this.scheduleNotification(config);
   }
 
   // Scheduling and Delivery
-  private async scheduleNotification(config: NotificationConfig): Promise<ScheduledNotification> {
+  private async scheduleNotification(
+    config: NotificationConfig
+  ): Promise<ScheduledNotification> {
     const notificationData: Omit<ScheduledNotification, 'id'> = {
       config,
       status: 'pending',
@@ -296,17 +323,20 @@ export class NotificationService extends DatabaseService {
 
       // Log delivery for each recipient
       for (const recipientId of notification.config.recipients) {
-        await this.logNotificationDelivery(notificationId, recipientId, 'delivered');
+        await this.logNotificationDelivery(
+          notificationId,
+          recipientId,
+          'delivered'
+        );
       }
-
     } catch (error: any) {
       // Update status to failed
       await this.update<ScheduledNotification>(
         this.SCHEDULED_COLLECTION,
         notificationId,
-        { 
+        {
           status: 'failed',
-          error: error.message
+          error: error.message,
         }
       );
 
@@ -338,7 +368,11 @@ export class NotificationService extends DatabaseService {
     const enabled: string[] = [];
 
     for (const userId of recipients) {
-      const isEnabled = await this.isNotificationEnabled(userId, type, tournamentId);
+      const isEnabled = await this.isNotificationEnabled(
+        userId,
+        type,
+        tournamentId
+      );
       if (isEnabled) {
         enabled.push(userId);
       }
@@ -347,23 +381,33 @@ export class NotificationService extends DatabaseService {
     return enabled;
   }
 
-  private async getTournamentFollowers(tournamentId: string): Promise<string[]> {
+  private async getTournamentFollowers(
+    tournamentId: string
+  ): Promise<string[]> {
     // Get users who are following this tournament (registered as players or spectators)
-    const registrations = await this.query<TournamentRegistration>('tournament_registrations', [
-      { fieldPath: 'tournamentId', opStr: '==', value: tournamentId },
-      { fieldPath: 'status', opStr: '==', value: 'active' }
-    ]);
+    const registrations = await this.query<TournamentRegistration>(
+      'tournament_registrations',
+      [
+        { fieldPath: 'tournamentId', opStr: '==', value: tournamentId },
+        { fieldPath: 'status', opStr: '==', value: 'active' },
+      ]
+    );
 
     return registrations.map(reg => reg.userId);
   }
 
-  private async getTournamentParticipants(tournamentId: string): Promise<string[]> {
+  private async getTournamentParticipants(
+    tournamentId: string
+  ): Promise<string[]> {
     // Get users who are registered as players in this tournament
-    const registrations = await this.query<TournamentRegistration>('tournament_registrations', [
-      { fieldPath: 'tournamentId', opStr: '==', value: tournamentId },
-      { fieldPath: 'role', opStr: '==', value: 'player' },
-      { fieldPath: 'status', opStr: '==', value: 'active' }
-    ]);
+    const registrations = await this.query<TournamentRegistration>(
+      'tournament_registrations',
+      [
+        { fieldPath: 'tournamentId', opStr: '==', value: tournamentId },
+        { fieldPath: 'role', opStr: '==', value: 'player' },
+        { fieldPath: 'status', opStr: '==', value: 'active' },
+      ]
+    );
 
     return registrations.map(reg => reg.userId);
   }
@@ -388,7 +432,7 @@ export class NotificationService extends DatabaseService {
 
       for (const minutes of reminderTimes) {
         const notificationTime = new Date(
-          match.startTime.toDate().getTime() - (minutes * 60 * 1000)
+          match.startTime.toDate().getTime() - minutes * 60 * 1000
         );
 
         // Only schedule if the notification time is in the future
@@ -404,10 +448,10 @@ export class NotificationService extends DatabaseService {
               tournamentName: tournament.name,
               minutesBefore: minutes.toString(),
               round: match.round.toString(),
-              court: match.court || 'TBD'
+              court: match.court || 'TBD',
             },
             recipients: [match.player1Id, match.player2Id].filter(Boolean),
-            scheduledFor: notificationTime
+            scheduledFor: notificationTime,
           };
 
           await this.scheduleNotification(config);
@@ -438,7 +482,7 @@ export class NotificationService extends DatabaseService {
         'match-completed': 35,
         'bracket-updated': 20,
         'tournament-update': 15,
-      }
+      },
     };
   }
 }

@@ -31,39 +31,54 @@ const RefereeScoreEntry: React.FC<RefereeScoreEntryProps> = ({
     currentSet: 0,
     isCompleted: false,
   });
-  
+
   const screenWidth = Dimensions.get('window').width;
   const buttonSize = Math.min((screenWidth - 80) / 6, 60); // Responsive button sizing
 
   useEffect(() => {
     // Auto-select first available match if none selected
     if (!selectedMatch && assignedMatches.length > 0) {
-      const activeMatch = assignedMatches.find(m => m.status === 'in_progress') || assignedMatches[0];
+      const activeMatch =
+        assignedMatches.find(m => m.status === 'in_progress') ||
+        assignedMatches[0];
       setSelectedMatch(activeMatch);
     }
   }, [assignedMatches, selectedMatch]);
 
-  const handleScoreUpdate = async (player: 'player1' | 'player2', setIndex: number, increment: number) => {
+  const handleScoreUpdate = async (
+    player: 'player1' | 'player2',
+    setIndex: number,
+    increment: number
+  ) => {
     if (!selectedMatch) return;
 
-    const hasScorePermission = await hasPermission('enter_scores', selectedMatch.id);
+    const hasScorePermission = await hasPermission(
+      'enter_scores',
+      selectedMatch.id
+    );
     if (!hasScorePermission) {
-      Alert.alert('Permission Denied', 'You do not have permission to enter scores for this match');
+      Alert.alert(
+        'Permission Denied',
+        'You do not have permission to enter scores for this match'
+      );
       return;
     }
 
     const newScore = { ...currentScore };
     const currentValue = newScore[`${player}Sets`][setIndex];
     const newValue = Math.max(0, currentValue + increment);
-    
+
     newScore[`${player}Sets`][setIndex] = newValue;
 
     // Check for set completion
     const player1Score = newScore.player1Sets[setIndex];
     const player2Score = newScore.player2Sets[setIndex];
-    
+
     // Simple set win logic (first to 11, must win by 2)
-    if ((player1Score >= 11 || player2Score >= 11) && Math.abs(player1Score - player2Score) >= 2) {
+    if (
+      (player1Score >= 11 || player2Score >= 11) &&
+      Math.abs(player1Score - player2Score) >= 2
+    ) {
       // Set completed, move to next set
       if (setIndex < 2) {
         newScore.currentSet = setIndex + 1;
@@ -77,14 +92,17 @@ const RefereeScoreEntry: React.FC<RefereeScoreEntryProps> = ({
 
     // Submit score update
     try {
-      const result = await multiDeviceService.enterScore(selectedMatch.id, newScore);
-      
+      const result = await multiDeviceService.enterScore(
+        selectedMatch.id,
+        newScore
+      );
+
       if (result.success) {
         onScoreEntered(selectedMatch.id, newScore);
-        
+
         if (result.requiresApproval) {
           Alert.alert(
-            'Score Entered', 
+            'Score Entered',
             'Score has been entered and is pending organizer approval.'
           );
         }
@@ -97,7 +115,8 @@ const RefereeScoreEntry: React.FC<RefereeScoreEntryProps> = ({
             {
               text: 'Override',
               style: 'destructive',
-              onPress: () => multiDeviceService.enterScore(selectedMatch.id, newScore, true),
+              onPress: () =>
+                multiDeviceService.enterScore(selectedMatch.id, newScore, true),
             },
           ]
         );
@@ -145,11 +164,14 @@ const RefereeScoreEntry: React.FC<RefereeScoreEntryProps> = ({
                 isCompleted: true,
               });
 
-              Alert.alert('Match Completed', 'The match has been marked as completed.');
-              
+              Alert.alert(
+                'Match Completed',
+                'The match has been marked as completed.'
+              );
+
               // Auto-select next match
-              const nextMatch = assignedMatches.find(m => 
-                m.id !== selectedMatch.id && m.status === 'scheduled'
+              const nextMatch = assignedMatches.find(
+                m => m.id !== selectedMatch.id && m.status === 'scheduled'
               );
               if (nextMatch) {
                 setSelectedMatch(nextMatch);
@@ -199,19 +221,27 @@ const RefereeScoreEntry: React.FC<RefereeScoreEntryProps> = ({
 
   const getMatchStatusColor = (status: string): string => {
     switch (status) {
-      case 'scheduled': return '#ffc107';
-      case 'in_progress': return '#28a745';
-      case 'completed': return '#6c757d';
-      default: return '#e0e0e0';
+      case 'scheduled':
+        return '#ffc107';
+      case 'in_progress':
+        return '#28a745';
+      case 'completed':
+        return '#6c757d';
+      default:
+        return '#e0e0e0';
     }
   };
 
   const getMatchStatusText = (status: string): string => {
     switch (status) {
-      case 'scheduled': return 'Ready to Start';
-      case 'in_progress': return 'In Progress';
-      case 'completed': return 'Completed';
-      default: return 'Unknown';
+      case 'scheduled':
+        return 'Ready to Start';
+      case 'in_progress':
+        return 'In Progress';
+      case 'completed':
+        return 'Completed';
+      default:
+        return 'Unknown';
     }
   };
 
@@ -221,7 +251,8 @@ const RefereeScoreEntry: React.FC<RefereeScoreEntryProps> = ({
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateTitle}>No Assigned Matches</Text>
           <Text style={styles.emptyStateText}>
-            You have no matches assigned at this time. Please check with the tournament organizer.
+            You have no matches assigned at this time. Please check with the
+            tournament organizer.
           </Text>
         </View>
       </View>
@@ -243,10 +274,12 @@ const RefereeScoreEntry: React.FC<RefereeScoreEntryProps> = ({
                 <Text style={styles.matchTitle}>
                   {match.player1?.name} vs {match.player2?.name || 'BYE'}
                 </Text>
-                <View style={[
-                  styles.statusBadge,
-                  { backgroundColor: getMatchStatusColor(match.status) }
-                ]}>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    { backgroundColor: getMatchStatusColor(match.status) },
+                  ]}
+                >
                   <Text style={styles.statusText}>
                     {getMatchStatusText(match.status)}
                   </Text>
@@ -267,7 +300,8 @@ const RefereeScoreEntry: React.FC<RefereeScoreEntryProps> = ({
       {/* Match Header */}
       <View style={styles.matchHeader}>
         <Text style={styles.matchTitle}>
-          {selectedMatch.player1?.name} vs {selectedMatch.player2?.name || 'BYE'}
+          {selectedMatch.player1?.name} vs{' '}
+          {selectedMatch.player2?.name || 'BYE'}
         </Text>
         <TouchableOpacity
           style={styles.changeMatchButton}
@@ -281,10 +315,12 @@ const RefereeScoreEntry: React.FC<RefereeScoreEntryProps> = ({
         <Text style={styles.matchInfoText}>
           Court {selectedMatch.court} • Round {selectedMatch.round}
         </Text>
-        <View style={[
-          styles.statusBadge,
-          { backgroundColor: getMatchStatusColor(selectedMatch.status) }
-        ]}>
+        <View
+          style={[
+            styles.statusBadge,
+            { backgroundColor: getMatchStatusColor(selectedMatch.status) },
+          ]}
+        >
           <Text style={styles.statusText}>
             {getMatchStatusText(selectedMatch.status)}
           </Text>
@@ -296,7 +332,9 @@ const RefereeScoreEntry: React.FC<RefereeScoreEntryProps> = ({
         <View style={styles.scoreHeader}>
           <Text style={styles.playerName}>{selectedMatch.player1?.name}</Text>
           <Text style={styles.vsText}>VS</Text>
-          <Text style={styles.playerName}>{selectedMatch.player2?.name || 'BYE'}</Text>
+          <Text style={styles.playerName}>
+            {selectedMatch.player2?.name || 'BYE'}
+          </Text>
         </View>
 
         {/* Sets Display */}
@@ -304,16 +342,20 @@ const RefereeScoreEntry: React.FC<RefereeScoreEntryProps> = ({
           {[0, 1, 2].map(setIndex => (
             <View key={setIndex} style={styles.setColumn}>
               <Text style={styles.setLabel}>Set {setIndex + 1}</Text>
-              <Text style={[
-                styles.setScore,
-                currentScore.currentSet === setIndex && styles.activeSetScore
-              ]}>
+              <Text
+                style={[
+                  styles.setScore,
+                  currentScore.currentSet === setIndex && styles.activeSetScore,
+                ]}
+              >
                 {currentScore.player1Sets[setIndex]}
               </Text>
-              <Text style={[
-                styles.setScore,
-                currentScore.currentSet === setIndex && styles.activeSetScore
-              ]}>
+              <Text
+                style={[
+                  styles.setScore,
+                  currentScore.currentSet === setIndex && styles.activeSetScore,
+                ]}
+              >
                 {currentScore.player2Sets[setIndex]}
               </Text>
             </View>
@@ -326,7 +368,7 @@ const RefereeScoreEntry: React.FC<RefereeScoreEntryProps> = ({
             <Text style={styles.currentSetTitle}>
               Current Set: {currentScore.currentSet + 1}
             </Text>
-            
+
             <View style={styles.scoringGrid}>
               {/* Player 1 Controls */}
               <View style={styles.playerScoringSection}>
@@ -335,14 +377,26 @@ const RefereeScoreEntry: React.FC<RefereeScoreEntryProps> = ({
                 </Text>
                 <View style={styles.scoringButtons}>
                   <TouchableOpacity
-                    style={[styles.scoreButton, styles.decrementButton, { width: buttonSize, height: buttonSize }]}
-                    onPress={() => handleScoreUpdate('player1', currentScore.currentSet, -1)}
+                    style={[
+                      styles.scoreButton,
+                      styles.decrementButton,
+                      { width: buttonSize, height: buttonSize },
+                    ]}
+                    onPress={() =>
+                      handleScoreUpdate('player1', currentScore.currentSet, -1)
+                    }
                   >
                     <Text style={styles.scoreButtonText}>-1</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.scoreButton, styles.incrementButton, { width: buttonSize, height: buttonSize }]}
-                    onPress={() => handleScoreUpdate('player1', currentScore.currentSet, 1)}
+                    style={[
+                      styles.scoreButton,
+                      styles.incrementButton,
+                      { width: buttonSize, height: buttonSize },
+                    ]}
+                    onPress={() =>
+                      handleScoreUpdate('player1', currentScore.currentSet, 1)
+                    }
                   >
                     <Text style={styles.scoreButtonText}>+1</Text>
                   </TouchableOpacity>
@@ -356,14 +410,26 @@ const RefereeScoreEntry: React.FC<RefereeScoreEntryProps> = ({
                 </Text>
                 <View style={styles.scoringButtons}>
                   <TouchableOpacity
-                    style={[styles.scoreButton, styles.decrementButton, { width: buttonSize, height: buttonSize }]}
-                    onPress={() => handleScoreUpdate('player2', currentScore.currentSet, -1)}
+                    style={[
+                      styles.scoreButton,
+                      styles.decrementButton,
+                      { width: buttonSize, height: buttonSize },
+                    ]}
+                    onPress={() =>
+                      handleScoreUpdate('player2', currentScore.currentSet, -1)
+                    }
                   >
                     <Text style={styles.scoreButtonText}>-1</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.scoreButton, styles.incrementButton, { width: buttonSize, height: buttonSize }]}
-                    onPress={() => handleScoreUpdate('player2', currentScore.currentSet, 1)}
+                    style={[
+                      styles.scoreButton,
+                      styles.incrementButton,
+                      { width: buttonSize, height: buttonSize },
+                    ]}
+                    onPress={() =>
+                      handleScoreUpdate('player2', currentScore.currentSet, 1)
+                    }
                   >
                     <Text style={styles.scoreButtonText}>+1</Text>
                   </TouchableOpacity>
@@ -384,14 +450,15 @@ const RefereeScoreEntry: React.FC<RefereeScoreEntryProps> = ({
             </TouchableOpacity>
           )}
 
-          {selectedMatch.status === 'in_progress' && !currentScore.isCompleted && (
-            <TouchableOpacity
-              style={[styles.controlButton, styles.completeButton]}
-              onPress={handleMatchComplete}
-            >
-              <Text style={styles.controlButtonText}>Complete Match</Text>
-            </TouchableOpacity>
-          )}
+          {selectedMatch.status === 'in_progress' &&
+            !currentScore.isCompleted && (
+              <TouchableOpacity
+                style={[styles.controlButton, styles.completeButton]}
+                onPress={handleMatchComplete}
+              >
+                <Text style={styles.controlButtonText}>Complete Match</Text>
+              </TouchableOpacity>
+            )}
 
           <TouchableOpacity
             style={[styles.controlButton, styles.reportButton]}

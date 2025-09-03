@@ -35,7 +35,9 @@
   },
   "jest": {
     "testEnvironment": "jsdom",
-    "setupFilesAfterEnv": ["<rootDir>/src/setupTests.ts"],
+    "setupFilesAfterEnv": [
+      "<rootDir>/src/setupTests.ts"
+    ],
     "testMatch": [
       "**/__tests__/**/*.(ts|tsx|js)",
       "**/*.(test|spec).(ts|tsx|js)"

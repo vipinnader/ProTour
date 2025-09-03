@@ -112,40 +112,39 @@ export const ERROR_MESSAGES = {
   // Generic
   REQUIRED_FIELD: 'This field is required',
   INVALID_FORMAT: 'Invalid format',
-  
+
   // Tournament
   TOURNAMENT_NOT_FOUND: 'Tournament not found',
   TOURNAMENT_NAME_TOO_SHORT: `Tournament name must be at least ${TOURNAMENT_CONSTRAINTS.NAME_MIN_LENGTH} characters`,
   TOURNAMENT_FULL: 'Tournament is full',
   TOURNAMENT_ALREADY_STARTED: 'Tournament has already started',
-  
+
   // Player
   PLAYER_NOT_FOUND: 'Player not found',
   PLAYER_NAME_TOO_SHORT: `Player name must be at least ${PLAYER_CONSTRAINTS.NAME_MIN_LENGTH} characters`,
   INVALID_EMAIL: 'Invalid email address',
   DUPLICATE_EMAIL: 'A player with this email already exists',
-  
+
   // Match
   MATCH_NOT_FOUND: 'Match not found',
   INVALID_MATCH_STATUS: 'Invalid match status',
   MATCH_ALREADY_COMPLETED: 'Match is already completed',
-  
+
   // Bracket
   INSUFFICIENT_PLAYERS: `At least ${TOURNAMENT_CONSTRAINTS.MIN_PLAYERS} players required`,
   TOO_MANY_PLAYERS_TOURNAMENT: `Maximum ${TOURNAMENT_CONSTRAINTS.MAX_PLAYERS} players allowed`,
   BRACKET_NOT_GENERATED: 'Tournament bracket has not been generated',
-  
+
   // CSV Import
   FILE_TOO_LARGE: `File size must be less than ${CSV_IMPORT_CONSTRAINTS.MAX_FILE_SIZE_MB}MB`,
   INVALID_FILE_TYPE: 'Only CSV files are supported',
   MISSING_REQUIRED_HEADERS: 'CSV file is missing required headers',
   TOO_MANY_PLAYERS_IMPORT: `Cannot import more than ${CSV_IMPORT_CONSTRAINTS.MAX_PLAYERS_PER_IMPORT} players`,
-  
+
   // Authentication
   UNAUTHORIZED: 'You are not authorized to perform this action',
   INVALID_CREDENTIALS: 'Invalid email or password',
   EMAIL_NOT_VERIFIED: 'Please verify your email address',
-  
 } as const;
 
 // Success Messages
@@ -192,14 +191,20 @@ export const FIREBASE_CONFIG = {
 // CSV Template
 export const CSV_TEMPLATE_HEADERS = [
   'Name',
-  'Email', 
+  'Email',
   'Phone',
   'Ranking',
   'Notes',
 ] as const;
 
 export const CSV_SAMPLE_DATA = [
-  ['John Smith', 'john@email.com', '+91-9876543210', '1500', 'Previous champion'],
+  [
+    'John Smith',
+    'john@email.com',
+    '+91-9876543210',
+    '1500',
+    'Previous champion',
+  ],
   ['Jane Doe', 'jane@email.com', '+91-8765432109', '', 'First time player'],
   ['Mike Johnson', 'mike@email.com', '', '1200', ''],
 ] as const;
