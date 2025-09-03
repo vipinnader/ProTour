@@ -116,7 +116,9 @@ jobs:
     runs-on: macos-latest
     needs: [setup, test]
     strategy:
-      matrix: [platform: [ios, android], environment: [staging, production]]
+      matrix:
+        platform: [ios, android]
+        environment: [staging, production]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -150,13 +152,13 @@ jobs:
           # Import certificate and provisioning profile
           echo "$IOS_CERTIFICATE" | base64 --decode > certificate.p12
           echo "$IOS_PROVISIONING_PROFILE" | base64 --decode > profile.mobileprovision
-          
+
           # Install certificate
           security create-keychain -p "" build.keychain
           security import certificate.p12 -k build.keychain -P "$IOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security set-keychain-settings -t 3600 -u build.keychain
           security list-keychains -s build.keychain
-          
+
           # Install provisioning profile
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
@@ -170,7 +172,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           echo "$ANDROID_KEYSTORE" | base64 --decode > apps/mobile/android/app/release.keystore
-          
+
           # Create keystore.properties
           cat > apps/mobile/android/keystore.properties << EOF
           storeFile=release.keystore
@@ -184,9 +186,9 @@ jobs:
         run: |
           cd apps/mobile
           if [[ "${{ matrix.environment }}" == "production" ]]; then
-            npx react-native build-ios --mode Release
+            xcodebuild -workspace ios/ProTour.xcworkspace -scheme ProTour -configuration Release -destination 'platform=iOS Simulator,name=iPhone 14' build
           else
-            npx react-native build-ios --mode Debug
+            xcodebuild -workspace ios/ProTour.xcworkspace -scheme ProTour -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 14' build
           fi
 
       - name: Build Android
@@ -279,7 +281,8 @@ jobs:
     if: needs.setup.outputs.should-deploy == 'true'
     environment: ${{ needs.setup.outputs.environment }}
     strategy:
-      matrix: [platform: [ios, android]]
+      matrix:
+        platform: [ios, android]
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
@@ -305,7 +308,7 @@ jobs:
         run: |
           # Setup Google Play CLI
           echo "$GOOGLE_PLAY_SERVICE_ACCOUNT" > service-account.json
-          
+
           # Upload to Google Play Internal Testing
           gcloud auth activate-service-account --key-file=service-account.json
           gcloud alpha android-publisher releases create \
@@ -326,7 +329,7 @@ jobs:
           else
             ENDPOINT="https://us-central1-protour-staging.cloudfunctions.net/healthCheck"
           fi
-          
+
           response=$(curl -s -o /dev/null -w "%{http_code}" "$ENDPOINT")
           if [[ "$response" != "200" ]]; then
             echo "Health check failed: $response"
