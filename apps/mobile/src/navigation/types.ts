@@ -21,6 +21,15 @@ export type MainStackParamList = {
   LiveScoring: { matchId: string; tournamentId: string };
   TournamentProgress: { tournamentId: string };
   RefereeTools: { matchId: string; tournamentId: string };
+  
+  // Epic 3 - Multi-Role Tournament Experience
+  PlayerDashboard: undefined;
+  JoinTournament: undefined;
+  MySchedule: { tournamentId?: string };
+  TournamentList: undefined;
+  PlayerProfile: { playerId: string };
+  LiveMatch: { matchId: string; tournamentId: string };
+  SpectatorView: { tournamentId: string };
 };
 
 export type RootStackParamList = AuthStackParamList & MainStackParamList;
@@ -57,4 +66,34 @@ export type TournamentProgressScreenProps = NativeStackScreenProps<
 export type RefereeToolsScreenProps = NativeStackScreenProps<
   MainStackParamList,
   'RefereeTools'
+>;
+
+// Epic 3 screen props
+export type PlayerDashboardScreenProps = NativeStackScreenProps<
+  MainStackParamList,
+  'PlayerDashboard'
+>;
+export type JoinTournamentScreenProps = NativeStackScreenProps<
+  MainStackParamList,
+  'JoinTournament'
+>;
+export type MyScheduleScreenProps = NativeStackScreenProps<
+  MainStackParamList,
+  'MySchedule'
+>;
+export type TournamentListScreenProps = NativeStackScreenProps<
+  MainStackParamList,
+  'TournamentList'
+>;
+export type PlayerProfileScreenProps = NativeStackScreenProps<
+  MainStackParamList,
+  'PlayerProfile'
+>;
+export type LiveMatchScreenProps = NativeStackScreenProps<
+  MainStackParamList,
+  'LiveMatch'
+>;
+export type SpectatorViewScreenProps = NativeStackScreenProps<
+  MainStackParamList,
+  'SpectatorView'
 >;

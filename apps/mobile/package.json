@@ -52,7 +52,9 @@
     "react-native-screens": "^3.29.0",
     "react-native-vector-icons": "^10.0.3",
     "react-query": "^3.39.3",
-    "zustand": "^4.5.2"
+    "zustand": "^4.5.2",
+    "@react-native-community/netinfo": "^11.1.0",
+    "react-native-uuid": "^2.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

@@ -337,7 +337,7 @@ const CreateTournamentScreen: React.FC<CreateTournamentScreenProps> = ({
                     <Select
                       selectedValue={formData.maxPlayers.toString()}
                       onValueChange={value =>
-                        handleInputChange('maxPlayers', parseInt(value))
+                        handleInputChange('maxPlayers', parseInt(value, 10))
                       }
                       placeholder="Select max players"
                       accessibilityLabel="Select maximum players"

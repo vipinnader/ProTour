@@ -1,11 +1,23 @@
-// Player service for ProTour - Epic 1 Implementation
+// Player service for ProTour - Epic 1-3 Implementation
 
 import { DatabaseService } from './DatabaseService';
-import { Player, PlayerImportData, CSVImportResult, CSVImportError, CSVDuplicate } from '../types';
+import { 
+  Player, 
+  PlayerImportData, 
+  CSVImportResult, 
+  CSVImportError, 
+  CSVDuplicate,
+  PlayerProfile,
+  PlayerFollow,
+  PlayerStatistics,
+  PlayerTournamentHistory
+} from '../types';
 import firestore from '@react-native-firebase/firestore';
 
 export class PlayerService extends DatabaseService {
   private readonly COLLECTION = 'players';
+  private readonly PROFILES_COLLECTION = 'player_profiles';
+  private readonly FOLLOWS_COLLECTION = 'player_follows';
 
   async createPlayer(data: Omit<Player, 'id' | 'createdAt' | 'updatedAt'>): Promise<Player> {
     // Validate required fields
@@ -296,5 +308,184 @@ export class PlayerService extends DatabaseService {
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     return shuffled;
+  }
+
+  // Epic 3 Methods - Player Profiles and Following
+
+  async getPlayerProfile(playerId: string): Promise<PlayerProfile | null> {
+    return this.read<PlayerProfile>(this.PROFILES_COLLECTION, playerId);
+  }
+
+  async createPlayerProfile(
+    data: Omit<PlayerProfile, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<PlayerProfile> {
+    const profileData: Omit<PlayerProfile, 'id'> = {
+      ...data,
+      createdAt: firestore.Timestamp.now(),
+      updatedAt: firestore.Timestamp.now(),
+    };
+
+    return this.create<PlayerProfile>(this.PROFILES_COLLECTION, profileData);
+  }
+
+  async updatePlayerProfile(
+    playerId: string, 
+    updates: Partial<PlayerProfile>
+  ): Promise<void> {
+    return this.update<PlayerProfile>(this.PROFILES_COLLECTION, playerId, {
+      ...updates,
+      updatedAt: firestore.Timestamp.now(),
+    });
+  }
+
+  // Player Following System
+  async followPlayer(followerId: string, playerId: string): Promise<PlayerFollow> {
+    // Check if already following
+    const existingFollow = await this.query<PlayerFollow>(this.FOLLOWS_COLLECTION, [
+      { fieldPath: 'followerId', opStr: '==', value: followerId },
+      { fieldPath: 'followedPlayerId', opStr: '==', value: playerId }
+    ]);
+
+    if (existingFollow.length > 0) {
+      throw new Error('Already following this player');
+    }
+
+    const followData: Omit<PlayerFollow, 'id'> = {
+      followerId,
+      followedPlayerId: playerId,
+      createdAt: firestore.Timestamp.now(),
+      notificationsEnabled: true,
+    };
+
+    return this.create<PlayerFollow>(this.FOLLOWS_COLLECTION, followData);
+  }
+
+  async unfollowPlayer(followerId: string, playerId: string): Promise<void> {
+    const follows = await this.query<PlayerFollow>(this.FOLLOWS_COLLECTION, [
+      { fieldPath: 'followerId', opStr: '==', value: followerId },
+      { fieldPath: 'followedPlayerId', opStr: '==', value: playerId }
+    ]);
+
+    if (follows.length === 0) {
+      throw new Error('Not following this player');
+    }
+
+    await this.delete(this.FOLLOWS_COLLECTION, follows[0].id);
+  }
+
+  async isFollowingPlayer(followerId: string, playerId: string): Promise<boolean> {
+    const follows = await this.query<PlayerFollow>(this.FOLLOWS_COLLECTION, [
+      { fieldPath: 'followerId', opStr: '==', value: followerId },
+      { fieldPath: 'followedPlayerId', opStr: '==', value: playerId }
+    ]);
+
+    return follows.length > 0;
+  }
+
+  async getPlayerFollowers(playerId: string): Promise<PlayerFollow[]> {
+    return this.query<PlayerFollow>(this.FOLLOWS_COLLECTION, [
+      { fieldPath: 'followedPlayerId', opStr: '==', value: playerId }
+    ]);
+  }
+
+  async getFollowedPlayers(followerId: string): Promise<PlayerFollow[]> {
+    return this.query<PlayerFollow>(this.FOLLOWS_COLLECTION, [
+      { fieldPath: 'followerId', opStr: '==', value: followerId }
+    ]);
+  }
+
+  // Privacy and Permission Methods
+  async sharesTournamentWithUser(playerId: string, userId: string): Promise<boolean> {
+    // Check if both users have participated in any common tournaments
+    // This is a simplified implementation - in production, you'd check tournament_registrations
+    const playerTournaments = await this.query<Player>(this.COLLECTION, [
+      { fieldPath: 'id', opStr: '==', value: playerId }
+    ]);
+
+    const userTournaments = await this.query<Player>(this.COLLECTION, [
+      { fieldPath: 'id', opStr: '==', value: userId }
+    ]);
+
+    // Simple check - if both have tournament records, they share tournaments
+    return playerTournaments.length > 0 && userTournaments.length > 0;
+  }
+
+  // Search Methods
+  async searchPlayers(query: {
+    name?: string;
+    tournamentId?: string;
+    limit?: number;
+  }): Promise<Player[]> {
+    const queryConstraints: any[] = [];
+
+    if (query.tournamentId) {
+      queryConstraints.push({
+        fieldPath: 'tournamentId',
+        opStr: '==',
+        value: query.tournamentId
+      });
+    }
+
+    const players = await this.query<Player>(this.COLLECTION, queryConstraints);
+    
+    // Filter by name if provided (simple contains check)
+    let filteredPlayers = players;
+    if (query.name) {
+      filteredPlayers = players.filter(player => 
+        player.name.toLowerCase().includes(query.name!.toLowerCase())
+      );
+    }
+
+    // Apply limit
+    if (query.limit) {
+      filteredPlayers = filteredPlayers.slice(0, query.limit);
+    }
+
+    return filteredPlayers;
+  }
+
+  // Mock Statistics Methods (in production, these would calculate from match data)
+  private createMockStatistics(): PlayerStatistics {
+    return {
+      matchesPlayed: Math.floor(Math.random() * 50) + 10,
+      matchesWon: 0, // Will be calculated below
+      matchesLost: 0, // Will be calculated below
+      setsWon: 0,
+      setsLost: 0,
+      tournamentsEntered: Math.floor(Math.random() * 10) + 1,
+      tournamentsWon: Math.floor(Math.random() * 3),
+      winPercentage: 0, // Will be calculated below
+      currentStreak: Math.floor(Math.random() * 5),
+      bestStreak: Math.floor(Math.random() * 10) + 5,
+    };
+  }
+
+  private createMockTournamentHistory(): PlayerTournamentHistory[] {
+    const tournaments: PlayerTournamentHistory[] = [];
+    const sports = ['badminton', 'tennis', 'squash'];
+    const tournamentNames = [
+      'Spring Championship',
+      'Summer Open',
+      'Winter Cup',
+      'City Tournament',
+      'Regional Finals'
+    ];
+
+    for (let i = 0; i < Math.floor(Math.random() * 5) + 1; i++) {
+      tournaments.push({
+        tournamentId: `tournament_${i}`,
+        tournamentName: tournamentNames[Math.floor(Math.random() * tournamentNames.length)],
+        sport: sports[Math.floor(Math.random() * sports.length)],
+        date: firestore.Timestamp.fromDate(
+          new Date(Date.now() - Math.floor(Math.random() * 365 * 24 * 60 * 60 * 1000))
+        ),
+        finalPosition: Math.floor(Math.random() * 16) + 1,
+        totalParticipants: Math.floor(Math.random() * 32) + 16,
+        matchesWon: Math.floor(Math.random() * 5),
+        matchesLost: Math.floor(Math.random() * 3),
+      });
+    }
+
+    return tournaments.sort((a, b) => b.date.toMillis() - a.date.toMillis());
   }
 }

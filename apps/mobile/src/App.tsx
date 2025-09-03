@@ -10,6 +10,10 @@ import './config/firebase';
 // Navigation
 import AppNavigator from './navigation/AppNavigator';
 
+// Context providers
+import { AuthProvider } from './contexts/AuthContext';
+import { SyncProvider } from './contexts/SyncContext';
+
 // Theme
 import { theme } from './theme';
 
@@ -44,13 +48,17 @@ const App: React.FC = () => {
   return (
     <SafeAreaProvider>
       <NativeBaseProvider theme={theme}>
-        <StatusBar
-          barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'}
-          backgroundColor={theme.colors.primary[600]}
-        />
-        <NavigationContainer>
-          <AppNavigator />
-        </NavigationContainer>
+        <AuthProvider>
+          <SyncProvider>
+            <StatusBar
+              barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'}
+              backgroundColor={theme.colors.primary[600]}
+            />
+            <NavigationContainer>
+              <AppNavigator />
+            </NavigationContainer>
+          </SyncProvider>
+        </AuthProvider>
       </NativeBaseProvider>
     </SafeAreaProvider>
   );

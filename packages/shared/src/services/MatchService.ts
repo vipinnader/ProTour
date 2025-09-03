@@ -1,11 +1,19 @@
-// Match service for ProTour - Epic 1 Implementation
+// Match service for ProTour - Epic 1-3 Implementation
 
 import { DatabaseService } from './DatabaseService';
-import { Match, MatchScore } from '../types';
+import { 
+  Match, 
+  MatchScore, 
+  MatchTimeline, 
+  MatchEvent,
+  Player 
+} from '../types';
 import firestore from '@react-native-firebase/firestore';
 
 export class MatchService extends DatabaseService {
   private readonly COLLECTION = 'matches';
+  private readonly TIMELINES_COLLECTION = 'match_timelines';
+  private readonly FOLLOWS_COLLECTION = 'match_follows';
 
   async createMatch(data: Omit<Match, 'id' | 'createdAt' | 'updatedAt'>): Promise<Match> {
     // Validate required fields
@@ -333,5 +341,179 @@ export class MatchService extends DatabaseService {
     } else if (!nextMatch.player2Id) {
       await this.updateMatch(nextMatchId, { player2Id: winnerId });
     }
+  }
+
+  // Epic 3 Methods - Live Match Viewing and Spectator Features
+
+  async getMatchTimeline(matchId: string): Promise<MatchTimeline | null> {
+    return this.read<MatchTimeline>(this.TIMELINES_COLLECTION, matchId);
+  }
+
+  async createMatchTimeline(matchId: string): Promise<MatchTimeline> {
+    const timelineData: Omit<MatchTimeline, 'id'> = {
+      matchId,
+      events: [],
+      duration: 0,
+      createdAt: firestore.Timestamp.now(),
+      updatedAt: firestore.Timestamp.now(),
+    };
+
+    return this.create<MatchTimeline>(this.TIMELINES_COLLECTION, timelineData);
+  }
+
+  async addMatchEvent(
+    matchId: string, 
+    event: Omit<MatchEvent, 'id'>
+  ): Promise<void> {
+    let timeline = await this.getMatchTimeline(matchId);
+    
+    if (!timeline) {
+      timeline = await this.createMatchTimeline(matchId);
+    }
+
+    const newEvent: MatchEvent = {
+      id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...event,
+    };
+
+    const updatedEvents = [...timeline.events, newEvent];
+    
+    await this.update<MatchTimeline>(this.TIMELINES_COLLECTION, timeline.id, {
+      events: updatedEvents,
+      updatedAt: firestore.Timestamp.now(),
+    });
+  }
+
+  // Match Following for Spectators
+  async followMatch(userId: string, matchId: string): Promise<void> {
+    // Check if already following
+    const existingFollow = await this.query<any>(this.FOLLOWS_COLLECTION, [
+      { fieldPath: 'userId', opStr: '==', value: userId },
+      { fieldPath: 'matchId', opStr: '==', value: matchId }
+    ]);
+
+    if (existingFollow.length > 0) {
+      return; // Already following
+    }
+
+    const followData = {
+      userId,
+      matchId,
+      createdAt: firestore.Timestamp.now(),
+    };
+
+    await this.create<any>(this.FOLLOWS_COLLECTION, followData);
+  }
+
+  async unfollowMatch(userId: string, matchId: string): Promise<void> {
+    const follows = await this.query<any>(this.FOLLOWS_COLLECTION, [
+      { fieldPath: 'userId', opStr: '==', value: userId },
+      { fieldPath: 'matchId', opStr: '==', value: matchId }
+    ]);
+
+    if (follows.length > 0) {
+      await this.delete(this.FOLLOWS_COLLECTION, follows[0].id);
+    }
+  }
+
+  async isFollowingMatch(userId: string, matchId: string): Promise<boolean> {
+    const follows = await this.query<any>(this.FOLLOWS_COLLECTION, [
+      { fieldPath: 'userId', opStr: '==', value: userId },
+      { fieldPath: 'matchId', opStr: '==', value: matchId }
+    ]);
+
+    return follows.length > 0;
+  }
+
+  // Player Information Methods
+  async getPlayerById(playerId: string): Promise<Player | null> {
+    return this.read<Player>('players', playerId);
+  }
+
+  // Live Match Updates
+  async updateMatchScore(
+    matchId: string, 
+    score: MatchScore,
+    addToTimeline: boolean = true
+  ): Promise<void> {
+    await this.updateMatch(matchId, { score });
+
+    // Add to timeline
+    if (addToTimeline) {
+      await this.addMatchEvent(matchId, {
+        timestamp: new Date(),
+        type: 'point-scored',
+        details: { score }
+      });
+    }
+  }
+
+  async startMatch(matchId: string): Promise<void> {
+    const match = await this.getMatch(matchId);
+    if (!match) {
+      throw new Error('Match not found');
+    }
+
+    if (match.status !== 'pending') {
+      throw new Error('Can only start pending matches');
+    }
+
+    await this.updateMatch(matchId, {
+      status: 'in-progress',
+      startTime: firestore.Timestamp.now()
+    });
+
+    // Add to timeline
+    await this.addMatchEvent(matchId, {
+      timestamp: new Date(),
+      type: 'match-start',
+      details: {}
+    });
+  }
+
+  // Search and Filter Methods
+  async getLiveMatches(tournamentId?: string): Promise<Match[]> {
+    const queryConstraints: any[] = [
+      { fieldPath: 'status', opStr: '==', value: 'in-progress' }
+    ];
+
+    if (tournamentId) {
+      queryConstraints.push({
+        fieldPath: 'tournamentId',
+        opStr: '==',
+        value: tournamentId
+      });
+    }
+
+    return this.query<Match>(this.COLLECTION, queryConstraints);
+  }
+
+  async getUpcomingMatches(
+    tournamentId?: string,
+    limit?: number
+  ): Promise<Match[]> {
+    const queryConstraints: any[] = [
+      { fieldPath: 'status', opStr: '==', value: 'pending' }
+    ];
+
+    if (tournamentId) {
+      queryConstraints.push({
+        fieldPath: 'tournamentId',
+        opStr: '==',
+        value: tournamentId
+      });
+    }
+
+    const matches = await this.query<Match>(this.COLLECTION, queryConstraints);
+    
+    // Sort by round and match number
+    matches.sort((a, b) => {
+      if (a.round !== b.round) {
+        return a.round - b.round;
+      }
+      return a.matchNumber - b.matchNumber;
+    });
+
+    return limit ? matches.slice(0, limit) : matches;
   }
 }

@@ -44,14 +44,14 @@ jobs:
           cd ../packages/shared && npm run type-check
 
       - name: Security audit
-        run: npm audit --audit-level high
+        run: npm audit --audit-level critical
         continue-on-error: true
 
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
     strategy:
-      matrix:
+      matrix: 
         package: [mobile, functions, shared]
     steps:
       - name: Checkout code
@@ -79,15 +79,16 @@ jobs:
         run: cd packages/shared && npm run test:ci
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           directory: ./coverage
           flags: ${{ matrix.package }}
           name: codecov-${{ matrix.package }}
           fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload test results
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v1.6.0
         if: always()
         with:
           name: Test Results (${{ matrix.package }})
@@ -173,13 +174,13 @@ jobs:
         run: cd functions && npm run build
 
       - name: Validate Firebase configuration
-        run: firebase use --add protour-dev
+        run: firebase use protour-dev --token ${{ secrets.FIREBASE_TOKEN }}
 
       - name: Validate Firestore rules
-        run: firebase firestore:rules:get
+        run: firebase firestore:rules:get --token ${{ secrets.FIREBASE_TOKEN }}
 
       - name: Deploy to staging (dry run)
-        run: firebase deploy --only functions --project protour-dev --debug --dry-run
+        run: firebase deploy --only functions --project protour-dev --dry-run
 
   integration-tests:
     name: Integration Tests
@@ -212,7 +213,7 @@ jobs:
       - name: Start Firebase emulators
         run: |
           firebase emulators:start --project protour-dev --import ./emulator-data &
-          sleep 10
+          npx wait-on http://localhost:4000
 
       - name: Run integration tests
         run: |

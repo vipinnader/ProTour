@@ -46,7 +46,6 @@ const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
   const [updating, setUpdating] = useState(false);
 
   // Modals
-  const [showScoreModal, setShowScoreModal] = useState(false);
   const [showCourtModal, setShowCourtModal] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
 
@@ -652,7 +651,11 @@ const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
                     flex={1}
                     value={scoreInput.player1Sets[setIndex].toString()}
                     onChangeText={text =>
-                      updateSetScore('player1', setIndex, parseInt(text) || 0)
+                      updateSetScore(
+                        'player1',
+                        setIndex,
+                        parseInt(text, 10) || 0
+                      )
                     }
                     keyboardType="numeric"
                     placeholder={match.player1?.name}
@@ -662,7 +665,11 @@ const MatchDetailScreen: React.FC<MatchDetailScreenProps> = ({
                     flex={1}
                     value={scoreInput.player2Sets[setIndex].toString()}
                     onChangeText={text =>
-                      updateSetScore('player2', setIndex, parseInt(text) || 0)
+                      updateSetScore(
+                        'player2',
+                        setIndex,
+                        parseInt(text, 10) || 0
+                      )
                     }
                     keyboardType="numeric"
                     placeholder={match.player2?.name || 'BYE'}

@@ -8,7 +8,6 @@ import {
   Button,
   Icon,
   useToast,
-  Progress,
   Alert,
   Card,
   Badge,
@@ -22,8 +21,6 @@ import Papa from 'papaparse';
 import {
   PlayerImportData,
   CSVImportResult,
-  CSVImportError,
-  CSVDuplicate,
   PlayerService,
 } from '@protour/shared';
 import WorkflowStepper from '../../components/tournament/WorkflowStepper';
@@ -108,7 +105,7 @@ const ImportPlayersScreen: React.FC<ImportPlayersScreenProps> = ({
       Papa.parse(csvText, {
         header: true,
         skipEmptyLines: true,
-        transform: (value: string, header: string) => {
+        transform: (value: string, _header: string) => {
           // Clean up the data
           return value.trim();
         },
@@ -127,7 +124,7 @@ const ImportPlayersScreen: React.FC<ImportPlayersScreenProps> = ({
                   undefined,
                 ranking:
                   row.ranking || row.Ranking
-                    ? parseInt(row.ranking || row.Ranking)
+                    ? parseInt(row.ranking || row.Ranking, 10)
                     : undefined,
                 notes: row.notes || row.Notes || undefined,
               })

@@ -480,7 +480,7 @@ const MatchManagementScreen: React.FC<MatchManagementScreenProps> = ({
               placeholder="All Rounds"
               selectedValue={selectedRound?.toString() || ''}
               onValueChange={value =>
-                setSelectedRound(value ? parseInt(value) : null)
+                setSelectedRound(value ? parseInt(value, 10) : null)
               }
             >
               {Array.from({ length: totalRounds }, (_, i) => i + 1).map(

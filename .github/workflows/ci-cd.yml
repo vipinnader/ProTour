@@ -16,7 +16,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   NODE_VERSION: '18'
@@ -78,10 +78,11 @@ jobs:
           retention-days: 30
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           directory: ./coverage
           fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   build-functions:
     name: Build Firebase Functions
@@ -115,9 +116,7 @@ jobs:
     runs-on: macos-latest
     needs: [setup, test]
     strategy:
-      matrix:
-        platform: [ios, android]
-        environment: [staging, production]
+      matrix: [platform: [ios, android], environment: [staging, production]]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -280,8 +279,7 @@ jobs:
     if: needs.setup.outputs.should-deploy == 'true'
     environment: ${{ needs.setup.outputs.environment }}
     strategy:
-      matrix:
-        platform: [ios, android]
+      matrix: [platform: [ios, android]]
     steps:
       - name: Download build artifacts
         uses: actions/download-artifact@v4

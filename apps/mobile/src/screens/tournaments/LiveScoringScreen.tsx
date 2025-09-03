@@ -58,7 +58,7 @@ const LiveScoringScreen: React.FC<LiveScoringScreenProps> = ({
 
   const [scoreHistory, setScoreHistory] = useState<ScoreHistory[]>([]);
   const [currentSet, setCurrentSet] = useState(0);
-  const [matchFormat, setMatchFormat] = useState<
+  const [matchFormat, _setMatchFormat] = useState<
     'best-of-1' | 'best-of-3' | 'best-of-5'
   >('best-of-3');
 

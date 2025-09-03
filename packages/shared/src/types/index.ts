@@ -207,3 +207,166 @@ export interface TournamentProgressStats {
   overallProgress: number; // percentage
   estimatedCompletion: Date;
 }
+
+// Epic 3 Types - Multi-Role Tournament Experience
+export interface TournamentRegistration {
+  id: string;
+  tournamentId: string;
+  playerId: string;
+  userId: string;
+  role: 'player' | 'spectator';
+  registeredAt: Timestamp;
+  status: 'active' | 'withdrawn';
+  withdrawnAt?: Timestamp;
+  withdrawalReason?: string;
+}
+
+export interface PlayerSchedule {
+  playerId: string;
+  tournamentId: string;
+  currentMatch?: Match;
+  upcomingMatches: Match[];
+  completedMatches: Match[];
+  tournamentProgress: BracketPosition;
+  estimatedNextMatchTime?: Date;
+  nextMatchNotification?: {
+    thirtyMinutes: boolean;
+    tenMinutes: boolean;
+    ready: boolean;
+  };
+}
+
+export interface BracketPosition {
+  currentRound: number;
+  position: number;
+  eliminated: boolean;
+  advancedToRound?: number;
+  canAdvanceToRound?: number;
+}
+
+export interface PlayerProfile {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  phone?: string;
+  profileImage?: string;
+  statistics: PlayerStatistics;
+  tournaments: PlayerTournamentHistory[];
+  privacySettings: PlayerPrivacySettings;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface PlayerStatistics {
+  matchesPlayed: number;
+  matchesWon: number;
+  matchesLost: number;
+  setsWon: number;
+  setsLost: number;
+  tournamentsEntered: number;
+  tournamentsWon: number;
+  winPercentage: number;
+  currentStreak: number;
+  bestStreak: number;
+}
+
+export interface PlayerTournamentHistory {
+  tournamentId: string;
+  tournamentName: string;
+  sport: string;
+  date: Timestamp;
+  finalPosition: number;
+  totalParticipants: number;
+  matchesWon: number;
+  matchesLost: number;
+}
+
+export interface PlayerPrivacySettings {
+  showProfile: 'everyone' | 'tournament-participants' | 'private';
+  showStatistics: 'everyone' | 'tournament-participants' | 'private';
+  showTournamentHistory: 'everyone' | 'tournament-participants' | 'private';
+  allowFollowing: boolean;
+  allowNotifications: boolean;
+}
+
+export interface PlayerFollow {
+  id: string;
+  followerId: string;
+  followedPlayerId: string;
+  createdAt: Timestamp;
+  notificationsEnabled: boolean;
+}
+
+export interface SpectatorSession {
+  id: string;
+  spectatorId: string;
+  tournamentId: string;
+  followedPlayers: string[];
+  followedMatches: string[];
+  preferredNotifications: SpectatorNotificationSettings;
+  createdAt: Timestamp;
+  lastActivity: Timestamp;
+}
+
+export interface SpectatorNotificationSettings {
+  matchCompletions: boolean;
+  bracketUpdates: boolean;
+  followedPlayerMatches: boolean;
+  tournamentStart: boolean;
+  tournamentEnd: boolean;
+}
+
+export interface NotificationPreference {
+  id: string;
+  userId: string;
+  tournamentId?: string;
+  type: 'match-ready' | 'match-completed' | 'bracket-updated' | 'tournament-update';
+  enabled: boolean;
+  timing?: {
+    thirtyMinutes?: boolean;
+    tenMinutes?: boolean;
+    immediate?: boolean;
+  };
+  delivery: ('push' | 'email' | 'sms')[];
+}
+
+export interface MatchTimeline {
+  matchId: string;
+  events: MatchEvent[];
+  duration: number;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+}
+
+export interface MatchEvent {
+  id: string;
+  timestamp: Date;
+  type: 'match-start' | 'point-scored' | 'set-completed' | 'match-end' | 'timeout' | 'injury';
+  player?: 'player1' | 'player2';
+  details: {
+    score?: MatchScore;
+    note?: string;
+    duration?: number;
+  };
+}
+
+// Tournament Access and Discovery
+export interface TournamentAccess {
+  tournamentId: string;
+  accessCode: string;
+  userId: string;
+  role: 'player' | 'spectator';
+  joinedAt: Timestamp;
+  active: boolean;
+}
+
+export interface TournamentSearchFilters {
+  sport?: 'badminton' | 'tennis' | 'squash';
+  dateFrom?: Date;
+  dateTo?: Date;
+  location?: string;
+  status?: 'setup' | 'active' | 'completed';
+  isPublic?: boolean;
+  maxDistance?: number; // km radius for location-based search
+}

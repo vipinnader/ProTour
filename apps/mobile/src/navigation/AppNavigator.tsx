@@ -29,6 +29,13 @@ import LiveScoringScreen from '../screens/tournaments/LiveScoringScreen';
 import TournamentProgressScreen from '../screens/tournaments/TournamentProgressScreen';
 import RefereeToolsScreen from '../screens/tournaments/RefereeToolsScreen';
 
+// Epic 3 - Player and Spectator Screens
+import PlayerDashboardScreen from '../screens/player/PlayerDashboardScreen';
+import JoinTournamentScreen from '../screens/player/JoinTournamentScreen';
+import MyScheduleScreen from '../screens/player/MyScheduleScreen';
+import PlayerProfileScreen from '../screens/player/PlayerProfileScreen';
+import LiveMatchScreen from '../screens/spectator/LiveMatchScreen';
+
 // Stack navigators
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const MainStack = createNativeStackNavigator<MainStackParamList>();
@@ -84,6 +91,14 @@ const MainNavigator = () => (
       component={TournamentProgressScreen}
     />
     <MainStack.Screen name="RefereeTools" component={RefereeToolsScreen} />
+    
+    {/* Epic 3 - Multi-Role Tournament Experience */}
+    <MainStack.Screen name="PlayerDashboard" component={PlayerDashboardScreen} />
+    <MainStack.Screen name="JoinTournament" component={JoinTournamentScreen} />
+    <MainStack.Screen name="MySchedule" component={MyScheduleScreen} />
+    <MainStack.Screen name="PlayerProfile" component={PlayerProfileScreen} />
+    <MainStack.Screen name="LiveMatch" component={LiveMatchScreen} />
+    
     {/* More screens will be added in upcoming stories */}
   </MainStack.Navigator>
 );
