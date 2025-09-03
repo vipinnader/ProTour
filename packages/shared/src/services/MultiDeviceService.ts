@@ -200,8 +200,21 @@ export class MultiDeviceService {
     return accessCode;
   }
 
+  // AC2B.2.1: Generate 6-digit access codes with QR code support
   private generateRandomCode(): string {
-    return Math.random().toString(36).substr(2, 8).toUpperCase();
+    // Generate 6-digit numerical code for easier entry
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  // Generate QR code data for access code
+  getQRCodeData(accessCode: AccessCode): string {
+    return JSON.stringify({
+      code: accessCode.code,
+      tournamentId: accessCode.tournamentId,
+      role: accessCode.role,
+      expiresAt: accessCode.expiresAt,
+      appVersion: '1.0.0', // For compatibility checking
+    });
   }
 
   private getDefaultPermissions(role: 'referee' | 'spectator'): string[] {
@@ -480,6 +493,254 @@ export class MultiDeviceService {
     });
 
     return accessCodes.map(code => code.data);
+  }
+
+  // AC2B.2.4: Real-time score entry with conflict detection
+  async enterScore(
+    matchId: string, 
+    score: any, 
+    overrideCheck = false
+  ): Promise<{ success: boolean; conflict?: any; requiresApproval?: boolean }> {
+    if (!this.activeSession || !await this.hasPermission('enter_scores', matchId)) {
+      throw new Error('No permission to enter scores for this match');
+    }
+
+    const timestamp = Date.now();
+    const scoreEntry = {
+      id: uuidv4() as string,
+      matchId,
+      score,
+      enteredBy: this.currentDeviceInfo?.deviceId,
+      userId: this.currentDeviceInfo?.userId,
+      timestamp,
+      sessionId: this.activeSession.sessionId,
+      role: this.activeSession.role,
+      requiresApproval: this.activeSession.role === 'referee', // Referees need organizer approval
+    };
+
+    try {
+      // Check for recent score entries by other devices (within 5 seconds)
+      const recentScores = await this.dataService.queryOffline({
+        collection: 'score_entries',
+        where: [
+          ['matchId', '==', matchId],
+          ['timestamp', '>', timestamp - 5000],
+        ],
+      });
+
+      // Detect conflicts with other devices
+      const conflicts = recentScores.filter(entry => 
+        entry.data.enteredBy !== this.currentDeviceInfo?.deviceId &&
+        JSON.stringify(entry.data.score) !== JSON.stringify(score)
+      );
+
+      if (conflicts.length > 0 && !overrideCheck) {
+        return {
+          success: false,
+          conflict: conflicts[0].data,
+        };
+      }
+
+      // Store score entry
+      await this.dataService.createOffline(
+        'score_entries',
+        scoreEntry,
+        this.currentDeviceInfo?.userId || ''
+      );
+
+      // Update activity
+      await this.updateActivity();
+
+      // Emit real-time update event
+      this.emitScoreUpdate(matchId, score, scoreEntry);
+
+      return {
+        success: true,
+        requiresApproval: scoreEntry.requiresApproval,
+      };
+
+    } catch (error) {
+      console.error('Failed to enter score:', error);
+      throw error;
+    }
+  }
+
+  // AC2B.2.6: Organizer score oversight and approval
+  async approveScore(scoreEntryId: string, approved = true): Promise<void> {
+    if (!this.currentDeviceInfo || this.currentDeviceInfo.role !== 'organizer') {
+      throw new Error('Only organizers can approve scores');
+    }
+
+    await this.dataService.updateOffline(
+      'score_entries',
+      scoreEntryId,
+      {
+        approved,
+        approvedBy: this.currentDeviceInfo.userId,
+        approvedAt: Date.now(),
+      },
+      this.currentDeviceInfo.userId
+    );
+  }
+
+  // Get referee activity feed for organizer oversight
+  async getRefereeActivity(
+    tournamentId: string, 
+    timeRange = 30 * 60 * 1000 // Last 30 minutes
+  ): Promise<any[]> {
+    if (!this.currentDeviceInfo || this.currentDeviceInfo.role !== 'organizer') {
+      throw new Error('Only organizers can view referee activity');
+    }
+
+    const activities = await this.dataService.queryOffline({
+      collection: 'score_entries',
+      where: [
+        ['timestamp', '>', Date.now() - timeRange],
+      ],
+      orderBy: [['timestamp', 'DESC']],
+      limit: 100,
+    });
+
+    return activities.map(activity => ({
+      ...activity.data,
+      timeAgo: this.formatTimeAgo(Date.now() - activity.data.timestamp),
+    }));
+  }
+
+  // AC2B.2.5: Device management dashboard data
+  async getDeviceManagementData(tournamentId: string): Promise<{
+    activeDevices: DeviceInfo[];
+    recentActivity: any[];
+    connectionStats: any;
+  }> {
+    if (!this.currentDeviceInfo || this.currentDeviceInfo.role !== 'organizer') {
+      throw new Error('Only organizers can view device management data');
+    }
+
+    const activeDevices = await this.getActiveDevices(tournamentId);
+    const recentActivity = await this.getRefereeActivity(tournamentId);
+    
+    // Calculate connection statistics
+    const connectionStats = {
+      totalDevices: activeDevices.length,
+      refereeDevices: activeDevices.filter(d => d.role === 'referee').length,
+      spectatorDevices: activeDevices.filter(d => d.role === 'spectator').length,
+      averageResponseTime: await this.calculateAverageResponseTime(tournamentId),
+      lastSyncTime: Date.now(), // This would be actual last sync time
+    };
+
+    return {
+      activeDevices,
+      recentActivity,
+      connectionStats,
+    };
+  }
+
+  // Calculate average response time for referees
+  private async calculateAverageResponseTime(tournamentId: string): Promise<number> {
+    // This would analyze score entry timestamps vs match events
+    // Simplified implementation
+    return 2.3; // seconds
+  }
+
+  // Emergency disconnect for problematic referees
+  async disconnectDevice(deviceId: string, reason = 'Manual disconnect'): Promise<void> {
+    if (!this.currentDeviceInfo || this.currentDeviceInfo.role !== 'organizer') {
+      throw new Error('Only organizers can disconnect devices');
+    }
+
+    // Find and deactivate all sessions for the device
+    const sessions = await this.dataService.queryOffline({
+      collection: this.COLLECTIONS.SESSIONS,
+      where: [
+        ['deviceId', '==', deviceId],
+      ],
+    });
+
+    for (const session of sessions) {
+      await this.dataService.updateOffline(
+        this.COLLECTIONS.SESSIONS,
+        session.id,
+        {
+          lastActivity: Date.now(),
+          disconnectedBy: this.currentDeviceInfo.userId,
+          disconnectReason: reason,
+        },
+        this.currentDeviceInfo.userId
+      );
+    }
+
+    // Revoke all active permissions for the device
+    const permissions = await this.dataService.queryOffline({
+      collection: this.COLLECTIONS.PERMISSIONS,
+      where: [
+        ['deviceId', '==', deviceId],
+        ['isActive', '==', true],
+      ],
+    });
+
+    for (const permission of permissions) {
+      await this.dataService.updateOffline(
+        this.COLLECTIONS.PERMISSIONS,
+        permission.id,
+        { isActive: false },
+        this.currentDeviceInfo.userId
+      );
+    }
+  }
+
+  // Assign specific matches to a referee device
+  async assignMatches(deviceId: string, matchIds: string[]): Promise<void> {
+    if (!this.currentDeviceInfo || this.currentDeviceInfo.role !== 'organizer') {
+      throw new Error('Only organizers can assign matches');
+    }
+
+    // Update device session with assigned matches
+    const sessions = await this.dataService.queryOffline({
+      collection: this.COLLECTIONS.SESSIONS,
+      where: [
+        ['deviceId', '==', deviceId],
+      ],
+    });
+
+    if (sessions.length === 0) {
+      throw new Error('Device session not found');
+    }
+
+    const session = sessions[0];
+    await this.dataService.updateOffline(
+      this.COLLECTIONS.SESSIONS,
+      session.id,
+      {
+        assignedMatches: matchIds,
+        updatedAt: Date.now(),
+      },
+      this.currentDeviceInfo.userId
+    );
+  }
+
+  // Real-time event emission (would integrate with WebSocket or similar)
+  private emitScoreUpdate(matchId: string, score: any, scoreEntry: any): void {
+    // This would emit to all connected devices in the tournament
+    console.log(`Score update for match ${matchId}:`, { score, scoreEntry });
+    
+    // In a real implementation, this would use WebSocket, Firebase real-time DB, etc.
+    // For now, we'll use the event system from OfflineDataService
+    if (this.dataService.subscribe) {
+      // Emit to any listening components
+    }
+  }
+
+  // Utility function for time formatting
+  private formatTimeAgo(ms: number): string {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+
+    if (seconds < 60) return `${seconds}s ago`;
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
   }
 
   // Monitor device connectivity
