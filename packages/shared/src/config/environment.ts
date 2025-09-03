@@ -3,6 +3,11 @@
  * Provides centralized configuration management for all environments
  */
 
+// Global declarations
+declare global {
+  var __DEV__: boolean | undefined;
+}
+
 export type Environment = 'development' | 'staging' | 'production' | 'test';
 
 export interface EnvironmentConfig {
@@ -348,6 +353,10 @@ export class EnvironmentManager {
         name: 'ProTour',
         version: process.env.APP_VERSION || '1.0.0',
         port: parseInt(process.env.PORT || '3000', 10),
+        baseUrl: process.env.BASE_URL || 'http://localhost:3000',
+        apiUrl: process.env.API_URL || 'http://localhost:3000/api',
+        webUrl: process.env.WEB_URL || 'http://localhost:3000',
+        mobileDeepLinkScheme: 'protour',
         supportEmail: 'support@protour.com',
         maxUploadSize: '50mb',
         timeZone: 'Asia/Kolkata',

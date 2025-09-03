@@ -3,15 +3,16 @@
  * Provides comprehensive mocking for all external service integrations
  */
 
-import type { 
-  PaymentGateway, PaymentIntent, PaymentResult, RefundResult, PaymentCustomer, PaymentAmount,
-  SMSProvider, SMSResult, SMSMessage,
-  EmailProvider, EmailResult, EmailMessage,
-  PushNotificationService, NotificationResult, PushNotificationPayload, NotificationTarget,
-  StorageProvider, UploadResult, StorageFile,
-  AnalyticsProvider, AnalyticsEvent,
-  SocialAuthProvider, AuthResult, AuthCredentials,
-} from '../services';
+// TODO: Re-enable when these services are implemented
+// import type { 
+//   PaymentGateway, PaymentIntent, PaymentResult, RefundResult, PaymentCustomer, PaymentAmount,
+//   SMSProvider, SMSResult, SMSMessage,
+//   EmailProvider, EmailResult, EmailMessage,
+//   PushNotificationService, NotificationResult, PushNotificationPayload, NotificationTarget,
+//   StorageProvider, UploadResult, StorageFile,
+//   AnalyticsProvider, AnalyticsEvent,
+//   SocialAuthProvider, AuthResult, AuthCredentials,
+// } from '../services';
 
 export interface MockConfig {
   delayMs?: number;

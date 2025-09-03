@@ -9,7 +9,7 @@ let flipperEnabled = false;
 // Flipper network plugin
 let networkLogger: any = null;
 
-// Flipper logger plugin  
+// Flipper logger plugin
 let flipperLogger: any = null;
 
 /**
@@ -22,8 +22,12 @@ export const initializeFlipper = (): void => {
 
   try {
     // Import Flipper modules only in development
-    const { logger: flipperLoggerImport } = require('flipper-plugin-react-native-logger');
-    const { networker } = require('@react-native-community/flipper-plugin-network');
+    const {
+      logger: flipperLoggerImport,
+    } = require('flipper-plugin-react-native-logger');
+    const {
+      networker,
+    } = require('@react-native-community/flipper-plugin-network');
 
     flipperLogger = flipperLoggerImport;
     networkLogger = networker();
@@ -45,7 +49,7 @@ export const logNetworkRequest = (
   url: string,
   method: string,
   headers?: any,
-  body?: any,
+  body?: any
 ): void => {
   if (!flipperEnabled || !networkLogger) return;
 
@@ -70,7 +74,7 @@ export const logNetworkResponse = (
   status: number,
   headers?: any,
   body?: any,
-  duration?: number,
+  duration?: number
 ): void => {
   if (!flipperEnabled || !networkLogger) return;
 
@@ -94,7 +98,7 @@ export const logNetworkResponse = (
 export const logFlipperEvent = (
   event: string,
   data?: any,
-  level: 'info' | 'warn' | 'error' = 'info',
+  level: 'info' | 'warn' | 'error' = 'info'
 ): void => {
   if (!flipperEnabled || !flipperLogger) return;
 

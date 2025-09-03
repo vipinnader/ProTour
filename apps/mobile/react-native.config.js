@@ -36,11 +36,11 @@ module.exports = {
   platforms: {
     ios: {
       // iOS specific configurations
-      linkConfig: {},
+      linkConfig: () => ({}),
     },
     android: {
       // Android specific configurations
-      linkConfig: {},
+      linkConfig: () => ({}),
     },
   },
 

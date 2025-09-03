@@ -7,9 +7,11 @@ import { Alert, Platform } from 'react-native';
 import { logger } from './logger';
 
 declare global {
-  var __DEV__: boolean;
-  var __BUNDLE_START_TIME__: number;
-  var __METRO_GLOBAL_PREFIX__: string;
+  interface XMLHttpRequest {
+    _method?: string;
+    _url?: string;
+    _startTime?: number;
+  }
 }
 
 /**
@@ -97,18 +99,22 @@ const setupConsoleDebugging = (): void => {
   };
 
   // Global error handler
-  const originalHandler = global.ErrorUtils.getGlobalHandler();
-  global.ErrorUtils.setGlobalHandler((error: any, isFatal: boolean) => {
-    console.error('Global Error:', {
-      message: error.message,
-      stack: error.stack,
-      isFatal,
-    });
-    
-    if (originalHandler) {
-      originalHandler(error, isFatal);
-    }
-  });
+  const originalHandler = (global as any).ErrorUtils?.getGlobalHandler();
+  if ((global as any).ErrorUtils) {
+    (global as any).ErrorUtils.setGlobalHandler(
+      (error: any, isFatal: boolean) => {
+        console.error('Global Error:', {
+          message: error.message,
+          stack: error.stack,
+          isFatal,
+        });
+
+        if (originalHandler) {
+          originalHandler(error, isFatal);
+        }
+      }
+    );
+  }
 };
 
 /**
@@ -119,7 +125,7 @@ const setupReactDevTools = (): void => {
     // Import React DevTools if available
     if (typeof require !== 'undefined') {
       const { connectToDevTools } = require('react-devtools-core');
-      
+
       connectToDevTools({
         host: 'localhost',
         port: 8097,
@@ -140,7 +146,7 @@ const setupPerformanceMonitoring = (): void => {
   // Monitor app startup time
   const startTime = __BUNDLE_START_TIME__ || Date.now();
   const loadTime = Date.now() - startTime;
-  
+
   setTimeout(() => {
     logger.info('App Performance Metrics', {
       bundleLoadTime: loadTime,
@@ -165,11 +171,16 @@ const setupPerformanceMonitoring = (): void => {
 const setupNetworkLogging = (): void => {
   // Override fetch for logging
   const originalFetch = global.fetch;
-  
-  global.fetch = async (input: RequestInfo, init?: RequestInit) => {
-    const url = typeof input === 'string' ? input : input.url;
+
+  global.fetch = async (input: string | URL | Request, init?: RequestInit) => {
+    const url =
+      typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : (input as Request).url;
     const startTime = Date.now();
-    
+
     logger.debug('Network Request', {
       url,
       method: init?.method || 'GET',
@@ -179,7 +190,7 @@ const setupNetworkLogging = (): void => {
     try {
       const response = await originalFetch(input, init);
       const endTime = Date.now();
-      
+
       logger.debug('Network Response', {
         url,
         status: response.status,
@@ -190,10 +201,10 @@ const setupNetworkLogging = (): void => {
       return response;
     } catch (error) {
       const endTime = Date.now();
-      
+
       logger.error('Network Error', {
         url,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         duration: endTime - startTime,
       });
 
@@ -205,15 +216,19 @@ const setupNetworkLogging = (): void => {
   const originalXHROpen = XMLHttpRequest.prototype.open;
   const originalXHRSend = XMLHttpRequest.prototype.send;
 
-  XMLHttpRequest.prototype.open = function(method: string, url: string, ...args: any[]) {
+  XMLHttpRequest.prototype.open = function (
+    method: string,
+    url: string,
+    ...args: any[]
+  ) {
     this._method = method;
     this._url = url;
     this._startTime = Date.now();
-    
+
     return originalXHROpen.call(this, method, url, ...args);
   };
 
-  XMLHttpRequest.prototype.send = function(body?: any) {
+  XMLHttpRequest.prototype.send = function (body?: any) {
     logger.debug('XHR Request', {
       method: this._method,
       url: this._url,
@@ -221,8 +236,8 @@ const setupNetworkLogging = (): void => {
     });
 
     this.addEventListener('loadend', () => {
-      const duration = Date.now() - this._startTime;
-      
+      const duration = Date.now() - (this._startTime || Date.now());
+
       logger.debug('XHR Response', {
         method: this._method,
         url: this._url,
@@ -248,9 +263,12 @@ export const showDevMenu = (): void => {
     { text: 'Reload', onPress: () => reloadApp() },
     { text: 'Debug JS Remotely', onPress: () => enableRemoteDebugging() },
     { text: 'Toggle Inspector', onPress: () => toggleInspector() },
-    { text: 'Show Performance Monitor', onPress: () => showPerformanceMonitor() },
+    {
+      text: 'Show Performance Monitor',
+      onPress: () => showPerformanceMonitor(),
+    },
     { text: 'Clear AsyncStorage', onPress: () => clearAsyncStorage() },
-    { text: 'Cancel', style: 'cancel' },
+    { text: 'Cancel', style: 'cancel' as const },
   ];
 
   Alert.alert('ProTour Dev Menu', 'Choose an action:', options);
@@ -313,11 +331,16 @@ export const clearAsyncStorage = async (): Promise<void> => {
 /**
  * Update development tools configuration
  */
-export const updateDevToolsConfig = async (newConfig: Partial<DevToolsConfig>): Promise<void> => {
+export const updateDevToolsConfig = async (
+  newConfig: Partial<DevToolsConfig>
+): Promise<void> => {
   devToolsConfig = { ...devToolsConfig, ...newConfig };
-  
+
   try {
-    await AsyncStorage.setItem('devtools_config', JSON.stringify(devToolsConfig));
+    await AsyncStorage.setItem(
+      'devtools_config',
+      JSON.stringify(devToolsConfig)
+    );
     logger.info('Development tools configuration updated', devToolsConfig);
   } catch (error) {
     logger.error('Failed to save development tools configuration:', error);

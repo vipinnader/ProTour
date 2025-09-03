@@ -5,25 +5,11 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "isPublic",
+          "fieldPath": "organizerId",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "startDate",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "tournaments",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "ownerId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
+          "fieldPath": "date",
           "order": "DESCENDING"
         }
       ]
@@ -33,18 +19,98 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "status",
+          "fieldPath": "organizerId",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "startDate",
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "tournaments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isPublic",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "tournaments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "isPublic",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sport",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "tournaments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tournamentCode",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "players",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tournamentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "players",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tournamentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "email",
           "order": "ASCENDING"
         }
       ]
     },
     {
       "collectionGroup": "matches",
-      "queryScope": "COLLECTION_GROUP",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tournamentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "round",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "matches",
+      "queryScope": "COLLECTION",
       "fields": [
         {
           "fieldPath": "tournamentId",
@@ -53,56 +119,34 @@
         {
           "fieldPath": "status",
           "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "scheduledTime",
-          "order": "ASCENDING"
         }
       ]
     },
     {
       "collectionGroup": "matches",
-      "queryScope": "COLLECTION_GROUP",
+      "queryScope": "COLLECTION",
       "fields": [
         {
           "fieldPath": "player1Id",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "scheduledTime",
+          "fieldPath": "startTime",
           "order": "DESCENDING"
         }
       ]
     },
     {
       "collectionGroup": "matches",
-      "queryScope": "COLLECTION_GROUP",
+      "queryScope": "COLLECTION",
       "fields": [
         {
           "fieldPath": "player2Id",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "scheduledTime",
+          "fieldPath": "startTime",
           "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "registrations",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "tournamentId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "registeredAt",
-          "order": "ASCENDING"
         }
       ]
     }

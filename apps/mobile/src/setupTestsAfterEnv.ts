@@ -14,8 +14,9 @@ afterEach(() => {
 // Custom matchers for better assertions
 expect.extend({
   toBeVisibleOnScreen(received) {
-    const pass = received && received.props && !received.props.style?.display === 'none';
-    
+    const pass =
+      received && received.props && received.props.style?.display !== 'none';
+
     if (pass) {
       return {
         message: () => `expected element not to be visible on screen`,
@@ -28,13 +29,15 @@ expect.extend({
       };
     }
   },
-  
+
   toHaveValidAccessibility(received) {
-    const hasAccessibilityLabel = received && received.props && received.props.accessibilityLabel;
-    const hasAccessibilityRole = received && received.props && received.props.accessibilityRole;
-    
+    const hasAccessibilityLabel =
+      received && received.props && received.props.accessibilityLabel;
+    const hasAccessibilityRole =
+      received && received.props && received.props.accessibilityRole;
+
     const pass = hasAccessibilityLabel || hasAccessibilityRole;
-    
+
     if (pass) {
       return {
         message: () => `expected element not to have valid accessibility props`,
@@ -42,7 +45,8 @@ expect.extend({
       };
     } else {
       return {
-        message: () => `expected element to have accessibilityLabel or accessibilityRole`,
+        message: () =>
+          `expected element to have accessibilityLabel or accessibilityRole`,
         pass: false,
       };
     }
@@ -54,17 +58,17 @@ global.testHelpers = {
   // Wait for async operations
   waitFor: async (callback: () => boolean, timeout = 5000) => {
     const start = Date.now();
-    
+
     while (Date.now() - start < timeout) {
       if (callback()) {
         return true;
       }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    
+
     throw new Error(`Timeout waiting for condition after ${timeout}ms`);
   },
-  
+
   // Create mock navigation props
   createMockNavigation: (overrides = {}) => ({
     navigate: jest.fn(),
@@ -77,7 +81,7 @@ global.testHelpers = {
     canGoBack: jest.fn(() => false),
     ...overrides,
   }),
-  
+
   // Create mock route props
   createMockRoute: (params = {}, overrides = {}) => ({
     key: 'test-route',
@@ -85,7 +89,7 @@ global.testHelpers = {
     params,
     ...overrides,
   }),
-  
+
   // Create mock tournament data
   createMockTournament: (overrides = {}) => ({
     id: 'test-tournament-1',
@@ -107,7 +111,7 @@ global.testHelpers = {
     updatedAt: new Date(),
     ...overrides,
   }),
-  
+
   // Create mock user data
   createMockUser: (overrides = {}) => ({
     uid: 'test-user-1',
@@ -131,7 +135,7 @@ global.testHelpers = {
     },
     ...overrides,
   }),
-  
+
   // Create mock match data
   createMockMatch: (overrides = {}) => ({
     id: 'test-match-1',
@@ -147,7 +151,7 @@ global.testHelpers = {
     updatedAt: new Date(),
     ...overrides,
   }),
-  
+
   // Mock Firebase auth user
   createMockFirebaseUser: (overrides = {}) => ({
     uid: 'test-user-1',
@@ -156,10 +160,12 @@ global.testHelpers = {
     photoURL: null,
     emailVerified: true,
     getIdToken: jest.fn(() => Promise.resolve('mock-token')),
-    getIdTokenResult: jest.fn(() => Promise.resolve({
-      token: 'mock-token',
-      claims: { role: 'player' },
-    })),
+    getIdTokenResult: jest.fn(() =>
+      Promise.resolve({
+        token: 'mock-token',
+        claims: { role: 'player' },
+      })
+    ),
     ...overrides,
   }),
 };
@@ -172,7 +178,7 @@ declare global {
       toHaveValidAccessibility(): R;
     }
   }
-  
+
   var testHelpers: {
     waitFor: (callback: () => boolean, timeout?: number) => Promise<boolean>;
     createMockNavigation: (overrides?: any) => any;

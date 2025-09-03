@@ -2,7 +2,9 @@
  * Push notifications configuration and utilities for ProTour
  */
 
-import messaging, { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
+import messaging, {
+  FirebaseMessagingTypes,
+} from '@react-native-firebase/messaging';
 import { Platform, PermissionsAndroid, Alert, Linking } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger } from './logger';
@@ -18,7 +20,9 @@ export interface NotificationPayload {
 
 export interface NotificationHandlers {
   onForegroundMessage?: (message: FirebaseMessagingTypes.RemoteMessage) => void;
-  onBackgroundMessage?: (message: FirebaseMessagingTypes.RemoteMessage) => Promise<void>;
+  onBackgroundMessage?: (
+    message: FirebaseMessagingTypes.RemoteMessage
+  ) => Promise<void>;
   onNotificationPress?: (message: FirebaseMessagingTypes.RemoteMessage) => void;
   onTokenRefresh?: (token: string) => void;
 }
@@ -38,9 +42,9 @@ export const setupNotifications = async (): Promise<string | null> => {
     }
 
     // Register background message handler (must be called outside of app lifecycle)
-    messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+    messaging().setBackgroundMessageHandler(async remoteMessage => {
       logger.info('Background message received:', remoteMessage);
-      
+
       if (notificationHandlers.onBackgroundMessage) {
         await notificationHandlers.onBackgroundMessage(remoteMessage);
       }
@@ -50,15 +54,15 @@ export const setupNotifications = async (): Promise<string | null> => {
     const fcmToken = await getFCMToken();
     if (fcmToken) {
       logger.info('FCM Token obtained successfully');
-      
+
       // Store token locally
       await AsyncStorage.setItem('fcm_token', fcmToken);
-      
+
       // Handle token refresh
-      messaging().onTokenRefresh((token) => {
+      messaging().onTokenRefresh(token => {
         logger.info('FCM Token refreshed:', token);
         AsyncStorage.setItem('fcm_token', token);
-        
+
         if (notificationHandlers.onTokenRefresh) {
           notificationHandlers.onTokenRefresh(token);
         }
@@ -66,9 +70,9 @@ export const setupNotifications = async (): Promise<string | null> => {
     }
 
     // Handle foreground messages
-    const unsubscribeForeground = messaging().onMessage(async (remoteMessage) => {
+    messaging().onMessage(async remoteMessage => {
       logger.info('Foreground message received:', remoteMessage);
-      
+
       if (notificationHandlers.onForegroundMessage) {
         notificationHandlers.onForegroundMessage(remoteMessage);
       } else {
@@ -78,9 +82,9 @@ export const setupNotifications = async (): Promise<string | null> => {
     });
 
     // Handle notification press (when app is opened from notification)
-    const unsubscribeNotificationPress = messaging().onNotificationOpenedApp((remoteMessage) => {
+    messaging().onNotificationOpenedApp(remoteMessage => {
       logger.info('Notification pressed (background):', remoteMessage);
-      
+
       if (notificationHandlers.onNotificationPress) {
         notificationHandlers.onNotificationPress(remoteMessage);
       } else {
@@ -91,10 +95,10 @@ export const setupNotifications = async (): Promise<string | null> => {
     // Handle notification press (when app was quit)
     messaging()
       .getInitialNotification()
-      .then((remoteMessage) => {
+      .then(remoteMessage => {
         if (remoteMessage) {
           logger.info('Notification pressed (quit):', remoteMessage);
-          
+
           if (notificationHandlers.onNotificationPress) {
             notificationHandlers.onNotificationPress(remoteMessage);
           } else {
@@ -118,28 +122,29 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
   try {
     if (Platform.OS === 'ios') {
       const authStatus = await messaging().requestPermission();
-      
+
       return (
         authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
         authStatus === messaging.AuthorizationStatus.PROVISIONAL
       );
     } else {
       // Android - check if permissions are needed (Android 13+)
-      if (Platform.Version >= 33) {
+      if (typeof Platform.Version === 'number' && Platform.Version >= 33) {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
           {
             title: 'ProTour Notification Permission',
-            message: 'ProTour needs notification permissions to keep you updated about your tournaments and matches.',
+            message:
+              'ProTour needs notification permissions to keep you updated about your tournaments and matches.',
             buttonNeutral: 'Ask Me Later',
             buttonNegative: 'Cancel',
             buttonPositive: 'OK',
           }
         );
-        
+
         return granted === PermissionsAndroid.RESULTS.GRANTED;
       }
-      
+
       // For older Android versions, notifications are enabled by default
       return true;
     }
@@ -177,58 +182,60 @@ export const getStoredFCMToken = async (): Promise<string | null> => {
 /**
  * Register notification handlers
  */
-export const registerNotificationHandlers = (handlers: NotificationHandlers): void => {
+export const registerNotificationHandlers = (
+  handlers: NotificationHandlers
+): void => {
   notificationHandlers = { ...notificationHandlers, ...handlers };
 };
 
 /**
  * Show foreground notification as alert
  */
-const showForegroundNotification = (message: FirebaseMessagingTypes.RemoteMessage): void => {
-  const { notification, data } = message;
-  
+const showForegroundNotification = (
+  message: FirebaseMessagingTypes.RemoteMessage
+): void => {
+  const { notification } = message;
+
   if (notification) {
-    Alert.alert(
-      notification.title || 'ProTour',
-      notification.body || '',
-      [
-        { text: 'Dismiss', style: 'cancel' },
-        { 
-          text: 'View', 
-          onPress: () => handleNotificationPress(message) 
-        },
-      ]
-    );
+    Alert.alert(notification.title || 'ProTour', notification.body || '', [
+      { text: 'Dismiss', style: 'cancel' },
+      {
+        text: 'View',
+        onPress: () => handleNotificationPress(message),
+      },
+    ]);
   }
 };
 
 /**
  * Handle notification press
  */
-const handleNotificationPress = (message: FirebaseMessagingTypes.RemoteMessage): void => {
+const handleNotificationPress = (
+  message: FirebaseMessagingTypes.RemoteMessage
+): void => {
   const { data } = message;
-  
+
   if (data) {
     logger.info('Handling notification press with data:', data);
-    
+
     // Handle different types of notifications based on data
     switch (data.type) {
       case 'tournament_update':
         // Navigate to tournament screen
         // navigation.navigate('Tournament', { tournamentId: data.tournamentId });
         break;
-        
+
       case 'match_scheduled':
       case 'match_completed':
         // Navigate to match screen
         // navigation.navigate('Match', { matchId: data.matchId });
         break;
-        
+
       case 'registration_confirmed':
         // Navigate to registrations screen
         // navigation.navigate('MyRegistrations');
         break;
-        
+
       default:
         // Default action - go to home screen
         // navigation.navigate('Home');
@@ -246,7 +253,7 @@ export const createLocalNotification = (payload: NotificationPayload): void => {
   if (__DEV__) {
     Alert.alert(payload.title, payload.body);
   }
-  
+
   logger.info('Local notification created:', payload);
 };
 
@@ -261,8 +268,8 @@ export const cancelAllNotifications = (): void => {
 /**
  * Get notification settings
  */
-export const getNotificationSettings = async (): Promise<FirebaseMessagingTypes.NotificationSettings> => {
-  return messaging().getNotificationSettings();
+export const getNotificationSettings = async (): Promise<any> => {
+  return messaging().hasPermission();
 };
 
 /**
@@ -271,9 +278,10 @@ export const getNotificationSettings = async (): Promise<FirebaseMessagingTypes.
 export const areNotificationsEnabled = async (): Promise<boolean> => {
   try {
     const settings = await getNotificationSettings();
-    
+
     return (
-      settings.authorizationStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+      settings.authorizationStatus ===
+        messaging.AuthorizationStatus.AUTHORIZED ||
       settings.authorizationStatus === messaging.AuthorizationStatus.PROVISIONAL
     );
   } catch (error) {

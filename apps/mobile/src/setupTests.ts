@@ -74,7 +74,9 @@ jest.mock('@react-native-firebase/storage', () => ({
   default: () => ({
     ref: jest.fn(() => ({
       putFile: jest.fn(() => Promise.resolve()),
-      getDownloadURL: jest.fn(() => Promise.resolve('https://example.com/file.jpg')),
+      getDownloadURL: jest.fn(() =>
+        Promise.resolve('https://example.com/file.jpg')
+      ),
     })),
   }),
 }));
@@ -91,7 +93,9 @@ jest.mock('@react-native-firebase/messaging', () => ({
     onTokenRefresh: jest.fn(),
     subscribeToTopic: jest.fn(() => Promise.resolve()),
     unsubscribeFromTopic: jest.fn(() => Promise.resolve()),
-    getNotificationSettings: jest.fn(() => Promise.resolve({ authorizationStatus: 1 })),
+    getNotificationSettings: jest.fn(() =>
+      Promise.resolve({ authorizationStatus: 1 })
+    ),
   }),
   AuthorizationStatus: {
     AUTHORIZED: 1,
@@ -132,16 +136,22 @@ jest.mock('native-base', () => {
   return {
     NativeBaseProvider: ({ children }: any) => children,
     extendTheme: jest.fn(),
-    Box: ({ children, ...props }: any) => React.createElement('View', props, children),
-    Text: ({ children, ...props }: any) => React.createElement('Text', props, children),
+    Box: ({ children, ...props }: any) =>
+      React.createElement('View', props, children),
+    Text: ({ children, ...props }: any) =>
+      React.createElement('Text', props, children),
     Button: ({ children, onPress, ...props }: any) =>
       React.createElement('TouchableOpacity', { onPress, ...props }, children),
     Input: (props: any) => React.createElement('TextInput', props),
-    VStack: ({ children, ...props }: any) => React.createElement('View', props, children),
-    HStack: ({ children, ...props }: any) => React.createElement('View', props, children),
-    Center: ({ children, ...props }: any) => React.createElement('View', props, children),
+    VStack: ({ children, ...props }: any) =>
+      React.createElement('View', props, children),
+    HStack: ({ children, ...props }: any) =>
+      React.createElement('View', props, children),
+    Center: ({ children, ...props }: any) =>
+      React.createElement('View', props, children),
     Spinner: (props: any) => React.createElement('ActivityIndicator', props),
-    Alert: ({ children, ...props }: any) => React.createElement('View', props, children),
+    Alert: ({ children, ...props }: any) =>
+      React.createElement('View', props, children),
     Toast: {
       show: jest.fn(),
       close: jest.fn(),
@@ -186,7 +196,7 @@ jest.mock('react-native-flipper', () => ({
 }));
 
 // Global test utilities
-global.__DEV__ = true;
+(global as any).__DEV__ = true;
 
 // Silence console warnings in tests
 global.console = {

@@ -508,7 +508,8 @@ export class ApiClient {
     }
 
     // Add content-type for requests with body
-    if (config.body && !config.headers['content-type']) {
+    if (config.body && (!config.headers || !config.headers['content-type'])) {
+      config.headers = config.headers || {};
       config.headers['content-type'] = 'application/json';
     }
 
@@ -517,6 +518,7 @@ export class ApiClient {
 
   private addAuthHeaders(config: RequestConfig): void {
     const auth = this.config.auth!;
+    config.headers = config.headers || {};
 
     switch (auth.type) {
       case 'bearer':

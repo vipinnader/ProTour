@@ -38,10 +38,21 @@ export const setupFirebaseEmulators = async () => {
     const storage = require('@react-native-firebase/storage').default;
 
     // Connect to emulators
-    auth().useEmulator(`http://${FIREBASE_EMULATOR_CONFIG.auth.host}:${FIREBASE_EMULATOR_CONFIG.auth.port}`);
-    firestore().useEmulator(FIREBASE_EMULATOR_CONFIG.firestore.host, FIREBASE_EMULATOR_CONFIG.firestore.port);
-    functions().useEmulator(FIREBASE_EMULATOR_CONFIG.functions.host, FIREBASE_EMULATOR_CONFIG.functions.port);
-    storage().useEmulator(FIREBASE_EMULATOR_CONFIG.storage.host, FIREBASE_EMULATOR_CONFIG.storage.port);
+    auth().useEmulator(
+      `http://${FIREBASE_EMULATOR_CONFIG.auth.host}:${FIREBASE_EMULATOR_CONFIG.auth.port}`
+    );
+    firestore().useEmulator(
+      FIREBASE_EMULATOR_CONFIG.firestore.host,
+      FIREBASE_EMULATOR_CONFIG.firestore.port
+    );
+    functions().useEmulator(
+      FIREBASE_EMULATOR_CONFIG.functions.host,
+      FIREBASE_EMULATOR_CONFIG.functions.port
+    );
+    storage().useEmulator(
+      FIREBASE_EMULATOR_CONFIG.storage.host,
+      FIREBASE_EMULATOR_CONFIG.storage.port
+    );
 
     console.log('Firebase emulators connected for testing');
   } catch (error) {
@@ -57,10 +68,13 @@ export const cleanupFirebaseEmulators = async () => {
 
   try {
     // Clear emulator data (this would typically be done via REST API calls to emulators)
-    const response = await fetch(`http://localhost:8080/emulator/v1/projects/protour-dev/databases/(default)/documents`, {
-      method: 'DELETE',
-    });
-    
+    const response = await fetch(
+      `http://localhost:8080/emulator/v1/projects/protour-dev/databases/(default)/documents`,
+      {
+        method: 'DELETE',
+      }
+    );
+
     if (!response.ok) {
       console.warn('Failed to clear Firestore emulator data');
     }
@@ -91,7 +105,7 @@ export class DatabaseTestHelpers {
   static async createTestTournament(data = {}) {
     const db = await this.setup();
     const tournament = testHelpers.createMockTournament(data);
-    
+
     const docRef = await db.collection('tournaments').add(tournament);
     return { ...tournament, id: docRef.id };
   }
@@ -99,7 +113,7 @@ export class DatabaseTestHelpers {
   static async createTestUser(data = {}) {
     const db = await this.setup();
     const user = testHelpers.createMockUser(data);
-    
+
     await db.collection('users').doc(user.uid).set(user);
     return user;
   }
@@ -107,32 +121,36 @@ export class DatabaseTestHelpers {
   static async createTestMatch(tournamentId: string, data = {}) {
     const db = await this.setup();
     const match = testHelpers.createMockMatch({ tournamentId, ...data });
-    
+
     const docRef = await db
       .collection('tournaments')
       .doc(tournamentId)
       .collection('matches')
       .add(match);
-    
+
     return { ...match, id: docRef.id };
   }
 
   static async clearCollection(collectionPath: string) {
     const db = await this.setup();
     const snapshot = await db.collection(collectionPath).get();
-    
+
     const batch = db.batch();
     snapshot.docs.forEach((doc: any) => {
       batch.delete(doc.ref);
     });
-    
+
     await batch.commit();
   }
 
-  static async waitForDoc(collectionPath: string, docId: string, timeout = 5000) {
+  static async waitForDoc(
+    collectionPath: string,
+    docId: string,
+    timeout = 5000
+  ) {
     const db = await this.setup();
     const start = Date.now();
-    
+
     while (Date.now() - start < timeout) {
       const doc = await db.collection(collectionPath).doc(docId).get();
       if (doc.exists) {
@@ -140,8 +158,10 @@ export class DatabaseTestHelpers {
       }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    
-    throw new Error(`Document ${collectionPath}/${docId} not found within ${timeout}ms`);
+
+    throw new Error(
+      `Document ${collectionPath}/${docId} not found within ${timeout}ms`
+    );
   }
 }
 
@@ -159,16 +179,19 @@ export class AuthTestHelpers {
     return this.auth;
   }
 
-  static async signInTestUser(email = 'test@example.com', password = 'testpass123') {
+  static async signInTestUser(
+    email = 'test@example.com',
+    password = 'testpass123'
+  ) {
     const auth = await this.setup();
-    
+
     try {
       // Try to create user first (might already exist)
       await auth.createUserWithEmailAndPassword(email, password);
     } catch (error) {
       // User might already exist, ignore error
     }
-    
+
     return auth.signInWithEmailAndPassword(email, password);
   }
 
@@ -187,12 +210,14 @@ export class AuthTestHelpers {
     // For tests, we'll mock this functionality
     const mockUser = {
       uid,
-      getIdTokenResult: jest.fn(() => Promise.resolve({
-        token: 'mock-token',
-        claims: { ...claims, role: claims.role || 'player' },
-      })),
+      getIdTokenResult: jest.fn(() =>
+        Promise.resolve({
+          token: 'mock-token',
+          claims: { ...claims, role: claims.role || 'player' },
+        })
+      ),
     };
-    
+
     return mockUser;
   }
 
@@ -258,8 +283,10 @@ export class StorageTestHelpers {
 
   static mockStorageError() {
     const originalImpl = AsyncStorage.getItem;
-    AsyncStorage.getItem = jest.fn(() => Promise.reject(new Error('Storage error')));
-    
+    AsyncStorage.getItem = jest.fn(() =>
+      Promise.reject(new Error('Storage error'))
+    );
+
     return () => {
       AsyncStorage.getItem = originalImpl;
     };
@@ -271,7 +298,7 @@ export class StorageTestHelpers {
  */
 export class TestDataGenerators {
   static generateTournamentData(count = 5, overrides = {}) {
-    return Array.from({ length: count }, (_, index) => 
+    return Array.from({ length: count }, (_, index) =>
       testHelpers.createMockTournament({
         id: `tournament-${index + 1}`,
         name: `Tournament ${index + 1}`,
@@ -281,7 +308,7 @@ export class TestDataGenerators {
   }
 
   static generateUserData(count = 10, overrides = {}) {
-    return Array.from({ length: count }, (_, index) => 
+    return Array.from({ length: count }, (_, index) =>
       testHelpers.createMockUser({
         uid: `user-${index + 1}`,
         email: `user${index + 1}@example.com`,
@@ -291,9 +318,13 @@ export class TestDataGenerators {
     );
   }
 
-  static generateMatchData(tournamentId: string, playerIds: string[], overrides = {}) {
+  static generateMatchData(
+    tournamentId: string,
+    playerIds: string[],
+    overrides = {}
+  ) {
     const matches = [];
-    
+
     for (let i = 0; i < playerIds.length - 1; i += 2) {
       matches.push(
         testHelpers.createMockMatch({
@@ -306,7 +337,7 @@ export class TestDataGenerators {
         })
       );
     }
-    
+
     return matches;
   }
 
@@ -314,11 +345,11 @@ export class TestDataGenerators {
     const rounds = [];
     let currentPlayers = [...playerIds];
     let roundNumber = 1;
-    
+
     while (currentPlayers.length > 1) {
       const roundMatches = [];
       const nextRoundPlayers = [];
-      
+
       for (let i = 0; i < currentPlayers.length; i += 2) {
         const matchId = `round-${roundNumber}-match-${i / 2 + 1}`;
         const match = testHelpers.createMockMatch({
@@ -328,16 +359,16 @@ export class TestDataGenerators {
           player2Id: currentPlayers[i + 1] || null,
           round: roundNumber,
         });
-        
+
         roundMatches.push(match);
         nextRoundPlayers.push(`winner-of-${matchId}`);
       }
-      
+
       rounds.push(roundMatches);
       currentPlayers = nextRoundPlayers;
       roundNumber++;
     }
-    
+
     return rounds;
   }
 }
@@ -348,17 +379,17 @@ export class TestDataGenerators {
 export class PerformanceTestHelpers {
   private static measurements: Record<string, number[]> = {};
 
-  static startMeasurement(name: string) {
+  static startMeasurement(_name: string) {
     return Date.now();
   }
 
   static endMeasurement(name: string, startTime: number) {
     const duration = Date.now() - startTime;
-    
+
     if (!this.measurements[name]) {
       this.measurements[name] = [];
     }
-    
+
     this.measurements[name].push(duration);
     return duration;
   }
@@ -370,8 +401,11 @@ export class PerformanceTestHelpers {
   static getAverageDuration(name: string) {
     const measurements = this.measurements[name] || [];
     if (measurements.length === 0) return 0;
-    
-    return measurements.reduce((sum, duration) => sum + duration, 0) / measurements.length;
+
+    return (
+      measurements.reduce((sum, duration) => sum + duration, 0) /
+      measurements.length
+    );
   }
 
   static clearMeasurements(name?: string) {

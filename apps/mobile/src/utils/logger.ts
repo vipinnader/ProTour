@@ -37,11 +37,11 @@ class Logger {
   private formatMessage(level: string, message: string, extra?: any): string {
     const timestamp = new Date().toISOString();
     const baseMessage = `[${timestamp}] [${level}] ${message}`;
-    
+
     if (extra !== undefined) {
       return `${baseMessage} ${JSON.stringify(extra, null, 2)}`;
     }
-    
+
     return baseMessage;
   }
 
@@ -49,7 +49,7 @@ class Logger {
     if (!this.shouldLog(LogLevel.DEBUG)) return;
 
     const formattedMessage = this.formatMessage('DEBUG', message, extra);
-    
+
     if (this.config.enableConsole) {
       console.log(formattedMessage);
     }
@@ -59,7 +59,7 @@ class Logger {
     if (!this.shouldLog(LogLevel.INFO)) return;
 
     const formattedMessage = this.formatMessage('INFO', message, extra);
-    
+
     if (this.config.enableConsole) {
       console.info(formattedMessage);
     }
@@ -78,7 +78,7 @@ class Logger {
     if (!this.shouldLog(LogLevel.WARN)) return;
 
     const formattedMessage = this.formatMessage('WARN', message, extra);
-    
+
     if (this.config.enableConsole) {
       console.warn(formattedMessage);
     }
@@ -96,7 +96,7 @@ class Logger {
     if (!this.shouldLog(LogLevel.ERROR)) return;
 
     const formattedMessage = this.formatMessage('ERROR', message, error);
-    
+
     if (this.config.enableConsole) {
       console.error(formattedMessage);
     }

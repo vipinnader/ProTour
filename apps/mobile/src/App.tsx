@@ -31,11 +31,11 @@ const App: React.FC = () => {
       console.log('ProTour app initialized successfully');
     } catch (error) {
       console.error('Error initializing app:', error);
-      
+
       if (__DEV__) {
         Alert.alert(
           'Initialization Error',
-          'There was an error initializing the app. Please check the console for details.',
+          'There was an error initializing the app. Please check the console for details.'
         );
       }
     }

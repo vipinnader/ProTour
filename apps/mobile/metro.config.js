@@ -53,47 +53,16 @@ const config = {
   
   // Transformer configuration
   transformer: {
-    // Enable Hermes for better performance
-    hermesCommand: 'hermes',
-    
-    // Babel transformer path
-    babelTransformerPath: require.resolve('metro-react-native-babel-transformer'),
-    
-    // Asset transformer
-    assetPlugins: ['expo-asset/tools/hashAssetFiles'],
+    // Use default transformer from React Native
+    getTransformOptions: async () => ({
+      transform: {
+        experimentalImportSupport: false,
+        inlineRequires: true,
+      },
+    }),
   },
   
-  // Server configuration
-  server: {
-    // Enhanced logging for development
-    enhanceMiddleware: (middleware) => {
-      return (req, res, next) => {
-        if (__DEV__) {
-          console.log(`[Metro] ${req.method} ${req.url}`);
-        }
-        return middleware(req, res, next);
-      };
-    },
-  },
-  
-  // Cache configuration for faster builds
-  cacheStores: [
-    {
-      name: 'metro-cache',
-      get: async (key) => {
-        // Custom cache implementation if needed
-        return undefined;
-      },
-      set: async (key, value) => {
-        // Custom cache implementation if needed
-      },
-    },
-  ],
-  
-  // Reset cache configuration
-  resetCache: false,
-  
-  // Maximum number of workers
+  // Maximum number of workers  
   maxWorkers: require('os').cpus().length,
 };
 

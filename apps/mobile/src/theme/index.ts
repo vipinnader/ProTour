@@ -189,7 +189,7 @@ const components = {
       colorScheme: 'primary',
     },
   },
-  
+
   Card: {
     baseStyle: {
       bg: 'white',

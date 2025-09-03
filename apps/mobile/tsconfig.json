@@ -9,7 +9,7 @@
     "jsx": "react-native",
     "lib": ["ES2017"],
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noEmit": true,
     "strict": true,
     "target": "ESNext",
@@ -28,6 +28,7 @@
   "include": [
     "src/**/*",
     "index.js",
+    "app.json",
     "__tests__/**/*"
   ],
   "exclude": [
