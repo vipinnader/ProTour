@@ -5,6 +5,8 @@ require_relative '../../../node_modules/@react-native-community/cli-platform-ios
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
+flipper_config = ENV['NO_FLIPPER'] == "1" ? FlipperConfiguration.disabled : FlipperConfiguration.enabled
+
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
@@ -16,9 +18,7 @@ target 'ProTour' do
 
   use_react_native!(
     :path => config[:reactNativePath],
-    # Enables Flipper for debugging
-    :flipper_configuration => FlipperConfiguration.enabled,
-    # An absolute path to your application root
+    :flipper_configuration => flipper_config,
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
@@ -34,7 +34,6 @@ target 'ProTour' do
   end
 
   post_install do |installer|
-    # React Native post install
     react_native_post_install(
       installer,
       config[:reactNativePath],
@@ -58,18 +57,3 @@ target 'ProTour' do
   end
 end
 
-# Staging target
-target 'ProTour-Staging' do
-  config = use_native_modules!
-
-  use_react_native!(
-    :path => config[:reactNativePath],
-    :flipper_configuration => FlipperConfiguration.enabled,
-    :app_path => "#{Pod::Config.instance.installation_root}/.."
-  )
-
-  pod 'Firebase', :modular_headers => true
-  pod 'FirebaseCoreInternal', :modular_headers => true
-  pod 'GoogleUtilities', :modular_headers => true
-  pod 'FirebaseCore', :modular_headers => true
-end
